@@ -305,7 +305,8 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
               type="button"
               onClick={() => setPaletteModalOpen(true)}
               aria-label="Theme palettes"
-              className="flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs text-foreground transition-colors hover:bg-muted active:scale-95"
+              title="Theme color palette"
+              className="flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs text-foreground transition-colors hover:bg-muted active:scale-95 touch-manipulation"
             >
               <span
                 className="h-2.5 w-2.5 rounded-full shrink-0 border border-black/10"
@@ -317,7 +318,8 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
               type="button"
               onClick={() => setVoiceModalOpen(true)}
               aria-label="Voice assistant"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted active:scale-95"
+              title="Voice assistant input"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-muted active:scale-95 touch-manipulation"
             >
               <Mic className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -351,7 +353,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
               type="button"
               aria-current={isActive ? 'page' : undefined}
               onClick={() => goTo(item.id)}
-              className="group relative flex flex-1 flex-col items-center justify-center gap-1 py-1 px-1 transition-all active:scale-95"
+              className="group relative flex flex-1 flex-col items-center justify-center gap-1 py-1 px-1 transition-all active:scale-95 touch-manipulation select-none"
             >
               {/* Active icon capsule pill */}
               <span
@@ -381,7 +383,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
           aria-expanded={mobileMoreOpen}
           aria-controls="mobile-more-menu"
           onClick={() => setMobileMoreOpen((open) => !open)}
-          className="group relative flex flex-1 flex-col items-center justify-center gap-1 py-1 px-1 transition-all active:scale-95"
+          className="group relative flex flex-1 flex-col items-center justify-center gap-1 py-1 px-1 transition-all active:scale-95 touch-manipulation select-none"
         >
           <span
             className={
