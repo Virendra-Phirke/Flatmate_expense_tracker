@@ -14,18 +14,20 @@ if (!process.env.SESSION_SECRET) {
 if (!process.env.VERCEL) {
   const PORT = parseInt(process.env.PORT || '3000', 10);
 
-  initDB()
-    .then(() => {
-      app.listen(PORT, () => {
-        console.log('─────────────────────────────────────────');
-        console.log(`  🏠  Flatmate Expense Manager (Backend)`);
-        console.log(`  →   http://localhost:${PORT}`);
-        console.log('─────────────────────────────────────────\n');
+  app.listen(PORT, () => {
+    console.log('─────────────────────────────────────────');
+    console.log(`  🏠  Flatmate Expense Manager (Backend)`);
+    console.log(`  →   http://localhost:${PORT}`);
+    console.log('─────────────────────────────────────────\n');
+
+    initDB()
+      .then(() => {
+        console.log('Database initialized successfully.\n');
+      })
+      .catch((err: any) => {
+        console.error('Failed to initialise database:', err.message);
       });
-    })
-    .catch((err: any) => {
-      console.error('Failed to initialise database:', err.message);
-    });
+  });
 }
 
 export default app;

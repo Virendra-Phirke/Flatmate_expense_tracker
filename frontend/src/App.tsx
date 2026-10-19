@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { LoginPage } from '@/pages/LoginPage';
 import { Shell, NavTab } from '@/components/layout/Shell';
@@ -13,8 +15,22 @@ import { Loader2 } from '@/components/ui/icons';
 
 export function App() {
   const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [selectedRepaymentTarget, setSelectedRepaymentTarget] = useState<string | undefined>();
+
+  // Background warm-up: prefetch core tabs once authenticated so navigation is instantaneous
+  useEffect(() => {
+    if (user?.id) {
+      queryClient.prefetchQuery({ queryKey: ['balances_summary'], queryFn: () => api('GET', '/balances/summary') });
+      queryClient.prefetchQuery({ queryKey: ['members'], queryFn: () => api('GET', '/members'), staleTime: 5 * 60 * 1000 });
+      queryClient.prefetchQuery({ queryKey: ['categories'], queryFn: () => api('GET', '/categories'), staleTime: 10 * 60 * 1000 });
+      queryClient.prefetchQuery({ queryKey: ['personal_expenses'], queryFn: () => api('GET', '/expenses?type=personal') });
+      queryClient.prefetchQuery({ queryKey: ['common_expenses'], queryFn: () => api('GET', '/expenses?type=common') });
+      queryClient.prefetchQuery({ queryKey: ['purchases_made'], queryFn: () => api('GET', '/purchases/made') });
+      queryClient.prefetchQuery({ queryKey: ['purchases_for_me'], queryFn: () => api('GET', '/purchases/for-me') });
+    }
+  }, [user?.id, queryClient]);
 
   if (loading) {
     return (

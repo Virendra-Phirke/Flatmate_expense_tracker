@@ -39,9 +39,9 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
     );
   }
 
-  const netBalance = summary.owedToMe - summary.owedByMe;
-  const debts = summary.myDebts?.filter((item) => item.outstanding > 0) ?? [];
-  const credits = summary.pairwise?.filter((item) => item.outstanding > 0) ?? [];
+  const netBalance = Number(summary.owedToMe || 0) - Number(summary.owedByMe || 0);
+  const debts = summary.myDebts?.filter((item) => Number(item.outstanding || 0) > 0) ?? [];
+  const credits = summary.pairwise?.filter((item) => Number(item.outstanding || 0) > 0) ?? [];
 
   return (
     <div className="space-y-4 xs:space-y-5 sm:space-y-6">

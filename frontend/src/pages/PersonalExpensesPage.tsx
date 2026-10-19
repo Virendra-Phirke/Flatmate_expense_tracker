@@ -75,6 +75,7 @@ export function PersonalExpensesPage({
   const { data: categories = [] } = useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: () => api<Category[]>('GET', '/categories'),
+    staleTime: 10 * 60 * 1000,
   });
 
   // Add Mutation
@@ -119,7 +120,7 @@ export function PersonalExpensesPage({
     return expenses.filter((e) => matchesDateFilter(e.expense_date, activeDateFilter));
   }, [expenses, activeDateFilter]);
 
-  const totalSpent = filteredExpenses.reduce((sum, e) => sum + (e.amount_paise || 0), 0);
+  const totalSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_paise || 0), 0);
   const isFilterActive = activeDateFilter.mode !== 'all';
 
   return (

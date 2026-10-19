@@ -54,6 +54,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
   const { data: members = [] } = useQuery<HouseholdMember[]>({
     queryKey: ['members'],
     queryFn: () => api<HouseholdMember[]>('GET', '/members'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: summary } = useQuery<BalanceSummary>({

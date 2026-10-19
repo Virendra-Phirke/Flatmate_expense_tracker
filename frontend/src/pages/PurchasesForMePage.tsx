@@ -20,7 +20,7 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
   });
 
   const totalOwed = purchases.reduce(
-    (sum, p) => sum + Math.max(0, p.my_total_paise - (p.my_confirmed_paise || 0)),
+    (sum, p) => sum + Math.max(0, Number(p.my_total_paise || 0) - Number(p.my_confirmed_paise || 0)),
     0
   );
 
@@ -70,7 +70,7 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
       ) : (
         <div className="space-y-3 xs:space-y-4">
           {purchases.map((purchase) => {
-            const outstanding = Math.max(0, purchase.my_total_paise - (purchase.my_confirmed_paise || 0));
+            const outstanding = Math.max(0, Number(purchase.my_total_paise || 0) - Number(purchase.my_confirmed_paise || 0));
             const isSettled = outstanding === 0;
 
             return (

@@ -110,12 +110,12 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
     ]);
 
     const receivedMap: Record<string, number> = Object.fromEntries(
-      receivedByPayer.map((r: any) => [r.payer_id, parseInt(r.confirmed_paid, 10)])
+      (receivedByPayer || []).map((r: any) => [r.payer_id, parseInt(r.confirmed_paid || 0, 10)])
     );
 
-    const pairwise = theyOweRows
+    const pairwise = (theyOweRows || [])
       .map((r: any) => {
-        const gross = parseInt(r.gross_owed, 10);
+        const gross = parseInt(r.gross_owed || 0, 10);
         const paid  = receivedMap[r.debtor_id] || 0;
         return {
           debtorId:      r.debtor_id,
@@ -128,12 +128,12 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
       .filter((r: any) => r.outstanding > 0);
 
     const paidMap: Record<string, number> = Object.fromEntries(
-      paidToCreditor.map((r: any) => [r.recipient_id, parseInt(r.confirmed_paid, 10)])
+      (paidToCreditor || []).map((r: any) => [r.recipient_id, parseInt(r.confirmed_paid || 0, 10)])
     );
 
-    const myDebts = myDebtRows
+    const myDebts = (myDebtRows || [])
       .map((r: any) => {
-        const gross = parseInt(r.gross_owe, 10);
+        const gross = parseInt(r.gross_owe || 0, 10);
         const paid  = paidMap[r.creditor_id] || 0;
         return {
           creditorId:    r.creditor_id,
@@ -145,14 +145,14 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
       })
       .filter((r: any) => r.outstanding > 0);
 
-    const totalOwedToMe = pairwise.reduce((acc: number, p: any) => acc + p.outstanding, 0);
-    const totalOwedByMe = myDebts.reduce((acc: number, d: any) => acc + d.outstanding, 0);
+    const totalOwedToMe = pairwise.reduce((acc: number, p: any) => acc + Number(p.outstanding || 0), 0);
+    const totalOwedByMe = myDebts.reduce((acc: number, d: any) => acc + Number(d.outstanding || 0), 0);
 
     res.json({
-      personalSpending:  parseInt(personalRow.total, 10),
-      commonShare:       parseInt(commonShareRow.total, 10),
-      commonPaid:        parseInt(commonPaidRow.total, 10),
-      advancedForOthers: parseInt(advancedRow.total, 10),
+      personalSpending:  parseInt(personalRow?.total || 0, 10),
+      commonShare:       parseInt(commonShareRow?.total || 0, 10),
+      commonPaid:        parseInt(commonPaidRow?.total || 0, 10),
+      advancedForOthers: parseInt(advancedRow?.total || 0, 10),
       owedToMe:          totalOwedToMe,
       owedByMe:          totalOwedByMe,
       pairwise,

@@ -128,16 +128,22 @@ export async function initDB() {
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )`;
 
-  // ── Indexes ───────────────────────────────────────────────────────────────
-  await sql`CREATE INDEX IF NOT EXISTS idx_expenses_household_date ON expenses(household_id, expense_date)`;
+  // ── High-Performance Query Indexes ─────────────────────────────────────────
+  await sql`CREATE INDEX IF NOT EXISTS idx_expenses_household_date ON expenses(household_id, expense_date DESC, created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_expenses_paid_by ON expenses(paid_by)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_expenses_type_del ON expenses(household_id, expense_type, is_deleted)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_expenses_personal_fast ON expenses(household_id, paid_by, expense_date DESC, created_at DESC) WHERE expense_type = 'personal' AND is_deleted = FALSE`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_expenses_common_fast ON expenses(household_id, expense_date DESC, created_at DESC) WHERE expense_type = 'common' AND is_deleted = FALSE`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_expenses_on_behalf_fast ON expenses(household_id, paid_by, expense_date DESC, created_at DESC) WHERE expense_type = 'on_behalf' AND is_deleted = FALSE`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_expense_items_expense_id ON expense_items(expense_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_expense_shares_user ON expense_shares(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_expense_shares_exp_id ON expense_shares(expense_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_expense_shares_exp_user ON expense_shares(expense_id, user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_expense_shares_item_id ON expense_shares(expense_item_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_settlements_payer ON settlements(payer_id)`;
-  await sql`CREATE INDEX IF NOT EXISTS idx_settlements_recipient ON settlements(recipient_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_settlements_payer_fast ON settlements(household_id, payer_id, status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_settlements_recipient_fast ON settlements(household_id, recipient_id, status)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_settlements_hh_status ON settlements(household_id, status)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_settlements_share_id ON settlements(expense_share_id)`;
 
   // ── Seed categories ───────────────────────────────────────────────────────
   const catCount = await sql`SELECT COUNT(*) AS c FROM categories`;

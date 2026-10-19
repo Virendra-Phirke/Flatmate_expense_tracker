@@ -8,16 +8,25 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Money formatting helpers
  */
-export const paise = (rupees: number | string): number =>
-  Math.round(parseFloat(String(rupees || 0)) * 100);
+export const paise = (rupees: number | string): number => {
+  if (rupees === null || rupees === undefined || rupees === '') return 0;
+  const cleaned = typeof rupees === 'number' ? rupees : parseFloat(String(rupees).replace(/,/g, '').trim());
+  return isNaN(cleaned) ? 0 : Math.round(cleaned * 100);
+};
 export const rupeesToPaise = paise;
 
-export const rupees = (paiseVal: number | string): string =>
-  (parseInt(String(paiseVal || 0), 10) / 100).toFixed(2);
+export const rupees = (paiseVal: number | string): string => {
+  const p = Math.round(Number(paiseVal) || 0);
+  return (p / 100).toFixed(2);
+};
 
 export const fmt = (paiseVal: number | string): string => {
-  const p = parseInt(String(paiseVal || 0), 10);
-  return '₹' + (p / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const n = Math.round(Number(paiseVal) || 0);
+  const s = (Math.abs(n) / 100).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return (n < 0 ? '-₹' : '₹') + s;
 };
 export const formatPaise = fmt;
 

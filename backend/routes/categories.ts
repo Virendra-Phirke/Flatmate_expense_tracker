@@ -5,14 +5,29 @@ import { requireAuth } from '../middleware/auth';
 
 const router = Router();
 
+let categoriesCache: { data: any[]; timestamp: number } | null = null;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+export function invalidateCategoriesCache() {
+  categoriesCache = null;
+}
+
 // ── GET /api/categories ──────────────────────────────────────────────────────
 router.get('/', requireAuth, async (req: Request, res: Response) => {
+  const now = Date.now();
+  if (categoriesCache && now - categoriesCache.timestamp < CACHE_TTL_MS) {
+    res.setHeader('Cache-Control', 'private, max-age=60');
+    return res.json(categoriesCache.data);
+  }
+
   try {
     const rows = await sql`
       SELECT id, name, expense_type
       FROM   categories
       WHERE  is_active = TRUE
       ORDER  BY name`;
+    categoriesCache = { data: rows, timestamp: now };
+    res.setHeader('Cache-Control', 'private, max-age=60');
     res.json(rows);
   } catch (err) {
     console.error('[categories GET /]', err);
@@ -47,6 +62,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       INSERT INTO categories (id, name, expense_type, is_active)
       VALUES (${id}, ${trimmed}, ${expense_type || null}, TRUE)`;
 
+    invalidateCategoriesCache();
     res.status(201).json({ id, name: trimmed, expense_type: expense_type || null });
   } catch (err) {
     console.error('[categories POST /]', err);

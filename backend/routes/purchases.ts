@@ -154,7 +154,7 @@ router.get(['/made-by-me', '/made'], requireAuth, async (req: Request, res: Resp
 
     const settledByExpense: Record<string, number> = {};
     for (const r of settlementRows) {
-      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid, 10);
+      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid || 0, 10);
     }
 
     const result = expenses.map((exp: any) => ({
@@ -221,12 +221,12 @@ router.get(['/made-for-me', '/for-me'], requireAuth, async (req: Request, res: R
 
     const settledByExpense: Record<string, number> = {};
     for (const r of settlementRows) {
-      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid, 10);
+      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid || 0, 10);
     }
 
     const result = expenses.map((exp: any) => {
       const items = itemsByExpense[exp.id] || [];
-      const myTotal = items.reduce((s: number, i: any) => s + parseInt(i.my_share, 10), 0);
+      const myTotal = items.reduce((s: number, i: any) => s + parseInt(i.my_share || 0, 10), 0);
       return {
         ...exp,
         my_items:           items,

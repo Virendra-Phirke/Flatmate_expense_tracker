@@ -69,6 +69,7 @@ export function PurchasesMadePage({
   const { data: members = [] } = useQuery<HouseholdMember[]>({
     queryKey: ['members'],
     queryFn: () => api<HouseholdMember[]>('GET', '/members'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const [items, setItems] = useState<PurchaseItemInput[]>([
@@ -127,7 +128,7 @@ export function PurchasesMadePage({
   };
 
   const totalPaiseCalc = items.reduce(
-    (sum, it) => sum + rupeesToPaise(it.amountRupees),
+    (sum, it) => sum + Number(rupeesToPaise(it.amountRupees) || 0),
     0
   );
 
@@ -190,7 +191,7 @@ export function PurchasesMadePage({
     return purchases.filter((p) => matchesDateFilter(p.expense_date, activeDateFilter));
   }, [purchases, activeDateFilter]);
 
-  const totalAdvanced = filteredPurchases.reduce((sum, p) => sum + (p.amount_paise || 0), 0);
+  const totalAdvanced = filteredPurchases.reduce((sum, p) => sum + Number(p.amount_paise || 0), 0);
   const isFilterActive = activeDateFilter.mode !== 'all';
 
   return (
@@ -331,8 +332,8 @@ export function PurchasesMadePage({
         <div className="space-y-4">
           {filteredPurchases.map((purchase) => {
             const isSettled =
-              purchase.confirmed_paid_paise >= purchase.amount_paise &&
-              purchase.amount_paise > 0;
+              Number(purchase.confirmed_paid_paise || 0) >= Number(purchase.amount_paise || 0) &&
+              Number(purchase.amount_paise || 0) > 0;
 
             return (
               <Card

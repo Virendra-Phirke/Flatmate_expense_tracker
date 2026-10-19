@@ -55,6 +55,7 @@ export function CommonExpensesPage() {
   const { data: members = [] } = useQuery<HouseholdMember[]>({
     queryKey: ['members'],
     queryFn: () => api<HouseholdMember[]>('GET', '/members'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const [customShares, setCustomShares] = useState<Record<string, string>>({});
@@ -102,7 +103,7 @@ export function CommonExpensesPage() {
       if (!paidBy) throw new Error('Please select who paid for the expense.');
 
       const shares = calculateShares();
-      const shareSum = shares.reduce((sum, s) => sum + s.amount_paise, 0);
+      const shareSum = shares.reduce((sum, s) => sum + Number(s.amount_paise || 0), 0);
 
       if (shareSum !== totalPaise) {
         throw new Error(
@@ -149,7 +150,7 @@ export function CommonExpensesPage() {
     return expenses.filter((e) => matchesDateFilter(e.expense_date, dateFilter));
   }, [expenses, dateFilter]);
 
-  const totalCommon = filteredExpenses.reduce((sum, e) => sum + (e.amount_paise || 0), 0);
+  const totalCommon = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_paise || 0), 0);
   const isFilterActive = dateFilter.mode !== 'all';
   const isAdmin = user?.role === 'admin';
 
@@ -501,10 +502,11 @@ export function CommonExpensesPage() {
                   Split Allocations ({members.length} members)
                 </div>
                 <div className="space-y-1.5">
-                  {members.map((m) => {
-                    const equalSharePaise = members.length
-                      ? Math.floor(totalPaise / members.length)
-                      : 0;
+                  {members.map((m, idx) => {
+                    const activeCount = members.length || 1;
+                    const baseShare = Math.floor(totalPaise / activeCount);
+                    const remainder = totalPaise % activeCount;
+                    const equalSharePaise = baseShare + (idx < remainder ? 1 : 0);
 
                     return (
                       <div
@@ -536,6 +538,24 @@ export function CommonExpensesPage() {
                     );
                   })}
                 </div>
+                {splitMethod === 'custom' && (
+                  <div className="pt-1.5 border-t border-border flex items-center justify-between text-[11px] font-mono">
+                    <span className="text-muted-foreground">Custom split sum:</span>
+                    {(() => {
+                      const customSumPaise = members.reduce(
+                        (sum, m) => sum + rupeesToPaise(customShares[m.id] || '0'),
+                        0
+                      );
+                      const diff = totalPaise - customSumPaise;
+                      return (
+                        <span className={diff === 0 ? 'text-positive font-semibold' : 'text-warning font-semibold'}>
+                          {formatPaise(customSumPaise)} of {formatPaise(totalPaise)}
+                          {diff !== 0 && ` (${diff > 0 ? 'remaining ' : 'over '} ${formatPaise(Math.abs(diff))})`}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1.5">

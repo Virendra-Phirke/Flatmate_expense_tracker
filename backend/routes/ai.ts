@@ -331,7 +331,8 @@ Return the output strictly matching the JSON schema.`;
         });
 
         // Ensure shares sum matches amount_paise
-        const totalShares = parsed.shares.reduce((sum: number, s: any) => sum + s.amount_paise, 0);
+        parsed.amount_paise = Number(parsed.amount_paise || 0);
+        const totalShares = parsed.shares.reduce((sum: number, s: any) => sum + Number(s.amount_paise || 0), 0);
         if (totalShares !== parsed.amount_paise && parsed.shares.length > 0) {
           const diff = parsed.amount_paise - totalShares;
           parsed.shares[0].amount_paise += diff;

@@ -84,9 +84,9 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
     );
   }
 
-  const netBalance = summary.owedToMe - summary.owedByMe;
-  const hasDebts = summary.myDebts?.some((debt) => debt.outstanding > 0) ?? false;
-  const hasCredits = summary.pairwise?.some((credit) => credit.outstanding > 0) ?? false;
+  const netBalance = Number(summary.owedToMe || 0) - Number(summary.owedByMe || 0);
+  const hasDebts = summary.myDebts?.some((debt) => Number(debt.outstanding || 0) > 0) ?? false;
+  const hasCredits = summary.pairwise?.some((credit) => Number(credit.outstanding || 0) > 0) ?? false;
 
   return (
     <div className="space-y-4 xs:space-y-5 sm:space-y-6">

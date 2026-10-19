@@ -4,9 +4,36 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 // db/index.ts
+import dns from "node:dns";
 import { neon, types } from "@neondatabase/serverless";
+if (typeof dns.lookup === "function" && dns.promises?.Resolver) {
+  const publicResolver = new dns.promises.Resolver();
+  publicResolver.setServers(["8.8.8.8", "1.1.1.1"]);
+  const originalLookup = dns.lookup;
+  dns.lookup = function(hostname, options, callback) {
+    if (typeof options === "function") {
+      callback = options;
+      options = {};
+    }
+    if (hostname && (hostname.includes("neon.tech") || hostname.includes("neon."))) {
+      publicResolver.resolve4(hostname).then((ips) => {
+        if (options && options.all) {
+          callback(null, ips.map((ip) => ({ address: ip, family: 4 })));
+        } else {
+          callback(null, ips[0], 4);
+        }
+      }).catch(() => {
+        originalLookup(hostname, options, callback);
+      });
+      return;
+    }
+    return originalLookup(hostname, options, callback);
+  };
+}
 if (types && typeof types.setTypeParser === "function") {
   types.setTypeParser(1082, (val) => val);
+  types.setTypeParser(20, (val) => val === null ? null : parseInt(val, 10));
+  types.setTypeParser(1700, (val) => val === null ? null : parseFloat(val));
 }
 var sqlInstance = null;
 function getSql() {
@@ -414,16 +441,27 @@ var auth_default = router;
 // routes/members.ts
 import { Router as Router2 } from "express";
 var router2 = Router2();
+var membersCache = {};
+var CACHE_TTL_MS = 2 * 60 * 1e3;
 router2.get("/", requireAuth, async (req, res) => {
   const session = req.session;
+  const hid = session.householdId;
+  const now = Date.now();
+  const cached = membersCache[hid];
+  if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+    res.setHeader("Cache-Control", "private, max-age=60");
+    return res.json(cached.data);
+  }
   try {
     const rows = await db_default`
       SELECT u.id, u.full_name, u.username, hm.role, u.is_active
       FROM   users u
       JOIN   household_members hm ON hm.user_id = u.id
-      WHERE  hm.household_id = ${session.householdId}
+      WHERE  hm.household_id = ${hid}
         AND  hm.is_active = TRUE
       ORDER  BY u.full_name`;
+    membersCache[hid] = { data: rows, timestamp: now };
+    res.setHeader("Cache-Control", "private, max-age=60");
     res.json(rows);
   } catch (err) {
     console.error("[members]", err);
@@ -436,13 +474,25 @@ var members_default = router2;
 import { Router as Router3 } from "express";
 import { randomUUID as uuidv4 } from "crypto";
 var router3 = Router3();
+var categoriesCache = null;
+var CACHE_TTL_MS2 = 5 * 60 * 1e3;
+function invalidateCategoriesCache() {
+  categoriesCache = null;
+}
 router3.get("/", requireAuth, async (req, res) => {
+  const now = Date.now();
+  if (categoriesCache && now - categoriesCache.timestamp < CACHE_TTL_MS2) {
+    res.setHeader("Cache-Control", "private, max-age=60");
+    return res.json(categoriesCache.data);
+  }
   try {
     const rows = await db_default`
       SELECT id, name, expense_type
       FROM   categories
       WHERE  is_active = TRUE
       ORDER  BY name`;
+    categoriesCache = { data: rows, timestamp: now };
+    res.setHeader("Cache-Control", "private, max-age=60");
     res.json(rows);
   } catch (err) {
     console.error("[categories GET /]", err);
@@ -468,6 +518,7 @@ router3.post("/", requireAuth, async (req, res) => {
     await db_default`
       INSERT INTO categories (id, name, expense_type, is_active)
       VALUES (${id}, ${trimmed}, ${expense_type || null}, TRUE)`;
+    invalidateCategoriesCache();
     res.status(201).json({ id, name: trimmed, expense_type: expense_type || null });
   } catch (err) {
     console.error("[categories POST /]", err);
@@ -519,7 +570,7 @@ async function resolveCategoryId(categoryInput) {
 router4.get("/", requireAuth, async (req, res) => {
   const { type, from, to, page, limit } = req.query;
   const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 30));
+  const limitNum = Math.min(1e3, Math.max(1, parseInt(String(limit), 10) || 500));
   const offsetNum = (pageNum - 1) * limitNum;
   const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
   const validTo = to && DATE_REGEX.test(String(to)) ? String(to) : null;
@@ -569,6 +620,23 @@ router4.get("/", requireAuth, async (req, res) => {
           )
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
+    }
+    if (type === "common" && rows.length > 0) {
+      const expIds = rows.map((r) => r.id);
+      const shareRows = await db_default`
+        SELECT es.*, u.full_name
+        FROM   expense_shares es
+        JOIN   users u ON u.id = es.user_id
+        WHERE  es.expense_id = ANY(${expIds})`;
+      const sharesByExp = {};
+      for (const sh of shareRows) {
+        if (!sharesByExp[sh.expense_id]) sharesByExp[sh.expense_id] = [];
+        sharesByExp[sh.expense_id].push(sh);
+      }
+      rows = rows.map((r) => ({
+        ...r,
+        shares: sharesByExp[r.id] || []
+      }));
     }
     res.json(rows);
   } catch (err) {
@@ -924,7 +992,7 @@ router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
     }
     const settledByExpense = {};
     for (const r of settlementRows) {
-      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid, 10);
+      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid || 0, 10);
     }
     const result = expenses.map((exp) => ({
       ...exp,
@@ -980,11 +1048,11 @@ router5.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
     }
     const settledByExpense = {};
     for (const r of settlementRows) {
-      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid, 10);
+      settledByExpense[r.expense_id] = (settledByExpense[r.expense_id] || 0) + parseInt(r.total_paid || 0, 10);
     }
     const result = expenses.map((exp) => {
       const items = itemsByExpense[exp.id] || [];
-      const myTotal = items.reduce((s, i) => s + parseInt(i.my_share, 10), 0);
+      const myTotal = items.reduce((s, i) => s + parseInt(i.my_share || 0, 10), 0);
       return {
         ...exp,
         my_items: items,
@@ -1097,10 +1165,10 @@ router6.get(["/", "/summary"], requireAuth, async (req, res) => {
         GROUP  BY recipient_id`
     ]);
     const receivedMap = Object.fromEntries(
-      receivedByPayer.map((r) => [r.payer_id, parseInt(r.confirmed_paid, 10)])
+      (receivedByPayer || []).map((r) => [r.payer_id, parseInt(r.confirmed_paid || 0, 10)])
     );
-    const pairwise = theyOweRows.map((r) => {
-      const gross = parseInt(r.gross_owed, 10);
+    const pairwise = (theyOweRows || []).map((r) => {
+      const gross = parseInt(r.gross_owed || 0, 10);
       const paid = receivedMap[r.debtor_id] || 0;
       return {
         debtorId: r.debtor_id,
@@ -1111,10 +1179,10 @@ router6.get(["/", "/summary"], requireAuth, async (req, res) => {
       };
     }).filter((r) => r.outstanding > 0);
     const paidMap = Object.fromEntries(
-      paidToCreditor.map((r) => [r.recipient_id, parseInt(r.confirmed_paid, 10)])
+      (paidToCreditor || []).map((r) => [r.recipient_id, parseInt(r.confirmed_paid || 0, 10)])
     );
-    const myDebts = myDebtRows.map((r) => {
-      const gross = parseInt(r.gross_owe, 10);
+    const myDebts = (myDebtRows || []).map((r) => {
+      const gross = parseInt(r.gross_owe || 0, 10);
       const paid = paidMap[r.creditor_id] || 0;
       return {
         creditorId: r.creditor_id,
@@ -1124,13 +1192,13 @@ router6.get(["/", "/summary"], requireAuth, async (req, res) => {
         outstanding: Math.max(0, gross - paid)
       };
     }).filter((r) => r.outstanding > 0);
-    const totalOwedToMe = pairwise.reduce((acc, p) => acc + p.outstanding, 0);
-    const totalOwedByMe = myDebts.reduce((acc, d) => acc + d.outstanding, 0);
+    const totalOwedToMe = pairwise.reduce((acc, p) => acc + Number(p.outstanding || 0), 0);
+    const totalOwedByMe = myDebts.reduce((acc, d) => acc + Number(d.outstanding || 0), 0);
     res.json({
-      personalSpending: parseInt(personalRow.total, 10),
-      commonShare: parseInt(commonShareRow.total, 10),
-      commonPaid: parseInt(commonPaidRow.total, 10),
-      advancedForOthers: parseInt(advancedRow.total, 10),
+      personalSpending: parseInt(personalRow?.total || 0, 10),
+      commonShare: parseInt(commonShareRow?.total || 0, 10),
+      commonPaid: parseInt(commonPaidRow?.total || 0, 10),
+      advancedForOthers: parseInt(advancedRow?.total || 0, 10),
       owedToMe: totalOwedToMe,
       owedByMe: totalOwedByMe,
       pairwise,
@@ -1735,7 +1803,8 @@ Return the output strictly matching the JSON schema.`;
             amount_paise: Number.isInteger(sh.amount_paise) ? sh.amount_paise : 0
           };
         });
-        const totalShares = parsed.shares.reduce((sum, s) => sum + s.amount_paise, 0);
+        parsed.amount_paise = Number(parsed.amount_paise || 0);
+        const totalShares = parsed.shares.reduce((sum, s) => sum + Number(s.amount_paise || 0), 0);
         if (totalShares !== parsed.amount_paise && parsed.shares.length > 0) {
           const diff = parsed.amount_paise - totalShares;
           parsed.shares[0].amount_paise += diff;

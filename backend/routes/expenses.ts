@@ -41,7 +41,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 
   // Sanitize and bound pagination (AUD-10)
   const pageNum   = Math.max(1, parseInt(String(page), 10) || 1);
-  const limitNum  = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 30));
+  const limitNum  = Math.min(1000, Math.max(1, parseInt(String(limit), 10) || 500));
   const offsetNum = (pageNum - 1) * limitNum;
 
   const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
@@ -98,6 +98,24 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
           )
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
+    }
+
+    if (type === 'common' && rows.length > 0) {
+      const expIds = rows.map((r: any) => r.id);
+      const shareRows = await sql`
+        SELECT es.*, u.full_name
+        FROM   expense_shares es
+        JOIN   users u ON u.id = es.user_id
+        WHERE  es.expense_id = ANY(${expIds})`;
+      const sharesByExp: Record<string, any[]> = {};
+      for (const sh of shareRows) {
+        if (!sharesByExp[sh.expense_id]) sharesByExp[sh.expense_id] = [];
+        sharesByExp[sh.expense_id].push(sh);
+      }
+      rows = rows.map((r: any) => ({
+        ...r,
+        shares: sharesByExp[r.id] || [],
+      }));
     }
 
     res.json(rows);
