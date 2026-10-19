@@ -64,8 +64,6 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
           AND  e.expense_type = 'personal'
           AND  e.paid_by      = ${uid}
           AND  e.is_deleted   = FALSE
-          ${validFrom ? sql`AND e.expense_date >= ${validFrom}` : sql``}
-          ${validTo   ? sql`AND e.expense_date <= ${validTo}`   : sql``}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
 
@@ -78,8 +76,6 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         WHERE  e.household_id = ${hid}
           AND  e.expense_type = 'common'
           AND  e.is_deleted   = FALSE
-          ${validFrom ? sql`AND e.expense_date >= ${validFrom}` : sql``}
-          ${validTo   ? sql`AND e.expense_date <= ${validTo}`   : sql``}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
 
@@ -100,8 +96,6 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
               WHERE  es.expense_id = e.id AND es.user_id = ${uid}
             )
           )
-          ${validFrom ? sql`AND e.expense_date >= ${validFrom}` : sql``}
-          ${validTo   ? sql`AND e.expense_date <= ${validTo}`   : sql``}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
     }

@@ -67,15 +67,9 @@ export function PersonalExpensesPage({
   const [formError, setFormError] = useState<string | null>(null);
 
   // Queries
-  const range = getDateFilterRange(activeDateFilter);
-  const queryUrl =
-    range.from && range.to
-      ? `/expenses?type=personal&from=${range.from}&to=${range.to}&limit=100`
-      : '/expenses?type=personal&limit=100';
-
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
-    queryKey: ['personal_expenses', range.from || '', range.to || ''],
-    queryFn: () => api<Expense[]>('GET', queryUrl),
+    queryKey: ['personal_expenses'],
+    queryFn: () => api<Expense[]>('GET', '/expenses?type=personal'),
   });
 
   const { data: categories = [] } = useQuery<Category[]>({

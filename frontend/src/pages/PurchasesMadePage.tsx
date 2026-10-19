@@ -84,15 +84,9 @@ export function PurchasesMadePage({
     }
   }, [members]);
 
-  const range = getDateFilterRange(activeDateFilter);
-  const queryUrl =
-    range.from && range.to
-      ? `/purchases/made?from=${range.from}&to=${range.to}`
-      : '/purchases/made';
-
   const { data: purchases = [], isLoading } = useQuery<OnBehalfPurchase[]>({
-    queryKey: ['purchases_made', range.from || '', range.to || ''],
-    queryFn: () => api<OnBehalfPurchase[]>('GET', queryUrl),
+    queryKey: ['purchases_made'],
+    queryFn: () => api<OnBehalfPurchase[]>('GET', '/purchases/made'),
   });
 
   const addItemRow = (defaultCategory?: string) => {

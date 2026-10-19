@@ -538,8 +538,6 @@ router4.get("/", requireAuth, async (req, res) => {
           AND  e.expense_type = 'personal'
           AND  e.paid_by      = ${uid}
           AND  e.is_deleted   = FALSE
-          ${validFrom ? db_default`AND e.expense_date >= ${validFrom}` : db_default``}
-          ${validTo ? db_default`AND e.expense_date <= ${validTo}` : db_default``}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
     } else if (type === "common") {
@@ -551,8 +549,6 @@ router4.get("/", requireAuth, async (req, res) => {
         WHERE  e.household_id = ${hid}
           AND  e.expense_type = 'common'
           AND  e.is_deleted   = FALSE
-          ${validFrom ? db_default`AND e.expense_date >= ${validFrom}` : db_default``}
-          ${validTo ? db_default`AND e.expense_date <= ${validTo}` : db_default``}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
     } else {
@@ -571,8 +567,6 @@ router4.get("/", requireAuth, async (req, res) => {
               WHERE  es.expense_id = e.id AND es.user_id = ${uid}
             )
           )
-          ${validFrom ? db_default`AND e.expense_date >= ${validFrom}` : db_default``}
-          ${validTo ? db_default`AND e.expense_date <= ${validTo}` : db_default``}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
     }
@@ -891,10 +885,6 @@ async function handleCreatePurchase(req, res) {
 router5.post("/", requireAuth, handleCreatePurchase);
 router5.post("/on-behalf", requireAuth, handleCreatePurchase);
 router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
-  const { from, to } = req.query;
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const validFrom = from && dateRegex.test(String(from)) ? String(from) : null;
-  const validTo = to && dateRegex.test(String(to)) ? String(to) : null;
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -907,8 +897,6 @@ router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
         AND  e.expense_type = 'on_behalf'
         AND  e.paid_by      = ${uid}
         AND  e.is_deleted   = FALSE
-        ${validFrom ? db_default`AND e.expense_date >= ${validFrom}` : db_default``}
-        ${validTo ? db_default`AND e.expense_date <= ${validTo}` : db_default``}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
     if (!expenses.length) return res.json([]);
     const expIds = expenses.map((e) => e.id);
@@ -950,10 +938,6 @@ router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
   }
 });
 router5.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
-  const { from, to } = req.query;
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  const validFrom = from && dateRegex.test(String(from)) ? String(from) : null;
-  const validTo = to && dateRegex.test(String(to)) ? String(to) : null;
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -968,8 +952,6 @@ router5.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
         AND  es.user_id     = ${uid}
         AND  e.paid_by     != ${uid}
         AND  e.is_deleted   = FALSE
-        ${validFrom ? db_default`AND e.expense_date >= ${validFrom}` : db_default``}
-        ${validTo ? db_default`AND e.expense_date <= ${validTo}` : db_default``}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
     if (!expenses.length) return res.json([]);
     const expIds = expenses.map((e) => e.id);

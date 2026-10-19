@@ -64,15 +64,9 @@ export function CommonExpensesPage() {
     if (!paidBy && user?.id) setPaidBy(user.id);
   }, [user, members]);
 
-  const range = getDateFilterRange(dateFilter);
-  const queryUrl =
-    range.from && range.to
-      ? `/expenses?type=common&from=${range.from}&to=${range.to}&limit=100`
-      : '/expenses?type=common&limit=100';
-
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
-    queryKey: ['common_expenses', range.from || '', range.to || ''],
-    queryFn: () => api<Expense[]>('GET', queryUrl),
+    queryKey: ['common_expenses'],
+    queryFn: () => api<Expense[]>('GET', '/expenses?type=common'),
   });
 
   const totalPaise = rupeesToPaise(amountRupees);
