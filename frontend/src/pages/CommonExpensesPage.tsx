@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Expense, HouseholdMember } from '@/types';
-import { formatPaise, rupeesToPaise, getLocalDateString } from '@/lib/utils';
+import { formatPaise, rupeesToPaise, getLocalDateString, cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,11 +28,19 @@ import {
 import { CategoryCombobox, ItemCombobox } from '@/components/ui/CategoryItemCombobox';
 import { DEFAULT_CATEGORIES } from '@/data/categorySuggestions';
 import { useAuth } from '@/context/AuthContext';
+import {
+  DateFilter,
+  DateFilterValue,
+  matchesDateFilter,
+  formatFilterLabel,
+  getDateFilterRange,
+} from '@/components/ui/DateFilter';
 
 export function CommonExpensesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [dateFilter, setDateFilter] = useState<DateFilterValue>({ mode: 'all' });
 
   // Form State
   const [description, setDescription] = useState('');
@@ -56,9 +64,15 @@ export function CommonExpensesPage() {
     if (!paidBy && user?.id) setPaidBy(user.id);
   }, [user, members]);
 
+  const range = getDateFilterRange(dateFilter);
+  const queryUrl =
+    range.from && range.to
+      ? `/expenses?type=common&from=${range.from}&to=${range.to}&limit=100`
+      : '/expenses?type=common&limit=100';
+
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
-    queryKey: ['common_expenses'],
-    queryFn: () => api<Expense[]>('GET', '/expenses?type=common'),
+    queryKey: ['common_expenses', range.from || '', range.to || ''],
+    queryFn: () => api<Expense[]>('GET', queryUrl),
   });
 
   const totalPaise = rupeesToPaise(amountRupees);
@@ -137,7 +151,12 @@ export function CommonExpensesPage() {
     },
   });
 
-  const totalCommon = expenses.reduce((sum, e) => sum + (e.amount_paise || 0), 0);
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((e) => matchesDateFilter(e.expense_date, dateFilter));
+  }, [expenses, dateFilter]);
+
+  const totalCommon = filteredExpenses.reduce((sum, e) => sum + (e.amount_paise || 0), 0);
+  const isFilterActive = dateFilter.mode !== 'all';
   const isAdmin = user?.role === 'admin';
 
   return (
@@ -148,7 +167,7 @@ export function CommonExpensesPage() {
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Common Expenses</h1>
             <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
-              {expenses.length} records
+              {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
             </Badge>
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -157,7 +176,9 @@ export function CommonExpensesPage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right hidden sm:block">
-            <div className="text-[10px] uppercase font-semibold text-muted-foreground">Total Common</div>
+            <div className="text-[10px] uppercase font-semibold text-muted-foreground">
+              {isFilterActive ? 'Filtered Common' : 'Total Common'}
+            </div>
             <div className="text-lg font-bold font-mono text-foreground">
               {formatPaise(totalCommon)}
             </div>
@@ -172,6 +193,16 @@ export function CommonExpensesPage() {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Date Filter Bar */}
+      <div className="rounded-2xl border border-border/80 bg-card/60 p-3 sm:p-3.5 shadow-xs backdrop-blur-xs">
+        <DateFilter
+          value={dateFilter}
+          onChange={setDateFilter}
+          totalRecords={expenses.length}
+          filteredCount={filteredExpenses.length}
+        />
       </div>
 
       {isLoading ? (
@@ -197,9 +228,38 @@ export function CommonExpensesPage() {
             )}
           </CardContent>
         </Card>
+      ) : filteredExpenses.length === 0 ? (
+        <Card className="border-border bg-card">
+          <CardContent className="p-8 sm:p-12 text-center flex flex-col items-center">
+            <Calendar className="h-12 w-12 text-muted-foreground/40 mb-3" />
+            <h3 className="text-base font-semibold text-foreground">No common expenses match this date filter</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mt-1 mb-5">
+              No common expenses were recorded for {formatFilterLabel(dateFilter)}. Try selecting a different date, month, or clear the filter.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <Button
+                onClick={() => setDateFilter({ mode: 'all' })}
+                variant="outline"
+                className="min-h-10 text-xs sm:text-sm"
+              >
+                Clear Date Filter
+              </Button>
+              {isAdmin && (
+                <Button
+                  onClick={() => setModalOpen(true)}
+                  size="sm"
+                  className="min-h-10 text-xs sm:text-sm"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Add Common Expense
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
-          {expenses.map((exp) => {
+          {filteredExpenses.map((exp) => {
             const myShare = exp.shares?.find((s: any) => s.user_id === user?.id)?.amount_paise;
 
             return (

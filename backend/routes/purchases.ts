@@ -108,6 +108,11 @@ router.post('/on-behalf', requireAuth, handleCreatePurchase);
 
 // ── GET /api/purchases/made-by-me & /api/purchases/made ───────────────────────
 router.get(['/made-by-me', '/made'], requireAuth, async (req: Request, res: Response) => {
+  const { from, to } = req.query;
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const validFrom = from && dateRegex.test(String(from)) ? String(from) : null;
+  const validTo   = to   && dateRegex.test(String(to))   ? String(to)   : null;
+
   const session = (req as any).session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -121,6 +126,8 @@ router.get(['/made-by-me', '/made'], requireAuth, async (req: Request, res: Resp
         AND  e.expense_type = 'on_behalf'
         AND  e.paid_by      = ${uid}
         AND  e.is_deleted   = FALSE
+        ${validFrom ? sql`AND e.expense_date >= ${validFrom}` : sql``}
+        ${validTo   ? sql`AND e.expense_date <= ${validTo}`   : sql``}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
 
     if (!expenses.length) return res.json([]);
@@ -172,6 +179,11 @@ router.get(['/made-by-me', '/made'], requireAuth, async (req: Request, res: Resp
 
 // ── GET /api/purchases/made-for-me & /api/purchases/for-me ─────────────────────
 router.get(['/made-for-me', '/for-me'], requireAuth, async (req: Request, res: Response) => {
+  const { from, to } = req.query;
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  const validFrom = from && dateRegex.test(String(from)) ? String(from) : null;
+  const validTo   = to   && dateRegex.test(String(to))   ? String(to)   : null;
+
   const session = (req as any).session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -187,6 +199,8 @@ router.get(['/made-for-me', '/for-me'], requireAuth, async (req: Request, res: R
         AND  es.user_id     = ${uid}
         AND  e.paid_by     != ${uid}
         AND  e.is_deleted   = FALSE
+        ${validFrom ? sql`AND e.expense_date >= ${validFrom}` : sql``}
+        ${validTo   ? sql`AND e.expense_date <= ${validTo}`   : sql``}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
 
     if (!expenses.length) return res.json([]);

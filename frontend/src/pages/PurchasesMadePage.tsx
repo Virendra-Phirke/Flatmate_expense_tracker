@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { OnBehalfPurchase, HouseholdMember } from '@/types';
@@ -25,9 +25,17 @@ import {
   X,
   Sparkles,
   Copy,
+  Calendar,
 } from '@/components/ui/icons';
 import { CategoryCombobox, ItemCombobox } from '@/components/ui/CategoryItemCombobox';
 import { DEFAULT_CATEGORIES, findCategoryByName } from '@/data/categorySuggestions';
+import {
+  DateFilter,
+  DateFilterValue,
+  matchesDateFilter,
+  formatFilterLabel,
+  getDateFilterRange,
+} from '@/components/ui/DateFilter';
 
 interface PurchaseItemInput {
   description: string;
@@ -38,10 +46,20 @@ interface PurchaseItemInput {
 
 interface PurchasesMadePageProps {
   hideTitle?: boolean;
+  dateFilter?: DateFilterValue;
+  onDateFilterChange?: (filter: DateFilterValue) => void;
 }
 
-export function PurchasesMadePage({ hideTitle = false }: PurchasesMadePageProps = {}) {
+export function PurchasesMadePage({
+  hideTitle = false,
+  dateFilter,
+  onDateFilterChange,
+}: PurchasesMadePageProps = {}) {
   const queryClient = useQueryClient();
+  const [internalDateFilter, setInternalDateFilter] = useState<DateFilterValue>({ mode: 'all' });
+  const activeDateFilter = dateFilter || internalDateFilter;
+  const handleDateFilterChange = onDateFilterChange || setInternalDateFilter;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(getLocalDateString());
@@ -66,9 +84,15 @@ export function PurchasesMadePage({ hideTitle = false }: PurchasesMadePageProps 
     }
   }, [members]);
 
+  const range = getDateFilterRange(activeDateFilter);
+  const queryUrl =
+    range.from && range.to
+      ? `/purchases/made?from=${range.from}&to=${range.to}`
+      : '/purchases/made';
+
   const { data: purchases = [], isLoading } = useQuery<OnBehalfPurchase[]>({
-    queryKey: ['purchases_made'],
-    queryFn: () => api<OnBehalfPurchase[]>('GET', '/purchases/made'),
+    queryKey: ['purchases_made', range.from || '', range.to || ''],
+    queryFn: () => api<OnBehalfPurchase[]>('GET', queryUrl),
   });
 
   const addItemRow = (defaultCategory?: string) => {
@@ -168,53 +192,88 @@ export function PurchasesMadePage({ hideTitle = false }: PurchasesMadePageProps 
     },
   });
 
-  const totalAdvanced = purchases.reduce((sum, p) => sum + (p.amount_paise || 0), 0);
+  const filteredPurchases = useMemo(() => {
+    return purchases.filter((p) => matchesDateFilter(p.expense_date, activeDateFilter));
+  }, [purchases, activeDateFilter]);
+
+  const totalAdvanced = filteredPurchases.reduce((sum, p) => sum + (p.amount_paise || 0), 0);
+  const isFilterActive = activeDateFilter.mode !== 'all';
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       {!hideTitle && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight">
-                Bought for others
-              </h1>
-              <Badge variant="outline" className="font-mono text-xs">
-                {purchases.length} purchases
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Items you purchased on behalf of individual flatmates
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs uppercase font-semibold text-muted-foreground">Total advanced</div>
-              <div className="text-lg font-bold font-mono text-foreground">
-                {formatPaise(totalAdvanced)}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl font-bold tracking-tight">
+                  Bought for others
+                </h1>
+                <Badge variant="outline" className="font-mono text-xs">
+                  {isFilterActive ? `${filteredPurchases.length} of ${purchases.length} purchases` : `${purchases.length} purchases`}
+                </Badge>
               </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Items you purchased on behalf of individual flatmates
+              </p>
             </div>
-            <Button
-              onClick={() => setModalOpen(true)}
-              className="min-h-11 text-xs sm:text-sm"
-            >
-              <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
-              New purchase
-            </Button>
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <div className="text-xs uppercase font-semibold text-muted-foreground">
+                  {isFilterActive ? 'Filtered total' : 'Total advanced'}
+                </div>
+                <div className="text-lg font-bold font-mono text-foreground">
+                  {formatPaise(totalAdvanced)}
+                </div>
+              </div>
+              <Button
+                onClick={() => setModalOpen(true)}
+                className="min-h-11 text-xs sm:text-sm"
+              >
+                <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                New purchase
+              </Button>
+            </div>
+          </div>
+
+          {/* Standalone DateFilter bar */}
+          <div className="rounded-2xl border border-border/80 bg-card/60 p-3 shadow-xs">
+            <DateFilter
+              value={activeDateFilter}
+              onChange={handleDateFilterChange}
+              totalRecords={purchases.length}
+              filteredCount={filteredPurchases.length}
+            />
           </div>
         </div>
       )}
 
       {hideTitle && (
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Total advanced: <strong className="font-mono text-sm text-foreground">{formatPaise(totalAdvanced)}</strong>
+              {isFilterActive ? 'Filtered:' : 'Total advanced:'}{' '}
+              <strong className="font-mono text-sm text-foreground">{formatPaise(totalAdvanced)}</strong>
             </span>
-            <Badge variant="outline" className="text-xs">
-              {purchases.length} purchases
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-xs font-mono',
+                isFilterActive && 'border-primary/40 bg-primary/5 text-primary'
+              )}
+            >
+              {isFilterActive ? `${filteredPurchases.length} of ${purchases.length} purchases` : `${purchases.length} purchases`}
             </Badge>
+            {isFilterActive && (
+              <button
+                type="button"
+                onClick={() => handleDateFilterChange({ mode: 'all' })}
+                className="text-xs text-muted-foreground hover:text-foreground underline decoration-dotted transition-colors"
+              >
+                Show all
+              </button>
+            )}
           </div>
           <Button
             onClick={() => setModalOpen(true)}
@@ -247,9 +306,36 @@ export function PurchasesMadePage({ hideTitle = false }: PurchasesMadePageProps 
             </Button>
           </CardContent>
         </Card>
+      ) : filteredPurchases.length === 0 ? (
+        <Card className="border-border bg-card">
+          <CardContent className="p-8 sm:p-12 text-center flex flex-col items-center">
+            <Calendar className="h-12 w-12 text-muted-foreground/40 mb-3" />
+            <h3 className="text-base font-semibold text-foreground">No purchases match this date filter</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mt-1 mb-5">
+              No purchases for flatmates were found for {formatFilterLabel(activeDateFilter)}. Try selecting a different date, month, or clear the filter.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <Button
+                onClick={() => handleDateFilterChange({ mode: 'all' })}
+                variant="outline"
+                className="min-h-10 text-xs sm:text-sm"
+              >
+                Clear Date Filter
+              </Button>
+              <Button
+                onClick={() => setModalOpen(true)}
+                size="sm"
+                className="min-h-10 text-xs sm:text-sm"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                New Purchase
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-4">
-          {purchases.map((purchase) => {
+          {filteredPurchases.map((purchase) => {
             const isSettled =
               purchase.confirmed_paid_paise >= purchase.amount_paise &&
               purchase.amount_paise > 0;

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Expense, Category } from '@/types';
-import { formatPaise, rupeesToPaise, getLocalDateString } from '@/lib/utils';
+import { formatPaise, rupeesToPaise, getLocalDateString, cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,13 +34,30 @@ import {
 } from '@/components/ui/icons';
 import { CategoryCombobox, ItemCombobox } from '@/components/ui/CategoryItemCombobox';
 import { DEFAULT_CATEGORIES } from '@/data/categorySuggestions';
+import {
+  DateFilter,
+  DateFilterValue,
+  matchesDateFilter,
+  formatFilterLabel,
+  getDateFilterRange,
+} from '@/components/ui/DateFilter';
 
 interface PersonalExpensesPageProps {
   hideTitle?: boolean;
+  dateFilter?: DateFilterValue;
+  onDateFilterChange?: (filter: DateFilterValue) => void;
 }
 
-export function PersonalExpensesPage({ hideTitle = false }: PersonalExpensesPageProps = {}) {
+export function PersonalExpensesPage({
+  hideTitle = false,
+  dateFilter,
+  onDateFilterChange,
+}: PersonalExpensesPageProps = {}) {
   const queryClient = useQueryClient();
+  const [internalDateFilter, setInternalDateFilter] = useState<DateFilterValue>({ mode: 'all' });
+  const activeDateFilter = dateFilter || internalDateFilter;
+  const handleDateFilterChange = onDateFilterChange || setInternalDateFilter;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [amountRupees, setAmountRupees] = useState('');
@@ -50,9 +67,15 @@ export function PersonalExpensesPage({ hideTitle = false }: PersonalExpensesPage
   const [formError, setFormError] = useState<string | null>(null);
 
   // Queries
+  const range = getDateFilterRange(activeDateFilter);
+  const queryUrl =
+    range.from && range.to
+      ? `/expenses?type=personal&from=${range.from}&to=${range.to}&limit=100`
+      : '/expenses?type=personal&limit=100';
+
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
-    queryKey: ['personal_expenses'],
-    queryFn: () => api<Expense[]>('GET', '/expenses?type=personal'),
+    queryKey: ['personal_expenses', range.from || '', range.to || ''],
+    queryFn: () => api<Expense[]>('GET', queryUrl),
   });
 
   const { data: categories = [] } = useQuery<Category[]>({
@@ -98,49 +121,84 @@ export function PersonalExpensesPage({ hideTitle = false }: PersonalExpensesPage
     },
   });
 
-  const totalSpent = expenses.reduce((sum, e) => sum + (e.amount_paise || 0), 0);
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((e) => matchesDateFilter(e.expense_date, activeDateFilter));
+  }, [expenses, activeDateFilter]);
+
+  const totalSpent = filteredExpenses.reduce((sum, e) => sum + (e.amount_paise || 0), 0);
+  const isFilterActive = activeDateFilter.mode !== 'all';
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       {!hideTitle && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">Personal expenses</h1>
-              <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
-                {expenses.length} records
-              </Badge>
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">Personal expenses</h1>
+                <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
+                  {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">
+                Expenses only for yourself that are not shared with flatmates
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Expenses only for yourself that are not shared with flatmates
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden sm:block">
+                <div className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">
+                  {isFilterActive ? 'Filtered total' : 'Total spent'}
+                </div>
+                <div className="text-lg font-bold font-mono text-foreground">{formatPaise(totalSpent)}</div>
+              </div>
+              <Button
+                onClick={() => setModalOpen(true)}
+                className="min-h-11 text-xs sm:text-sm"
+              >
+                <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                Add Expense
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">Total spent</div>
-              <div className="text-lg font-bold font-mono text-foreground">{formatPaise(totalSpent)}</div>
-            </div>
-            <Button
-              onClick={() => setModalOpen(true)}
-              className="min-h-11 text-xs sm:text-sm"
-            >
-              <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
-              Add Expense
-            </Button>
+
+          {/* Standalone DateFilter bar */}
+          <div className="rounded-2xl border border-border/80 bg-card/60 p-3 shadow-xs">
+            <DateFilter
+              value={activeDateFilter}
+              onChange={handleDateFilterChange}
+              totalRecords={expenses.length}
+              filteredCount={filteredExpenses.length}
+            />
           </div>
         </div>
       )}
 
       {hideTitle && (
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Total personal: <strong className="font-mono text-sm text-foreground">{formatPaise(totalSpent)}</strong>
+              {isFilterActive ? 'Filtered:' : 'Total personal:'}{' '}
+              <strong className="font-mono text-sm text-foreground">{formatPaise(totalSpent)}</strong>
             </span>
-            <Badge variant="outline" className="text-xs">
-              {expenses.length} records
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-xs font-mono',
+                isFilterActive && 'border-primary/40 bg-primary/5 text-primary'
+              )}
+            >
+              {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
             </Badge>
+            {isFilterActive && (
+              <button
+                type="button"
+                onClick={() => handleDateFilterChange({ mode: 'all' })}
+                className="text-xs text-muted-foreground hover:text-foreground underline decoration-dotted transition-colors"
+              >
+                Show all
+              </button>
+            )}
           </div>
           <Button
             onClick={() => setModalOpen(true)}
@@ -173,11 +231,38 @@ export function PersonalExpensesPage({ hideTitle = false }: PersonalExpensesPage
             </Button>
           </CardContent>
         </Card>
+      ) : filteredExpenses.length === 0 ? (
+        <Card className="border-border bg-card">
+          <CardContent className="p-8 sm:p-12 text-center flex flex-col items-center">
+            <Calendar className="h-12 w-12 text-muted-foreground/40 mb-3" />
+            <h3 className="text-base font-semibold text-foreground">No expenses match this date filter</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mt-1 mb-5">
+              No personal expenses were recorded for {formatFilterLabel(activeDateFilter)}. Try selecting a different date or clear the filter.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2.5">
+              <Button
+                onClick={() => handleDateFilterChange({ mode: 'all' })}
+                variant="outline"
+                className="min-h-10 text-xs sm:text-sm"
+              >
+                Clear Date Filter
+              </Button>
+              <Button
+                onClick={() => setModalOpen(true)}
+                size="sm"
+                className="min-h-10 text-xs sm:text-sm"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add Expense for this date
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <>
           {/* Mobile Card List */}
           <div className="md:hidden space-y-2.5">
-            {expenses.map((exp) => (
+            {filteredExpenses.map((exp) => (
               <div
                 key={exp.id}
                 className="rounded-lg border border-border bg-card p-3 min-[360px]:p-4 space-y-2"
@@ -239,7 +324,7 @@ export function PersonalExpensesPage({ hideTitle = false }: PersonalExpensesPage
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {expenses.map((exp) => (
+                {filteredExpenses.map((exp) => (
                   <TableRow key={exp.id}>
                     <TableCell className="text-sm font-mono text-muted-foreground">
                       {exp.expense_date}
@@ -279,6 +364,7 @@ export function PersonalExpensesPage({ hideTitle = false }: PersonalExpensesPage
           </div>
         </>
       )}
+
 
       {/* Add Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

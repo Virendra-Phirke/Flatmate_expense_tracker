@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PersonalExpensesPage } from './PersonalExpensesPage';
 import { PurchasesMadePage } from './PurchasesMadePage';
 import { Receipt, ShoppingBag } from '@/components/ui/icons';
+import { DateFilter, DateFilterValue } from '@/components/ui/DateFilter';
 
 interface ExpensesPageProps {
   initialSubTab?: 'personal' | 'purchases_made';
@@ -9,6 +10,7 @@ interface ExpensesPageProps {
 
 export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps = {}) {
   const [subTab, setSubTab] = useState<'personal' | 'purchases_made'>(initialSubTab);
+  const [dateFilter, setDateFilter] = useState<DateFilterValue>({ mode: 'all' });
 
   return (
     <div className="space-y-6">
@@ -58,11 +60,24 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
         </div>
       </div>
 
+      {/* Date Filter Bar */}
+      <div className="rounded-2xl border border-border/80 bg-card/60 p-3 sm:p-3.5 shadow-xs backdrop-blur-xs">
+        <DateFilter value={dateFilter} onChange={setDateFilter} />
+      </div>
+
       {/* Render sub-view */}
       {subTab === 'personal' ? (
-        <PersonalExpensesPage hideTitle />
+        <PersonalExpensesPage
+          hideTitle
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+        />
       ) : (
-        <PurchasesMadePage hideTitle />
+        <PurchasesMadePage
+          hideTitle
+          dateFilter={dateFilter}
+          onDateFilterChange={setDateFilter}
+        />
       )}
     </div>
   );
