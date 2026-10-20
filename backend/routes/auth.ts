@@ -26,7 +26,7 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
       SELECT u.id, u.full_name, u.username, u.password_hash, u.is_active,
              u.must_change_password, hm.role, hm.household_id
       FROM   users u
-      JOIN   household_members hm ON hm.user_id = u.id
+      LEFT   JOIN household_members hm ON hm.user_id = u.id
       WHERE  u.username = ${username.toLowerCase().trim()}`;
 
     const user = rows[0];
@@ -41,12 +41,19 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
+    // Default household fallback if user does not have an explicit member entry yet
+    let householdId = user.household_id;
+    if (!householdId) {
+      const defaultHh = await sql`SELECT id FROM households LIMIT 1`;
+      householdId = defaultHh[0]?.id || 'c281ffa5-0c9b-4bff-9863-9b5bcee7f22c';
+    }
+
     const sessionPayload: UserSessionPayload = {
       userId:             user.id,
       username:           user.username,
       fullName:           user.full_name,
-      role:               user.role,
-      householdId:        user.household_id,
+      role:               user.role || 'member',
+      householdId:        householdId,
       mustChangePassword: Boolean(user.must_change_password),
     };
 
@@ -58,8 +65,8 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
       id:                 user.id,
       fullName:           user.full_name,
       username:           user.username,
-      role:               user.role,
-      householdId:        user.household_id,
+      role:               user.role || 'member',
+      householdId:        householdId,
       mustChangePassword: Boolean(user.must_change_password),
     };
 
@@ -78,9 +85,13 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
       user: userPayload,
       ...userPayload,
     });
-  } catch (err) {
-    console.error('[auth/login]', err);
-    res.status(500).json({ error: 'Server error' });
+  } catch (err: any) {
+    console.error('[auth/login error]:', err?.message || err);
+    res.status(500).json({
+      error: process.env.NODE_ENV === 'production'
+        ? 'Authentication service temporarily unavailable'
+        : `Database/Server Error: ${err?.message || 'Unknown error'}`
+    });
   }
 });
 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveTableSkeleton } from '@/components/ui/skeleton';
 import { Gift, User, CheckCircle2, AlertCircle, ArrowRight } from '@/components/ui/icons';
+import { getSyncCachedData } from '@/lib/idb';
 
 interface PurchasesForMePageProps {
   onNavigateToRepayments: () => void;
@@ -17,6 +18,7 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
   const { data: purchases = [], isLoading } = useQuery<OnBehalfForMePurchase[]>({
     queryKey: ['purchases_for_me'],
     queryFn: () => api<OnBehalfForMePurchase[]>('GET', '/purchases/for-me'),
+    initialData: () => getSyncCachedData<OnBehalfForMePurchase[]>('/purchases/for-me') || [],
   });
 
   const totalOwed = purchases.reduce(
@@ -55,7 +57,7 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
         )}
       </div>
 
-      {isLoading ? (
+      {isLoading && purchases.length === 0 ? (
         <ResponsiveTableSkeleton rows={5} mobileCards={3} />
       ) : purchases.length === 0 ? (
         <Card>

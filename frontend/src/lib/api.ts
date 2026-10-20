@@ -55,7 +55,13 @@ export function getApiBase(): string {
   return '';
 }
 
-import { getCachedData, setCachedData, enqueueOfflineMutation } from './idb';
+import {
+  getCachedData,
+  setCachedData,
+  getSyncCachedData,
+  enqueueOfflineMutation,
+  applyOptimisticOfflineMutation,
+} from './idb';
 import { refreshPendingCount } from './offlineQueue';
 
 export interface ApiOptions {
@@ -101,7 +107,7 @@ export async function api<T = any>(
     }
   }
 
-  // If completely offline and mutating data, queue mutation for auto-sync
+  // If completely offline and mutating data, queue mutation for auto-sync and apply optimistically
   if (isOffline && method !== 'GET' && !options?.bypassOfflineQueue) {
     const payload = getCurrentTokenPayload();
     const tempId = await enqueueOfflineMutation({
@@ -111,6 +117,15 @@ export async function api<T = any>(
       userId: payload?.userId,
       householdId: payload?.householdId,
     });
+    void applyOptimisticOfflineMutation({
+      id: tempId,
+      method,
+      path: normalizedPath,
+      body,
+      userId: payload?.userId,
+      householdId: payload?.householdId,
+      createdAt: Date.now(),
+    });
     void refreshPendingCount();
     return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
   }
@@ -119,10 +134,10 @@ export async function api<T = any>(
   try {
     res = await fetch(targetUrl, opts);
   } catch (netErr: any) {
-    // If GET request failed due to network error, try serving from IndexedDB cache
+    // If GET request failed due to network error, try serving from IndexedDB / sync cache
     if (method === 'GET') {
-      const cached = await getCachedData<T>(normalizedPath);
-      if (cached !== null) {
+      const cached = getSyncCachedData<T>(normalizedPath) || (await getCachedData<T>(normalizedPath));
+      if (cached !== null && cached !== undefined) {
         return cached;
       }
     }
@@ -136,6 +151,15 @@ export async function api<T = any>(
         body,
         userId: payload?.userId,
         householdId: payload?.householdId,
+      });
+      void applyOptimisticOfflineMutation({
+        id: tempId,
+        method,
+        path: normalizedPath,
+        body,
+        userId: payload?.userId,
+        householdId: payload?.householdId,
+        createdAt: Date.now(),
       });
       void refreshPendingCount();
       return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
@@ -158,6 +182,38 @@ export async function api<T = any>(
       // Clear token if server explicitly rejects it
       setAuthToken(null);
     }
+
+    // If server responded with 5xx error on a GET request, fallback to local cache
+    if (method === 'GET' && res.status >= 500) {
+      const cached = getSyncCachedData<T>(normalizedPath) || (await getCachedData<T>(normalizedPath));
+      if (cached !== null && cached !== undefined) {
+        return cached;
+      }
+    }
+
+    // If server responded with 5xx error on a mutation, save offline so user does not lose work
+    if (method !== 'GET' && res.status >= 500 && !options?.bypassOfflineQueue) {
+      const payload = getCurrentTokenPayload();
+      const tempId = await enqueueOfflineMutation({
+        method,
+        path: normalizedPath,
+        body,
+        userId: payload?.userId,
+        householdId: payload?.householdId,
+      });
+      void applyOptimisticOfflineMutation({
+        id: tempId,
+        method,
+        path: normalizedPath,
+        body,
+        userId: payload?.userId,
+        householdId: payload?.householdId,
+        createdAt: Date.now(),
+      });
+      void refreshPendingCount();
+      return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
+    }
+
     throw new Error(data.error || (res.status === 404 ? `API endpoint not found (404: ${path})` : `HTTP ${res.status}`));
   }
 

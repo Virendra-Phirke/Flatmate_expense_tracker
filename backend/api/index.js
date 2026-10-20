@@ -6,6 +6,7 @@ import cors from "cors";
 // db/index.ts
 import dns from "node:dns";
 import { neon, types } from "@neondatabase/serverless";
+var dnsCache = /* @__PURE__ */ new Map();
 if (typeof dns.lookup === "function" && dns.promises?.Resolver) {
   const publicResolver = new dns.promises.Resolver();
   publicResolver.setServers(["8.8.8.8", "1.1.1.1"]);
@@ -16,11 +17,23 @@ if (typeof dns.lookup === "function" && dns.promises?.Resolver) {
       options = {};
     }
     if (hostname && (hostname.includes("neon.tech") || hostname.includes("neon."))) {
-      publicResolver.resolve4(hostname).then((ips) => {
+      const cachedIps = dnsCache.get(hostname);
+      if (cachedIps && cachedIps.length > 0) {
         if (options && options.all) {
-          callback(null, ips.map((ip) => ({ address: ip, family: 4 })));
+          return callback(null, cachedIps.map((ip) => ({ address: ip, family: 4 })));
+        }
+        return callback(null, cachedIps[0], 4);
+      }
+      publicResolver.resolve4(hostname).then((ips) => {
+        if (ips && ips.length > 0) {
+          dnsCache.set(hostname, ips);
+          if (options && options.all) {
+            callback(null, ips.map((ip) => ({ address: ip, family: 4 })));
+          } else {
+            callback(null, ips[0], 4);
+          }
         } else {
-          callback(null, ips[0], 4);
+          originalLookup(hostname, options, callback);
         }
       }).catch(() => {
         originalLookup(hostname, options, callback);
@@ -29,6 +42,22 @@ if (typeof dns.lookup === "function" && dns.promises?.Resolver) {
     }
     return originalLookup(hostname, options, callback);
   };
+  try {
+    if (process.env.DATABASE_URL) {
+      const url = new URL(process.env.DATABASE_URL);
+      if (url.hostname && url.hostname.includes("neon.tech")) {
+        publicResolver.resolve4(url.hostname).then((ips) => {
+          if (ips && ips.length) dnsCache.set(url.hostname, ips);
+        }).catch(() => {
+        });
+      }
+    }
+    publicResolver.resolve4("api.c-4.ap-southeast-1.aws.neon.tech").then((ips) => {
+      if (ips && ips.length) dnsCache.set("api.c-4.ap-southeast-1.aws.neon.tech", ips);
+    }).catch(() => {
+    });
+  } catch {
+  }
 }
 if (types && typeof types.setTypeParser === "function") {
   types.setTypeParser(1082, (val) => val);
@@ -305,7 +334,7 @@ router.post("/login", rateLimitLogin, async (req, res) => {
       SELECT u.id, u.full_name, u.username, u.password_hash, u.is_active,
              u.must_change_password, hm.role, hm.household_id
       FROM   users u
-      JOIN   household_members hm ON hm.user_id = u.id
+      LEFT   JOIN household_members hm ON hm.user_id = u.id
       WHERE  u.username = ${username.toLowerCase().trim()}`;
     const user = rows[0];
     if (!user || !user.is_active) {
@@ -315,12 +344,17 @@ router.post("/login", rateLimitLogin, async (req, res) => {
     if (!valid) {
       return res.status(401).json({ error: "Invalid username or password" });
     }
+    let householdId = user.household_id;
+    if (!householdId) {
+      const defaultHh = await db_default`SELECT id FROM households LIMIT 1`;
+      householdId = defaultHh[0]?.id || "c281ffa5-0c9b-4bff-9863-9b5bcee7f22c";
+    }
     const sessionPayload = {
       userId: user.id,
       username: user.username,
       fullName: user.full_name,
-      role: user.role,
-      householdId: user.household_id,
+      role: user.role || "member",
+      householdId,
       mustChangePassword: Boolean(user.must_change_password)
     };
     const token = signToken(sessionPayload);
@@ -329,8 +363,8 @@ router.post("/login", rateLimitLogin, async (req, res) => {
       id: user.id,
       fullName: user.full_name,
       username: user.username,
-      role: user.role,
-      householdId: user.household_id,
+      role: user.role || "member",
+      householdId,
       mustChangePassword: Boolean(user.must_change_password)
     };
     const session = req.session;
@@ -348,8 +382,10 @@ router.post("/login", rateLimitLogin, async (req, res) => {
       ...userPayload
     });
   } catch (err) {
-    console.error("[auth/login]", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("[auth/login error]:", err?.message || err);
+    res.status(500).json({
+      error: process.env.NODE_ENV === "production" ? "Authentication service temporarily unavailable" : `Database/Server Error: ${err?.message || "Unknown error"}`
+    });
   }
 });
 router.post("/logout", (req, res) => {
@@ -528,7 +564,7 @@ router3.post("/", requireAuth, async (req, res) => {
 var categories_default = router3;
 
 // routes/expenses.ts
-import { Router as Router4 } from "express";
+import { Router as Router5 } from "express";
 import { randomUUID as uuidv43 } from "crypto";
 
 // utils/audit.ts
@@ -546,8 +582,160 @@ async function audit(actorId, householdId, entityType, entityId, action, before 
   }
 }
 
-// routes/expenses.ts
+// routes/balances.ts
+import { Router as Router4 } from "express";
 var router4 = Router4();
+var balanceCache = /* @__PURE__ */ new Map();
+var BALANCE_CACHE_TTL_MS = 15 * 1e3;
+function invalidateBalanceCache(householdId) {
+  if (householdId) {
+    for (const key of balanceCache.keys()) {
+      if (key.startsWith(`${householdId}:`)) {
+        balanceCache.delete(key);
+      }
+    }
+  } else {
+    balanceCache.clear();
+  }
+}
+router4.get(["/", "/summary"], requireAuth, async (req, res) => {
+  const session = req.session;
+  const uid = session.userId;
+  const hid = session.householdId;
+  const cacheKey = `${hid}:${uid}`;
+  const now = Date.now();
+  const cached = balanceCache.get(cacheKey);
+  if (cached && now - cached.timestamp < BALANCE_CACHE_TTL_MS) {
+    res.setHeader("X-Cache", "HIT");
+    res.setHeader("Cache-Control", "private, max-age=15");
+    return res.json(cached.data);
+  }
+  try {
+    const [row] = await db_default`
+      SELECT
+        (SELECT json_build_object(
+          'personal_spending', (SELECT COALESCE(SUM(amount_paise), 0) FROM expenses WHERE household_id = ${hid} AND expense_type = 'personal' AND paid_by = ${uid} AND is_deleted = FALSE),
+          'common_share', (SELECT COALESCE(SUM(es.amount_paise), 0) FROM expense_shares es JOIN expenses e ON e.id = es.expense_id WHERE e.household_id = ${hid} AND e.expense_type = 'common' AND es.user_id = ${uid} AND e.is_deleted = FALSE),
+          'common_paid', (SELECT COALESCE(SUM(amount_paise), 0) FROM expenses WHERE household_id = ${hid} AND expense_type = 'common' AND paid_by = ${uid} AND is_deleted = FALSE),
+          'advanced_for_others', (SELECT COALESCE(SUM(es.amount_paise), 0) FROM expense_shares es JOIN expenses e ON e.id = es.expense_id WHERE e.household_id = ${hid} AND e.expense_type IN ('on_behalf', 'common') AND e.paid_by = ${uid} AND es.user_id != ${uid} AND e.is_deleted = FALSE)
+        )) AS totals,
+
+        (SELECT COALESCE(json_agg(json_build_object('id', u.id, 'full_name', u.full_name)), '[]'::json)
+         FROM users u
+         JOIN household_members hm ON hm.user_id = u.id
+         WHERE hm.household_id = ${hid} AND hm.is_active = TRUE AND u.id != ${uid}
+        ) AS roommates,
+
+        (SELECT COALESCE(json_agg(json_build_object('debtor_id', sub.user_id, 'debtor_name', sub.full_name, 'gross_owed', sub.gross_owed)), '[]'::json)
+         FROM (
+           SELECT es.user_id, u.full_name, COALESCE(SUM(es.amount_paise), 0) AS gross_owed
+           FROM expense_shares es
+           JOIN expenses e ON e.id = es.expense_id
+           JOIN users u ON u.id = es.user_id
+           WHERE e.household_id = ${hid} AND e.expense_type IN ('on_behalf', 'common') AND e.paid_by = ${uid} AND es.user_id != ${uid} AND e.is_deleted = FALSE
+           GROUP BY es.user_id, u.full_name
+         ) sub
+        ) AS they_owe,
+
+        (SELECT COALESCE(json_agg(json_build_object('creditor_id', sub.creditor_id, 'creditor_name', sub.creditor_name, 'gross_owe', sub.gross_owe)), '[]'::json)
+         FROM (
+           SELECT e.paid_by AS creditor_id, u.full_name AS creditor_name, COALESCE(SUM(es.amount_paise), 0) AS gross_owe
+           FROM expense_shares es
+           JOIN expenses e ON e.id = es.expense_id
+           JOIN users u ON u.id = e.paid_by
+           WHERE e.household_id = ${hid} AND e.expense_type IN ('on_behalf', 'common') AND e.paid_by != ${uid} AND es.user_id = ${uid} AND e.is_deleted = FALSE
+           GROUP BY e.paid_by, u.full_name
+         ) sub
+        ) AS my_debts,
+
+        (SELECT COALESCE(json_agg(json_build_object('peer_id', sub.peer_id, 'direction', sub.direction, 'confirmed_paid', sub.confirmed_paid)), '[]'::json)
+         FROM (
+           SELECT
+             CASE WHEN recipient_id = ${uid} THEN payer_id ELSE recipient_id END AS peer_id,
+             CASE WHEN recipient_id = ${uid} THEN 'received' ELSE 'paid' END AS direction,
+             COALESCE(SUM(amount_paise), 0) AS confirmed_paid
+           FROM settlements
+           WHERE household_id = ${hid} AND status = 'confirmed' AND (recipient_id = ${uid} OR payer_id = ${uid})
+           GROUP BY peer_id, direction
+         ) sub
+        ) AS settlements
+    `;
+    const totalsRow = row?.totals || {};
+    const roommates = row?.roommates || [];
+    const theyOweRows = row?.they_owe || [];
+    const myDebtRows = row?.my_debts || [];
+    const settlementRows = row?.settlements || [];
+    const peerNames = /* @__PURE__ */ new Map();
+    for (const m of roommates || []) peerNames.set(m.id, m.full_name);
+    for (const r of theyOweRows || []) peerNames.set(r.debtor_id, r.debtor_name);
+    for (const r of myDebtRows || []) peerNames.set(r.creditor_id, r.creditor_name);
+    const theyOweMap = Object.fromEntries(
+      (theyOweRows || []).map((r) => [r.debtor_id, parseInt(r.gross_owed || 0, 10)])
+    );
+    const myDebtMap = Object.fromEntries(
+      (myDebtRows || []).map((r) => [r.creditor_id, parseInt(r.gross_owe || 0, 10)])
+    );
+    const receivedMap = {};
+    const paidMap = {};
+    for (const s of settlementRows || []) {
+      const amt = parseInt(s.confirmed_paid || 0, 10);
+      if (s.direction === "received") {
+        receivedMap[s.peer_id] = amt;
+      } else {
+        paidMap[s.peer_id] = amt;
+      }
+    }
+    const pairwise = [];
+    const myDebts = [];
+    for (const [peerId, peerName] of peerNames.entries()) {
+      const theyOweGross = theyOweMap[peerId] || 0;
+      const myDebtGross = myDebtMap[peerId] || 0;
+      const settlementsReceived = receivedMap[peerId] || 0;
+      const settlementsPaid = paidMap[peerId] || 0;
+      const netOwedToMe = theyOweGross + settlementsPaid - (myDebtGross + settlementsReceived);
+      if (netOwedToMe > 0) {
+        pairwise.push({
+          debtorId: peerId,
+          debtorName: peerName,
+          grossOwed: theyOweGross,
+          confirmedPaid: settlementsReceived,
+          outstanding: netOwedToMe
+        });
+      } else if (netOwedToMe < 0) {
+        myDebts.push({
+          creditorId: peerId,
+          creditorName: peerName,
+          grossOwe: myDebtGross,
+          confirmedPaid: settlementsPaid,
+          outstanding: Math.abs(netOwedToMe)
+        });
+      }
+    }
+    const totalOwedToMe = pairwise.reduce((acc, p) => acc + Number(p.outstanding || 0), 0);
+    const totalOwedByMe = myDebts.reduce((acc, d) => acc + Number(d.outstanding || 0), 0);
+    const result = {
+      personalSpending: parseInt(totalsRow?.personal_spending || 0, 10),
+      commonShare: parseInt(totalsRow?.common_share || 0, 10),
+      commonPaid: parseInt(totalsRow?.common_paid || 0, 10),
+      advancedForOthers: parseInt(totalsRow?.advanced_for_others || 0, 10),
+      owedToMe: totalOwedToMe,
+      owedByMe: totalOwedByMe,
+      pairwise,
+      myDebts
+    };
+    balanceCache.set(cacheKey, { data: result, timestamp: now });
+    res.setHeader("X-Cache", "MISS");
+    res.setHeader("Cache-Control", "private, max-age=15");
+    res.json(result);
+  } catch (err) {
+    console.error("[balances GET /]", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+var balances_default = router4;
+
+// routes/expenses.ts
+var router5 = Router5();
 var DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function resolveCategoryId(categoryInput) {
@@ -567,7 +755,7 @@ async function resolveCategoryId(categoryInput) {
     VALUES (${newId}, ${val.slice(0, 100)}, TRUE)`;
   return newId;
 }
-router4.get("/", requireAuth, async (req, res) => {
+router5.get("/", requireAuth, async (req, res) => {
   const { type, from, to, page, limit } = req.query;
   const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
   const limitNum = Math.min(1e3, Math.max(1, parseInt(String(limit), 10) || 500));
@@ -652,7 +840,7 @@ router4.get("/", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router4.get("/:id", requireAuth, async (req, res) => {
+router5.get("/:id", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
@@ -692,7 +880,7 @@ router4.get("/:id", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router4.post("/personal", requireAuth, async (req, res) => {
+router5.post("/personal", requireAuth, async (req, res) => {
   const { description, amount_paise, category_id, expense_date, notes } = req.body;
   if (!description || !amount_paise || !expense_date) {
     return res.status(400).json({ error: "description, amount_paise, and expense_date are required" });
@@ -721,13 +909,14 @@ router4.post("/personal", requireAuth, async (req, res) => {
         VALUES (${uuidv43()}, ${eid}, ${uid}, ${amount_paise}, 'personal')`
     ]);
     await audit(uid, hid, "expense", eid, "create", null, { type: "personal", amount_paise });
+    invalidateBalanceCache(hid);
     res.status(201).json({ id: eid });
   } catch (err) {
     console.error("[expenses POST /personal]", err);
     res.status(500).json({ error: "Server error" });
   }
 });
-router4.post("/common", requireAdmin, async (req, res) => {
+router5.post("/common", requireAdmin, async (req, res) => {
   const { description, amount_paise, category_id, expense_date, paid_by, split_method, notes, shares } = req.body;
   if (!description || !amount_paise || !expense_date || !paid_by || !split_method || !Array.isArray(shares)) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -785,13 +974,14 @@ router4.post("/common", requireAdmin, async (req, res) => {
     ];
     await db_default.transaction(transactionQueries);
     await audit(uid, hid, "expense", eid, "create", null, { type: "common", amount_paise, split_method });
+    invalidateBalanceCache(hid);
     res.status(201).json({ id: eid });
   } catch (err) {
     console.error("[expenses POST /common]", err);
     res.status(500).json({ error: "Server error" });
   }
 });
-router4.post("/on-behalf", requireAuth, async (req, res) => {
+router5.post("/on-behalf", requireAuth, async (req, res) => {
   const { description, expense_date, notes, items } = req.body;
   if (!description || !expense_date) {
     return res.status(400).json({ error: "description and expense_date are required" });
@@ -847,13 +1037,14 @@ router4.post("/on-behalf", requireAuth, async (req, res) => {
       amount_paise: totalPaise,
       item_count: items.length
     });
+    invalidateBalanceCache(hid);
     res.status(201).json({ id: eid });
   } catch (err) {
     console.error("[expenses POST /on-behalf]", err);
     res.status(500).json({ error: "Server error" });
   }
 });
-router4.delete("/:id", requireAuth, async (req, res) => {
+router5.delete("/:id", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
@@ -883,18 +1074,19 @@ router4.delete("/:id", requireAuth, async (req, res) => {
     }
     await db_default`UPDATE expenses SET is_deleted = TRUE, updated_at = NOW() WHERE id = ${id}`;
     await audit(uid, hid, "expense", id, "delete", { amount_paise: exp.amount_paise }, null);
+    invalidateBalanceCache(hid);
     res.json({ ok: true });
   } catch (err) {
     console.error("[expenses DELETE /:id]", err);
     res.status(500).json({ error: "Server error" });
   }
 });
-var expenses_default = router4;
+var expenses_default = router5;
 
 // routes/purchases.ts
-import { Router as Router5 } from "express";
+import { Router as Router6 } from "express";
 import { randomUUID as uuidv44 } from "crypto";
-var router5 = Router5();
+var router6 = Router6();
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var DATE_REGEX2 = /^\d{4}-\d{2}-\d{2}$/;
 async function resolveCategoryId2(categoryInput) {
@@ -970,15 +1162,16 @@ async function handleCreatePurchase(req, res) {
       amount_paise: totalPaise,
       item_count: items.length
     });
+    invalidateBalanceCache(hid);
     res.status(201).json({ id: eid });
   } catch (err) {
     console.error("[purchases POST /]", err);
     res.status(500).json({ error: "Server error" });
   }
 }
-router5.post("/", requireAuth, handleCreatePurchase);
-router5.post("/on-behalf", requireAuth, handleCreatePurchase);
-router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
+router6.post("/", requireAuth, handleCreatePurchase);
+router6.post("/on-behalf", requireAuth, handleCreatePurchase);
+router6.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
   const { from, to } = req.query;
   const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
   const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
@@ -1038,7 +1231,7 @@ router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router5.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
+router6.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
   const { from, to } = req.query;
   const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
   const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
@@ -1106,173 +1299,7 @@ router5.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-var purchases_default = router5;
-
-// routes/balances.ts
-import { Router as Router6 } from "express";
-var router6 = Router6();
-router6.get(["/", "/summary"], requireAuth, async (req, res) => {
-  const session = req.session;
-  const uid = session.userId;
-  const hid = session.householdId;
-  try {
-    const [
-      roommates,
-      [personalRow],
-      [commonShareRow],
-      [commonPaidRow],
-      [advancedRow],
-      theyOweRows,
-      receivedByPayer,
-      myDebtRows,
-      paidToCreditor
-    ] = await Promise.all([
-      // 0. Active roommates in this household
-      db_default`
-        SELECT u.id, u.full_name
-        FROM   users u
-        JOIN   household_members hm ON hm.user_id = u.id
-        WHERE  hm.household_id = ${hid}
-          AND  hm.is_active = TRUE
-          AND  u.id != ${uid}`,
-      // 1. Personal spending
-      db_default`
-        SELECT COALESCE(SUM(amount_paise), 0) AS total
-        FROM   expenses
-        WHERE  household_id  = ${hid}
-          AND  expense_type  = 'personal'
-          AND  paid_by       = ${uid}
-          AND  is_deleted    = FALSE`,
-      // 2. Common share
-      db_default`
-        SELECT COALESCE(SUM(es.amount_paise), 0) AS total
-        FROM   expense_shares es
-        JOIN   expenses        e  ON e.id = es.expense_id
-        WHERE  e.household_id = ${hid}
-          AND  e.expense_type = 'common'
-          AND  es.user_id     = ${uid}
-          AND  e.is_deleted   = FALSE`,
-      // 3. Common paid by me
-      db_default`
-        SELECT COALESCE(SUM(amount_paise), 0) AS total
-        FROM   expenses
-        WHERE  household_id = ${hid}
-          AND  expense_type = 'common'
-          AND  paid_by      = ${uid}
-          AND  is_deleted   = FALSE`,
-      // 4. Advanced for others
-      db_default`
-        SELECT COALESCE(SUM(es.amount_paise), 0) AS total
-        FROM   expense_shares es
-        JOIN   expenses        e ON e.id = es.expense_id
-        WHERE  e.household_id = ${hid}
-          AND  e.expense_type IN ('on_behalf', 'common')
-          AND  e.paid_by      = ${uid}
-          AND  es.user_id    != ${uid}
-          AND  e.is_deleted   = FALSE`,
-      // 5. Who owes me (gross)
-      db_default`
-        SELECT es.user_id AS debtor_id, u.full_name AS debtor_name,
-               COALESCE(SUM(es.amount_paise), 0) AS gross_owed
-        FROM   expense_shares es
-        JOIN   expenses        e  ON e.id  = es.expense_id
-        JOIN   users           u  ON u.id  = es.user_id
-        WHERE  e.household_id = ${hid}
-          AND  e.expense_type IN ('on_behalf', 'common')
-          AND  e.paid_by      = ${uid}
-          AND  es.user_id    != ${uid}
-          AND  e.is_deleted   = FALSE
-        GROUP  BY es.user_id, u.full_name`,
-      // 6. Settlements received by me
-      db_default`
-        SELECT payer_id, COALESCE(SUM(amount_paise), 0) AS confirmed_paid
-        FROM   settlements
-        WHERE  household_id = ${hid}
-          AND  recipient_id = ${uid}
-          AND  status       = 'confirmed'
-        GROUP  BY payer_id`,
-      // 7. What I owe others (gross)
-      db_default`
-        SELECT e.paid_by AS creditor_id, u.full_name AS creditor_name,
-               COALESCE(SUM(es.amount_paise), 0) AS gross_owe
-        FROM   expense_shares es
-        JOIN   expenses        e  ON e.id  = es.expense_id
-        JOIN   users           u  ON u.id  = e.paid_by
-        WHERE  e.household_id = ${hid}
-          AND  e.expense_type IN ('on_behalf', 'common')
-          AND  es.user_id     = ${uid}
-          AND  e.paid_by     != ${uid}
-          AND  e.is_deleted   = FALSE
-        GROUP  BY e.paid_by, u.full_name`,
-      // 8. Settlements paid to others
-      db_default`
-        SELECT recipient_id, COALESCE(SUM(amount_paise), 0) AS confirmed_paid
-        FROM   settlements
-        WHERE  household_id = ${hid}
-          AND  payer_id     = ${uid}
-          AND  status       = 'confirmed'
-        GROUP  BY recipient_id`
-    ]);
-    const peerNames = /* @__PURE__ */ new Map();
-    for (const m of roommates || []) peerNames.set(m.id, m.full_name);
-    for (const r of theyOweRows || []) peerNames.set(r.debtor_id, r.debtor_name);
-    for (const r of myDebtRows || []) peerNames.set(r.creditor_id, r.creditor_name);
-    const theyOweMap = Object.fromEntries(
-      (theyOweRows || []).map((r) => [r.debtor_id, parseInt(r.gross_owed || 0, 10)])
-    );
-    const myDebtMap = Object.fromEntries(
-      (myDebtRows || []).map((r) => [r.creditor_id, parseInt(r.gross_owe || 0, 10)])
-    );
-    const receivedMap = Object.fromEntries(
-      (receivedByPayer || []).map((r) => [r.payer_id, parseInt(r.confirmed_paid || 0, 10)])
-    );
-    const paidMap = Object.fromEntries(
-      (paidToCreditor || []).map((r) => [r.recipient_id, parseInt(r.confirmed_paid || 0, 10)])
-    );
-    const pairwise = [];
-    const myDebts = [];
-    for (const [peerId, peerName] of peerNames.entries()) {
-      const theyOweGross = theyOweMap[peerId] || 0;
-      const myDebtGross = myDebtMap[peerId] || 0;
-      const settlementsReceived = receivedMap[peerId] || 0;
-      const settlementsPaid = paidMap[peerId] || 0;
-      const netOwedToMe = theyOweGross + settlementsPaid - (myDebtGross + settlementsReceived);
-      if (netOwedToMe > 0) {
-        pairwise.push({
-          debtorId: peerId,
-          debtorName: peerName,
-          grossOwed: theyOweGross,
-          confirmedPaid: settlementsReceived,
-          outstanding: netOwedToMe
-        });
-      } else if (netOwedToMe < 0) {
-        myDebts.push({
-          creditorId: peerId,
-          creditorName: peerName,
-          grossOwe: myDebtGross,
-          confirmedPaid: settlementsPaid,
-          outstanding: Math.abs(netOwedToMe)
-        });
-      }
-    }
-    const totalOwedToMe = pairwise.reduce((acc, p) => acc + Number(p.outstanding || 0), 0);
-    const totalOwedByMe = myDebts.reduce((acc, d) => acc + Number(d.outstanding || 0), 0);
-    res.json({
-      personalSpending: parseInt(personalRow?.total || 0, 10),
-      commonShare: parseInt(commonShareRow?.total || 0, 10),
-      commonPaid: parseInt(commonPaidRow?.total || 0, 10),
-      advancedForOthers: parseInt(advancedRow?.total || 0, 10),
-      owedToMe: totalOwedToMe,
-      owedByMe: totalOwedByMe,
-      pairwise,
-      myDebts
-    });
-  } catch (err) {
-    console.error("[balances GET /]", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-var balances_default = router6;
+var purchases_default = router6;
 
 // routes/settlements.ts
 import { Router as Router7 } from "express";
@@ -1353,6 +1380,7 @@ router7.post("/", requireAuth, rateLimitClaim, async (req, res) => {
          ${note ? note.trim().slice(0, 500) : null},
          ${recip.full_name}, ${recip.upi_id || null}, ${expense_share_id || null})`;
     await audit(uid, hid, "settlement", sid, "claim", null, { amount_paise, method, recipient_id });
+    invalidateBalanceCache(hid);
     res.status(201).json({ id: sid });
   } catch (err) {
     console.error("[settlements POST /]", err);
@@ -1387,6 +1415,7 @@ router7.post("/:id/confirm", requireAuth, async (req, res) => {
       return res.status(409).json({ error: "Settlement is no longer in a pending status" });
     }
     await audit(uid, hid, "settlement", id, "confirm", { status: s.status }, { status: "confirmed" });
+    invalidateBalanceCache(hid);
     res.json({ ok: true });
   } catch (err) {
     console.error("[settlements POST /:id/confirm]", err);
@@ -1417,6 +1446,7 @@ router7.post("/:id/reject", requireAuth, async (req, res) => {
       return res.status(409).json({ error: "Settlement is no longer in a pending status" });
     }
     await audit(uid, hid, "settlement", id, "reject", { status: s.status }, { status: "rejected" });
+    invalidateBalanceCache(hid);
     res.json({ ok: true });
   } catch (err) {
     console.error("[settlements POST /:id/reject]", err);
@@ -1447,6 +1477,7 @@ router7.post("/:id/cancel", requireAuth, async (req, res) => {
       return res.status(409).json({ error: "Settlement is no longer in a pending status" });
     }
     await audit(uid, hid, "settlement", id, "cancel", { status: s.status }, { status: "cancelled" });
+    invalidateBalanceCache(hid);
     res.json({ ok: true });
   } catch (err) {
     console.error("[settlements POST /:id/cancel]", err);

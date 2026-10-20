@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Expense, HouseholdMember } from '@/types';
+import { getSyncCachedData } from '@/lib/idb';
 import { formatPaise, rupeesToPaise, getLocalDateString, cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ export function CommonExpensesPage() {
   const { data: members = [] } = useQuery<HouseholdMember[]>({
     queryKey: ['members'],
     queryFn: () => api<HouseholdMember[]>('GET', '/members'),
+    initialData: () => getSyncCachedData<HouseholdMember[]>('/members') || [],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -68,6 +70,7 @@ export function CommonExpensesPage() {
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
     queryKey: ['common_expenses'],
     queryFn: () => api<Expense[]>('GET', '/expenses?type=common'),
+    initialData: () => getSyncCachedData<Expense[]>('/expenses?type=common') || [],
   });
 
   const totalPaise = rupeesToPaise(amountRupees);

@@ -4,6 +4,7 @@ import sql from '../db/index';
 import { requireAuth } from '../middleware/auth';
 import { rateLimitClaim } from '../middleware/rateLimiter';
 import { audit } from '../utils/audit';
+import { invalidateBalanceCache } from './balances';
 
 const router = Router();
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -97,6 +98,7 @@ router.post('/', requireAuth, rateLimitClaim, async (req: Request, res: Response
          ${recip.full_name}, ${recip.upi_id || null}, ${expense_share_id || null})`;
 
     await audit(uid, hid, 'settlement', sid, 'claim', null, { amount_paise, method, recipient_id });
+    invalidateBalanceCache(hid);
 
     res.status(201).json({ id: sid });
   } catch (err) {
@@ -141,6 +143,7 @@ router.post('/:id/confirm', requireAuth, async (req: Request, res: Response) => 
     }
 
     await audit(uid, hid, 'settlement', id, 'confirm', { status: s.status }, { status: 'confirmed' });
+    invalidateBalanceCache(hid);
 
     res.json({ ok: true });
   } catch (err) {
@@ -181,6 +184,7 @@ router.post('/:id/reject', requireAuth, async (req: Request, res: Response) => {
     }
 
     await audit(uid, hid, 'settlement', id, 'reject', { status: s.status }, { status: 'rejected' });
+    invalidateBalanceCache(hid);
 
     res.json({ ok: true });
   } catch (err) {
@@ -221,6 +225,7 @@ router.post('/:id/cancel', requireAuth, async (req: Request, res: Response) => {
     }
 
     await audit(uid, hid, 'settlement', id, 'cancel', { status: s.status }, { status: 'cancelled' });
+    invalidateBalanceCache(hid);
 
     res.json({ ok: true });
   } catch (err) {

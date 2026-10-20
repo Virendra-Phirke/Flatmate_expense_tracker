@@ -3,6 +3,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import sql from '../db/index';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { audit } from '../utils/audit';
+import { invalidateBalanceCache } from './balances';
 
 const router = Router();
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -219,6 +220,7 @@ router.post('/personal', requireAuth, async (req: Request, res: Response) => {
     ]);
 
     await audit(uid, hid, 'expense', eid, 'create', null, { type: 'personal', amount_paise });
+    invalidateBalanceCache(hid);
 
     res.status(201).json({ id: eid });
   } catch (err) {
@@ -300,6 +302,7 @@ router.post('/common', requireAdmin, async (req: Request, res: Response) => {
     await sql.transaction(transactionQueries);
 
     await audit(uid, hid, 'expense', eid, 'create', null, { type: 'common', amount_paise, split_method });
+    invalidateBalanceCache(hid);
 
     res.status(201).json({ id: eid });
   } catch (err) {
@@ -372,6 +375,7 @@ router.post('/on-behalf', requireAuth, async (req: Request, res: Response) => {
     await audit(uid, hid, 'expense', eid, 'create', null, {
       type: 'on_behalf', amount_paise: totalPaise, item_count: items.length,
     });
+    invalidateBalanceCache(hid);
 
     res.status(201).json({ id: eid });
   } catch (err) {
@@ -418,6 +422,7 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 
     await sql`UPDATE expenses SET is_deleted = TRUE, updated_at = NOW() WHERE id = ${id}`;
     await audit(uid, hid, 'expense', id, 'delete', { amount_paise: exp.amount_paise }, null);
+    invalidateBalanceCache(hid);
 
     res.json({ ok: true });
   } catch (err) {

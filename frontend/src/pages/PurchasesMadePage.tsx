@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { OnBehalfPurchase, HouseholdMember } from '@/types';
+import { getSyncCachedData } from '@/lib/idb';
 import { formatPaise, rupeesToPaise, getLocalDateString, cn } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,6 +70,7 @@ export function PurchasesMadePage({
   const { data: members = [] } = useQuery<HouseholdMember[]>({
     queryKey: ['members'],
     queryFn: () => api<HouseholdMember[]>('GET', '/members'),
+    initialData: () => getSyncCachedData<HouseholdMember[]>('/members') || [],
     staleTime: 5 * 60 * 1000,
   });
 
@@ -88,6 +90,7 @@ export function PurchasesMadePage({
   const { data: purchases = [], isLoading } = useQuery<OnBehalfPurchase[]>({
     queryKey: ['purchases_made'],
     queryFn: () => api<OnBehalfPurchase[]>('GET', '/purchases/made'),
+    initialData: () => getSyncCachedData<OnBehalfPurchase[]>('/purchases/made') || [],
   });
 
   const addItemRow = (defaultCategory?: string) => {

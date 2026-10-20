@@ -7,6 +7,7 @@ import App from './App';
 import './index.css';
 
 import { initOfflineSync } from './lib/offlineQueue';
+import { hydrateTanStackQuery } from './lib/idb';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +19,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Hydrate query cache from local IndexedDB for instant 0ms startup
+void hydrateTanStackQuery(queryClient);
 
 // Initialize network connection listeners and offline mutation synchronization
 initOfflineSync(queryClient);

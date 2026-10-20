@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/icons';
 
 import { DashboardSkeleton } from '@/components/ui/skeleton';
+import { getSyncCachedData } from '@/lib/idb';
 
 interface ActivityItem {
   id: string;
@@ -50,20 +51,22 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
   } = useQuery<BalanceSummary>({
     queryKey: ['balances_summary'],
     queryFn: () => api<BalanceSummary>('GET', '/balances/summary'),
+    initialData: () => getSyncCachedData<BalanceSummary>('/balances/summary'),
     staleTime: 60 * 1000,
   });
 
   const { data: activity = [], isLoading: isActivityLoading } = useQuery<ActivityItem[]>({
     queryKey: ['recent_activity'],
     queryFn: () => api<ActivityItem[]>('GET', '/activity?limit=6'),
+    initialData: () => getSyncCachedData<ActivityItem[]>('/activity?limit=6') || [],
     staleTime: 60 * 1000,
   });
 
-  if (isSummaryLoading) {
+  if (isSummaryLoading && !summary) {
     return <DashboardSkeleton />;
   }
 
-  if (summaryError || !summary) {
+  if ((summaryError && !summary) || !summary) {
     return (
       <Card className="p-4 xs:p-5">
         <div className="flex items-start gap-3">
@@ -411,7 +414,7 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {isActivityLoading ? (
+          {isActivityLoading && activity.length === 0 ? (
             <div className="space-y-2 p-3" aria-label="Loading recent activity" aria-busy="true">
               {[1, 2, 3].map((i) => <div key={i} className="h-10 animate-pulse rounded-lg bg-muted" />)}
             </div>

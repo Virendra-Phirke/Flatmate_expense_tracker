@@ -1,7 +1,9 @@
 import dns from 'node:dns';
 import { neon, types } from '@neondatabase/serverless';
 
-// Resilient DNS resolution fallback for Neon database endpoints when local network/router DNS blocks/refuses neon.tech
+// Resilient DNS resolution fallback & in-memory cache for Neon database endpoints
+const dnsCache = new Map<string, string[]>();
+
 if (typeof (dns as any).lookup === 'function' && dns.promises?.Resolver) {
   const publicResolver = new dns.promises.Resolver();
   publicResolver.setServers(['8.8.8.8', '1.1.1.1']);
@@ -12,14 +14,28 @@ if (typeof (dns as any).lookup === 'function' && dns.promises?.Resolver) {
       callback = options;
       options = {};
     }
+
     if (hostname && (hostname.includes('neon.tech') || hostname.includes('neon.'))) {
+      const cachedIps = dnsCache.get(hostname);
+      if (cachedIps && cachedIps.length > 0) {
+        if (options && options.all) {
+          return callback(null, cachedIps.map((ip) => ({ address: ip, family: 4 })));
+        }
+        return callback(null, cachedIps[0], 4);
+      }
+
       publicResolver
         .resolve4(hostname)
         .then((ips) => {
-          if (options && options.all) {
-            callback(null, ips.map((ip) => ({ address: ip, family: 4 })));
+          if (ips && ips.length > 0) {
+            dnsCache.set(hostname, ips);
+            if (options && options.all) {
+              callback(null, ips.map((ip) => ({ address: ip, family: 4 })));
+            } else {
+              callback(null, ips[0], 4);
+            }
           } else {
-            callback(null, ips[0], 4);
+            originalLookup(hostname, options, callback);
           }
         })
         .catch(() => {
@@ -29,6 +45,21 @@ if (typeof (dns as any).lookup === 'function' && dns.promises?.Resolver) {
     }
     return originalLookup(hostname, options, callback);
   };
+
+  // Pre-seed known neon endpoint if present in environment
+  try {
+    if (process.env.DATABASE_URL) {
+      const url = new URL(process.env.DATABASE_URL);
+      if (url.hostname && url.hostname.includes('neon.tech')) {
+        publicResolver.resolve4(url.hostname).then((ips) => {
+          if (ips && ips.length) dnsCache.set(url.hostname, ips);
+        }).catch(() => {});
+      }
+    }
+    publicResolver.resolve4('api.c-4.ap-southeast-1.aws.neon.tech').then((ips) => {
+      if (ips && ips.length) dnsCache.set('api.c-4.ap-southeast-1.aws.neon.tech', ips);
+    }).catch(() => {});
+  } catch {}
 }
 
 // Ensure PostgreSQL DATE columns (OID 1082) return exact YYYY-MM-DD strings without timezone shifting,

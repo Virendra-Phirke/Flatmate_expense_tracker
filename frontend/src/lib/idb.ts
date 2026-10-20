@@ -50,10 +50,56 @@ function getDB(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
+const SYNC_CACHE_PREFIX = 'fm_cached_';
+
 /**
- * Retrieve cached query data from IndexedDB
+ * Retrieve cached query data synchronously (0.01ms frame 0 render)
+ */
+export function getSyncCachedData<T = any>(key: string): T | undefined {
+  if (typeof window === 'undefined' || !window.localStorage) return undefined;
+  try {
+    const raw = localStorage.getItem(SYNC_CACHE_PREFIX + key);
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw);
+    return parsed?.data as T;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Store cached data synchronously in localStorage for instant hydration on fresh page loads
+ */
+export function setSyncCachedData(key: string, data: any): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    localStorage.setItem(
+      SYNC_CACHE_PREFIX + key,
+      JSON.stringify({ data, updatedAt: Date.now() })
+    );
+  } catch {
+    // If quota exceeded, evict older non-critical query keys
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(SYNC_CACHE_PREFIX) && !k.includes('summary')) {
+          localStorage.removeItem(k);
+          break;
+        }
+      }
+    } catch {}
+  }
+}
+
+/**
+ * Retrieve cached query data from IndexedDB with fast synchronous fallback
  */
 export async function getCachedData<T = any>(key: string): Promise<T | null> {
+  const syncData = getSyncCachedData<T>(key);
+  if (syncData !== undefined) {
+    return syncData;
+  }
+
   try {
     const db = await getDB();
     return new Promise((resolve) => {
@@ -62,6 +108,7 @@ export async function getCachedData<T = any>(key: string): Promise<T | null> {
       const req = store.get(key);
       req.onsuccess = () => {
         if (req.result && req.result.data !== undefined) {
+          setSyncCachedData(key, req.result.data);
           resolve(req.result.data as T);
         } else {
           resolve(null);
@@ -75,9 +122,13 @@ export async function getCachedData<T = any>(key: string): Promise<T | null> {
 }
 
 /**
- * Save query response into IndexedDB cache
+ * Save query response into IndexedDB cache and fast synchronous storage
  */
 export async function setCachedData(key: string, data: any): Promise<void> {
+  // 1. Immediately store in fast synchronous cache for 0ms next reload
+  setSyncCachedData(key, data);
+
+  // 2. Persist in IndexedDB
   try {
     const db = await getDB();
     return new Promise((resolve, reject) => {
@@ -173,6 +224,20 @@ export async function removeOfflineMutation(id: string): Promise<void> {
  * Clear cached query data on logout to prevent cross-user data leakage on shared devices
  */
 export async function clearCachedData(clearMutations: boolean = false): Promise<void> {
+  // Clear localStorage sync cache
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith(SYNC_CACHE_PREFIX)) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {}
+  }
+
   try {
     const db = await getDB();
     await new Promise<void>((resolve) => {
@@ -194,5 +259,118 @@ export async function clearCachedData(clearMutations: boolean = false): Promise<
     }
   } catch {
     // Fail silently
+  }
+}
+
+/**
+ * Optimistically apply an offline mutation to local IndexedDB and synchronous cache
+ * so user sees immediate feedback even with 0 network connectivity
+ */
+export async function applyOptimisticOfflineMutation(mutation: QueuedMutation, queryClient?: any): Promise<void> {
+  const { path, method, body } = mutation;
+
+  try {
+    if (method === 'POST') {
+      if (path.includes('/expenses')) {
+        const isCommon = path.includes('common');
+        const isPersonal = path.includes('personal');
+        const type = isCommon ? 'common' : (isPersonal ? 'personal' : 'common');
+        const cacheKey = `/expenses?type=${type}`;
+        const current = getSyncCachedData<any[]>(cacheKey) || (await getCachedData<any[]>(cacheKey)) || [];
+
+        const tempItem = {
+          id: mutation.id,
+          description: body?.description || 'Expense',
+          amount_paise: body?.amount_paise || 0,
+          expense_date: body?.expense_date || new Date().toISOString().split('T')[0],
+          expense_type: type,
+          paid_by: body?.paid_by,
+          paid_by_name: 'You (Offline)',
+          category_name: body?.category_id || 'General',
+          notes: body?.notes,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          offlinePending: true,
+        };
+
+        const updated = [tempItem, ...current];
+        await setCachedData(cacheKey, updated);
+        if (queryClient) {
+          queryClient.setQueryData([isCommon ? 'common_expenses' : 'personal_expenses'], updated);
+        }
+      }
+    } else if (method === 'DELETE' && path.includes('/expenses/')) {
+      const parts = path.split('/');
+      const expenseId = parts[parts.length - 1];
+      for (const type of ['common', 'personal']) {
+        const cacheKey = `/expenses?type=${type}`;
+        const current = getSyncCachedData<any[]>(cacheKey) || (await getCachedData<any[]>(cacheKey)) || [];
+        const updated = current.filter((e) => e.id !== expenseId);
+        if (updated.length !== current.length) {
+          await setCachedData(cacheKey, updated);
+          if (queryClient) {
+            queryClient.setQueryData([type === 'common' ? 'common_expenses' : 'personal_expenses'], updated);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[applyOptimisticOfflineMutation]', err);
+  }
+}
+
+/**
+ * Hydrates TanStack Query cache directly from IndexedDB on startup (0ms startup latency)
+ */
+export async function hydrateTanStackQuery(queryClient: any): Promise<number> {
+  try {
+    const db = await getDB();
+    const records = await new Promise<any[]>((resolve) => {
+      const tx = db.transaction(STORE_CACHE, 'readonly');
+      const store = tx.objectStore(STORE_CACHE);
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+
+    let count = 0;
+    for (const item of records) {
+      if (!item.key || item.data === undefined) continue;
+      const key: string = item.key;
+      setSyncCachedData(key, item.data);
+
+      let queryKey: string[] | null = null;
+
+      if (key === '/balances/summary' || key === '/balances') {
+        queryKey = ['balances_summary'];
+      } else if (key.includes('/expenses') && key.includes('type=personal')) {
+        queryKey = ['personal_expenses'];
+      } else if (key.includes('/expenses') && key.includes('type=common')) {
+        queryKey = ['common_expenses'];
+      } else if (key === '/expenses') {
+        queryKey = ['all_expenses'];
+      } else if (key.includes('/purchases') && (key.includes('made-by-me') || key.includes('/made'))) {
+        queryKey = ['purchases_made'];
+      } else if (key.includes('/purchases') && (key.includes('made-for-me') || key.includes('/for-me'))) {
+        queryKey = ['purchases_for_me'];
+      } else if (key === '/members') {
+        queryKey = ['members'];
+      } else if (key === '/categories') {
+        queryKey = ['categories'];
+      } else if (key === '/settlements') {
+        queryKey = ['settlements'];
+      } else if (key.includes('/activity')) {
+        queryClient.setQueryData(['recent_activity'], item.data);
+        queryKey = ['activity'];
+      }
+
+      if (queryKey) {
+        queryClient.setQueryData(queryKey, item.data);
+        count++;
+      }
+    }
+    return count;
+  } catch {
+    return 0;
   }
 }

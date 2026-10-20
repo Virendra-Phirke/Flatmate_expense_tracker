@@ -3,6 +3,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import sql from '../db/index';
 import { requireAuth } from '../middleware/auth';
 import { audit } from '../utils/audit';
+import { invalidateBalanceCache } from './balances';
 
 const router = Router();
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -100,6 +101,7 @@ async function handleCreatePurchase(req: Request, res: Response) {
     await audit(uid, hid, 'expense', eid, 'create', null, {
       type: 'on_behalf', amount_paise: totalPaise, item_count: items.length,
     });
+    invalidateBalanceCache(hid);
 
     res.status(201).json({ id: eid });
   } catch (err) {

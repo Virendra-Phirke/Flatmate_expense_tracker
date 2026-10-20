@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Scale, ArrowRight, ArrowUpRight, ArrowDownLeft, CheckCircle2, AlertCircle } from '@/components/ui/icons';
 
 import { BalancesSkeleton } from '@/components/ui/skeleton';
+import { getSyncCachedData } from '@/lib/idb';
 
 interface BalancesPageProps {
   onNavigateToRepayments: (targetMemberId?: string) => void;
@@ -18,13 +19,14 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
   const { data: summary, isLoading, error, refetch } = useQuery<BalanceSummary>({
     queryKey: ['balances_summary'],
     queryFn: () => api<BalanceSummary>('GET', '/balances/summary'),
+    initialData: () => getSyncCachedData<BalanceSummary>('/balances/summary'),
   });
 
-  if (isLoading) {
+  if (isLoading && !summary) {
     return <BalancesSkeleton />;
   }
 
-  if (error || !summary) {
+  if ((error && !summary) || !summary) {
     return (
       <Card className="p-4 xs:p-5">
         <div className="flex items-start gap-3">

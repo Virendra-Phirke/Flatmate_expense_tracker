@@ -144,6 +144,9 @@ export async function initDB() {
   await sql`CREATE INDEX IF NOT EXISTS idx_settlements_recipient_fast ON settlements(household_id, recipient_id, status)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_settlements_hh_status ON settlements(household_id, status)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_settlements_share_id ON settlements(expense_share_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_household_members_user_id ON household_members(user_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_settlements_confirmed ON settlements(household_id, status, payer_id, recipient_id)`;
 
   // ── Seed categories ───────────────────────────────────────────────────────
   const catCount = await sql`SELECT COUNT(*) AS c FROM categories`;
