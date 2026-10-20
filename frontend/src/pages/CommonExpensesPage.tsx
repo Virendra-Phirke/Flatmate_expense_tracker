@@ -128,6 +128,7 @@ export function CommonExpensesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['common_expenses'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setModalOpen(false);
       setDescription('');
       setAmountRupees('');
@@ -146,6 +147,7 @@ export function CommonExpensesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['common_expenses'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
   });
 

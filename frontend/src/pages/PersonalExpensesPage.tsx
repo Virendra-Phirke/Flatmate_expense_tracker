@@ -99,6 +99,7 @@ export function PersonalExpensesPage({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal_expenses'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setModalOpen(false);
       setDescription('');
       setAmountRupees('');
@@ -116,6 +117,7 @@ export function PersonalExpensesPage({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['personal_expenses'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
   });
 

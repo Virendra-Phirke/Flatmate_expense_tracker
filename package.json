@@ -16,6 +16,7 @@
     "build:frontend": "npm run build --prefix frontend",
     "build:backend": "npm run build --prefix backend",
     "typecheck": "npm run typecheck --prefix frontend && npm run typecheck --prefix backend",
+    "test": "tsx test/comprehensive_suite.ts",
     "start": "npm run start --prefix backend",
     "db:push": "npm run db:push --prefix backend",
     "db:studio": "npm run db:studio --prefix backend"

@@ -116,6 +116,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settlements'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setModalOpen(false);
       setAmountRupees('');
       setTxRef('');
@@ -133,6 +134,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settlements'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
   });
 
@@ -142,6 +144,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settlements'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
   });
 

@@ -111,4 +111,11 @@ export const Sun = createFlaticon('sun');
 export const Moon = createFlaticon('moon');
 export const Cloud = createFlaticon('cloud');
 export const CloudOff = createFlaticon('cloud-disabled');
+export const ChartPie = createFlaticon('chart-pie');
+export const ChartHistogram = createFlaticon('chart-histogram');
+export const ChartLine = createFlaticon('chart-line-up');
+export const Layers = createFlaticon('layers');
+export const Grid = createFlaticon('grid');
+export const TrendingUp = createFlaticon('arrow-trend-up');
+export const Download = createFlaticon('download');
 

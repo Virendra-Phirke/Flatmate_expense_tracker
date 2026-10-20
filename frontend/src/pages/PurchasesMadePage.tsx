@@ -164,6 +164,7 @@ export function PurchasesMadePage({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setModalOpen(false);
       setDescription('');
       setNotes('');
@@ -187,6 +188,7 @@ export function PurchasesMadePage({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },
   });
 

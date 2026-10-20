@@ -564,7 +564,7 @@ router3.post("/", requireAuth, async (req, res) => {
 var categories_default = router3;
 
 // routes/expenses.ts
-import { Router as Router5 } from "express";
+import { Router as Router6 } from "express";
 import { randomUUID as uuidv43 } from "crypto";
 
 // utils/audit.ts
@@ -583,8 +583,298 @@ async function audit(actorId, householdId, entityType, entityId, action, before 
 }
 
 // routes/balances.ts
+import { Router as Router5 } from "express";
+
+// routes/analytics.ts
 import { Router as Router4 } from "express";
 var router4 = Router4();
+var DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+var analyticsCache = /* @__PURE__ */ new Map();
+var CACHE_TTL_MS3 = 15 * 1e3;
+function invalidateAnalyticsCache(householdId) {
+  if (householdId) {
+    for (const key of analyticsCache.keys()) {
+      if (key.startsWith(`${householdId}:`)) {
+        analyticsCache.delete(key);
+      }
+    }
+  } else {
+    analyticsCache.clear();
+  }
+}
+router4.get("/", requireAuth, async (req, res) => {
+  const session = req.session;
+  const uid = session.userId;
+  const hid = session.householdId;
+  const { from, to, type, category } = req.query;
+  const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : "1970-01-01";
+  const validTo = to && DATE_REGEX.test(String(to)) ? String(to) : "2099-12-31";
+  const filterType = type && ["personal", "common", "on_behalf"].includes(String(type)) ? String(type) : "all";
+  const filterCategory = category ? String(category).trim().toLowerCase() : "";
+  const cacheKey = `${hid}:${uid}:${validFrom}:${validTo}:${filterType}:${filterCategory}`;
+  const now = Date.now();
+  const cached = analyticsCache.get(cacheKey);
+  if (cached && now - cached.timestamp < CACHE_TTL_MS3) {
+    res.setHeader("X-Cache", "HIT");
+    res.setHeader("Cache-Control", "private, max-age=15");
+    return res.json(cached.data);
+  }
+  try {
+    const [row] = await db_default`
+      WITH user_expenses AS (
+        -- 1. Personal expenses paid by user
+        SELECT
+          e.id,
+          e.expense_date,
+          e.created_at,
+          'personal' AS expense_type,
+          e.description,
+          e.amount_paise AS my_amount_paise,
+          e.amount_paise AS total_amount_paise,
+          COALESCE(c.name, 'Uncategorized') AS category_name,
+          NULL::uuid AS other_user_id,
+          NULL::text AS other_user_name
+        FROM expenses e
+        LEFT JOIN categories c ON c.id = e.category_id
+        WHERE e.household_id = ${hid}
+          AND e.expense_type = 'personal'
+          AND e.paid_by = ${uid}
+          AND e.is_deleted = FALSE
+          AND e.expense_date >= ${validFrom}
+          AND e.expense_date <= ${validTo}
+          AND (${filterType} = 'all' OR ${filterType} = 'personal')
+          AND (${filterCategory} = '' OR LOWER(COALESCE(c.name, 'Uncategorized')) = ${filterCategory})
+
+        UNION ALL
+
+        -- 2. Household Common expenses (user's allocated split share)
+        SELECT
+          e.id,
+          e.expense_date,
+          e.created_at,
+          'common' AS expense_type,
+          e.description,
+          es.amount_paise AS my_amount_paise,
+          e.amount_paise AS total_amount_paise,
+          COALESCE(c.name, 'Household Common') AS category_name,
+          NULL::uuid AS other_user_id,
+          NULL::text AS other_user_name
+        FROM expense_shares es
+        JOIN expenses e ON e.id = es.expense_id
+        LEFT JOIN categories c ON c.id = e.category_id
+        WHERE e.household_id = ${hid}
+          AND e.expense_type = 'common'
+          AND es.user_id = ${uid}
+          AND e.is_deleted = FALSE
+          AND e.expense_date >= ${validFrom}
+          AND e.expense_date <= ${validTo}
+          AND (${filterType} = 'all' OR ${filterType} = 'common')
+          AND (${filterCategory} = '' OR LOWER(COALESCE(c.name, 'Household Common')) = ${filterCategory})
+
+        UNION ALL
+
+        -- 3. On-behalf purchases made for flatmates
+        SELECT
+          e.id,
+          e.expense_date,
+          e.created_at,
+          'on_behalf' AS expense_type,
+          COALESCE(ei.description, e.description) AS description,
+          es.amount_paise AS my_amount_paise,
+          e.amount_paise AS total_amount_paise,
+          COALESCE(c.name, 'Shopping') AS category_name,
+          u.id AS other_user_id,
+          u.full_name AS other_user_name
+        FROM expense_shares es
+        JOIN expenses e ON e.id = es.expense_id
+        JOIN users u ON u.id = es.user_id
+        LEFT JOIN expense_items ei ON ei.id = es.expense_item_id
+        LEFT JOIN categories c ON c.id = COALESCE(ei.category_id, e.category_id)
+        WHERE e.household_id = ${hid}
+          AND e.expense_type = 'on_behalf'
+          AND e.paid_by = ${uid}
+          AND es.user_id != ${uid}
+          AND e.is_deleted = FALSE
+          AND e.expense_date >= ${validFrom}
+          AND e.expense_date <= ${validTo}
+          AND (${filterType} = 'all' OR ${filterType} = 'on_behalf')
+          AND (${filterCategory} = '' OR LOWER(COALESCE(c.name, 'Shopping')) = ${filterCategory})
+      )
+      SELECT
+        -- Summary KPIs
+        (SELECT json_build_object(
+          'total_spending_paise', COALESCE(SUM(my_amount_paise), 0),
+          'personal_spending_paise', COALESCE(SUM(CASE WHEN expense_type = 'personal' THEN my_amount_paise ELSE 0 END), 0),
+          'common_share_paise', COALESCE(SUM(CASE WHEN expense_type = 'common' THEN my_amount_paise ELSE 0 END), 0),
+          'on_behalf_paid_paise', COALESCE(SUM(CASE WHEN expense_type = 'on_behalf' THEN my_amount_paise ELSE 0 END), 0),
+          'transaction_count', COUNT(*)
+        ) FROM user_expenses) AS kpi,
+
+        -- Category Breakdown
+        (SELECT COALESCE(json_agg(json_build_object(
+          'category_name', sub.category_name,
+          'total_paise', sub.total_paise,
+          'count', sub.count,
+          'personal_paise', sub.personal_paise,
+          'common_paise', sub.common_paise,
+          'on_behalf_paise', sub.on_behalf_paise
+        )), '[]'::json) FROM (
+          SELECT
+            category_name,
+            COALESCE(SUM(my_amount_paise), 0) AS total_paise,
+            COUNT(*) AS count,
+            COALESCE(SUM(CASE WHEN expense_type = 'personal' THEN my_amount_paise ELSE 0 END), 0) AS personal_paise,
+            COALESCE(SUM(CASE WHEN expense_type = 'common' THEN my_amount_paise ELSE 0 END), 0) AS common_paise,
+            COALESCE(SUM(CASE WHEN expense_type = 'on_behalf' THEN my_amount_paise ELSE 0 END), 0) AS on_behalf_paise
+          FROM user_expenses
+          GROUP BY category_name
+          ORDER BY total_paise DESC
+        ) sub) AS categories,
+
+        -- Daily Trend
+        (SELECT COALESCE(json_agg(json_build_object(
+          'expense_date', sub.expense_date,
+          'total_paise', sub.total_paise,
+          'personal_paise', sub.personal_paise,
+          'common_paise', sub.common_paise,
+          'on_behalf_paise', sub.on_behalf_paise,
+          'count', sub.count
+        )), '[]'::json) FROM (
+          SELECT
+            expense_date,
+            COALESCE(SUM(my_amount_paise), 0) AS total_paise,
+            COALESCE(SUM(CASE WHEN expense_type = 'personal' THEN my_amount_paise ELSE 0 END), 0) AS personal_paise,
+            COALESCE(SUM(CASE WHEN expense_type = 'common' THEN my_amount_paise ELSE 0 END), 0) AS common_paise,
+            COALESCE(SUM(CASE WHEN expense_type = 'on_behalf' THEN my_amount_paise ELSE 0 END), 0) AS on_behalf_paise,
+            COUNT(*) AS count
+          FROM user_expenses
+          GROUP BY expense_date
+          ORDER BY expense_date ASC
+        ) sub) AS daily_trend,
+
+        -- Roommate Beneficiary Breakdown (who I bought for)
+        (SELECT COALESCE(json_agg(json_build_object(
+          'roommate_id', sub.other_user_id,
+          'roommate_name', sub.other_user_name,
+          'total_paise', sub.total_paise,
+          'count', sub.count
+        )), '[]'::json) FROM (
+          SELECT
+            other_user_id,
+            other_user_name,
+            COALESCE(SUM(my_amount_paise), 0) AS total_paise,
+            COUNT(*) AS count
+          FROM user_expenses
+          WHERE expense_type = 'on_behalf' AND other_user_id IS NOT NULL
+          GROUP BY other_user_id, other_user_name
+          ORDER BY total_paise DESC
+        ) sub) AS roommates,
+
+        -- Top Transactions
+        (SELECT COALESCE(json_agg(json_build_object(
+          'id', sub.id,
+          'description', sub.description,
+          'expense_date', sub.expense_date,
+          'expense_type', sub.expense_type,
+          'category_name', sub.category_name,
+          'amount_paise', sub.my_amount_paise,
+          'other_user_name', sub.other_user_name
+        )), '[]'::json) FROM (
+          SELECT id, description, expense_date, expense_type, category_name, my_amount_paise, other_user_name
+          FROM user_expenses
+          ORDER BY expense_date DESC, my_amount_paise DESC
+          LIMIT 200
+        ) sub) AS top_transactions
+    `;
+    const kpiRaw = row?.kpi || {};
+    const totalSpending = parseInt(kpiRaw.total_spending_paise || 0, 10);
+    const personalSpending = parseInt(kpiRaw.personal_spending_paise || 0, 10);
+    const commonShare = parseInt(kpiRaw.common_share_paise || 0, 10);
+    const onBehalfPaid = parseInt(kpiRaw.on_behalf_paid_paise || 0, 10);
+    const transactionCount = parseInt(kpiRaw.transaction_count || 0, 10);
+    const categoriesRaw = row?.categories || [];
+    const categories = categoriesRaw.map((c) => {
+      const tot = parseInt(c.total_paise || 0, 10);
+      return {
+        categoryName: c.category_name,
+        totalPaise: tot,
+        percentage: totalSpending > 0 ? Math.round(tot / totalSpending * 1e3) / 10 : 0,
+        count: parseInt(c.count || 0, 10),
+        personalPaise: parseInt(c.personal_paise || 0, 10),
+        commonPaise: parseInt(c.common_paise || 0, 10),
+        onBehalfPaise: parseInt(c.on_behalf_paise || 0, 10)
+      };
+    });
+    const dailyTrendRaw = row?.daily_trend || [];
+    let runningCumulative = 0;
+    const dailyTrend = dailyTrendRaw.map((d) => {
+      const dayTotal = parseInt(d.total_paise || 0, 10);
+      runningCumulative += dayTotal;
+      return {
+        date: d.expense_date,
+        expense_date: d.expense_date,
+        totalPaise: dayTotal,
+        personalPaise: parseInt(d.personal_paise || 0, 10),
+        commonPaise: parseInt(d.common_paise || 0, 10),
+        onBehalfPaise: parseInt(d.on_behalf_paise || 0, 10),
+        cumulativePaise: runningCumulative,
+        count: parseInt(d.count || 0, 10)
+      };
+    });
+    const roommates = (row?.roommates || []).map((r) => ({
+      roommateId: r.roommate_id,
+      roommateName: r.roommate_name,
+      totalPaise: parseInt(r.total_paise || 0, 10),
+      count: parseInt(r.count || 0, 10)
+    }));
+    const topTransactions = (row?.top_transactions || []).map((t) => ({
+      id: t.id,
+      description: t.description,
+      expenseDate: t.expense_date,
+      expenseType: t.expense_type,
+      categoryName: t.category_name,
+      amountPaise: parseInt(t.amount_paise || 0, 10),
+      otherUserName: t.other_user_name
+    }));
+    const daysInPeriod = Math.max(1, dailyTrend.length);
+    const dailyAveragePaise = Math.round(totalSpending / daysInPeriod);
+    const result = {
+      kpi: {
+        totalSpendingPaise: totalSpending,
+        personalSpendingPaise: personalSpending,
+        commonSharePaise: commonShare,
+        onBehalfPaidPaise: onBehalfPaid,
+        transactionCount,
+        dailyAveragePaise,
+        topCategoryName: categories[0]?.categoryName || "None",
+        topCategoryPaise: categories[0]?.totalPaise || 0
+      },
+      typeDistribution: {
+        personalPaise: personalSpending,
+        personalPercentage: totalSpending > 0 ? Math.round(personalSpending / totalSpending * 1e3) / 10 : 0,
+        commonPaise: commonShare,
+        commonPercentage: totalSpending > 0 ? Math.round(commonShare / totalSpending * 1e3) / 10 : 0,
+        onBehalfPaise: onBehalfPaid,
+        onBehalfPercentage: totalSpending > 0 ? Math.round(onBehalfPaid / totalSpending * 1e3) / 10 : 0
+      },
+      categories,
+      dailyTrend,
+      roommates,
+      topTransactions
+    };
+    analyticsCache.set(cacheKey, { data: result, timestamp: now });
+    res.setHeader("X-Cache", "MISS");
+    res.setHeader("Cache-Control", "private, max-age=15");
+    res.json(result);
+  } catch (err) {
+    console.error("[analytics GET / error]:", err?.message || err);
+    res.status(500).json({ error: "Server error computing expense analytics" });
+  }
+});
+var analytics_default = router4;
+
+// routes/balances.ts
+var router5 = Router5();
 var balanceCache = /* @__PURE__ */ new Map();
 var BALANCE_CACHE_TTL_MS = 15 * 1e3;
 function invalidateBalanceCache(householdId) {
@@ -597,8 +887,12 @@ function invalidateBalanceCache(householdId) {
   } else {
     balanceCache.clear();
   }
+  try {
+    invalidateAnalyticsCache(householdId);
+  } catch {
+  }
 }
-router4.get(["/", "/summary"], requireAuth, async (req, res) => {
+router5.get(["/", "/summary"], requireAuth, async (req, res) => {
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -699,6 +993,7 @@ router4.get(["/", "/summary"], requireAuth, async (req, res) => {
           debtorName: peerName,
           grossOwed: theyOweGross,
           confirmedPaid: settlementsReceived,
+          crossOffset: myDebtGross + settlementsPaid,
           outstanding: netOwedToMe
         });
       } else if (netOwedToMe < 0) {
@@ -707,6 +1002,7 @@ router4.get(["/", "/summary"], requireAuth, async (req, res) => {
           creditorName: peerName,
           grossOwe: myDebtGross,
           confirmedPaid: settlementsPaid,
+          crossOffset: theyOweGross + settlementsReceived,
           outstanding: Math.abs(netOwedToMe)
         });
       }
@@ -732,11 +1028,11 @@ router4.get(["/", "/summary"], requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-var balances_default = router4;
+var balances_default = router5;
 
 // routes/expenses.ts
-var router5 = Router5();
-var DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+var router6 = Router6();
+var DATE_REGEX2 = /^\d{4}-\d{2}-\d{2}$/;
 var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function resolveCategoryId(categoryInput) {
   if (!categoryInput) return null;
@@ -755,13 +1051,13 @@ async function resolveCategoryId(categoryInput) {
     VALUES (${newId}, ${val.slice(0, 100)}, TRUE)`;
   return newId;
 }
-router5.get("/", requireAuth, async (req, res) => {
+router6.get("/", requireAuth, async (req, res) => {
   const { type, from, to, page, limit } = req.query;
   const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
   const limitNum = Math.min(1e3, Math.max(1, parseInt(String(limit), 10) || 500));
   const offsetNum = (pageNum - 1) * limitNum;
-  const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
-  const validTo = to && DATE_REGEX.test(String(to)) ? String(to) : null;
+  const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
+  const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
   const minDate = validFrom || "1970-01-01";
   const maxDate = validTo || "2099-12-31";
   const session = req.session;
@@ -840,7 +1136,7 @@ router5.get("/", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router5.get("/:id", requireAuth, async (req, res) => {
+router6.get("/:id", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
@@ -880,7 +1176,7 @@ router5.get("/:id", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router5.post("/personal", requireAuth, async (req, res) => {
+router6.post("/personal", requireAuth, async (req, res) => {
   const { description, amount_paise, category_id, expense_date, notes } = req.body;
   if (!description || !amount_paise || !expense_date) {
     return res.status(400).json({ error: "description, amount_paise, and expense_date are required" });
@@ -888,14 +1184,22 @@ router5.post("/personal", requireAuth, async (req, res) => {
   if (!Number.isInteger(amount_paise) || amount_paise <= 0 || amount_paise > 1e9) {
     return res.status(400).json({ error: "amount_paise must be a valid positive integer" });
   }
-  if (!DATE_REGEX.test(expense_date)) {
+  if (!DATE_REGEX2.test(expense_date)) {
     return res.status(400).json({ error: "Invalid expense_date format (YYYY-MM-DD required)" });
   }
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
-  const eid = uuidv43();
+  const clientProvidedId = req.body.id && UUID_REGEX.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv43();
   try {
+    if (clientProvidedId) {
+      const existing = await db_default`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
     const resolvedCatId = await resolveCategoryId(category_id);
     await db_default.transaction([
       db_default`
@@ -916,7 +1220,7 @@ router5.post("/personal", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router5.post("/common", requireAdmin, async (req, res) => {
+router6.post("/common", requireAdmin, async (req, res) => {
   const { description, amount_paise, category_id, expense_date, paid_by, split_method, notes, shares } = req.body;
   if (!description || !amount_paise || !expense_date || !paid_by || !split_method || !Array.isArray(shares)) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -924,7 +1228,7 @@ router5.post("/common", requireAdmin, async (req, res) => {
   if (!Number.isInteger(amount_paise) || amount_paise <= 0 || amount_paise > 1e9) {
     return res.status(400).json({ error: "amount_paise must be a valid positive integer" });
   }
-  if (!DATE_REGEX.test(expense_date)) {
+  if (!DATE_REGEX2.test(expense_date)) {
     return res.status(400).json({ error: "Invalid expense_date format (YYYY-MM-DD required)" });
   }
   if (shares.length === 0) {
@@ -955,8 +1259,16 @@ router5.post("/common", requireAdmin, async (req, res) => {
       error: `Share total (${shareTotal} paise) must equal expense amount (${amount_paise} paise)`
     });
   }
-  const eid = uuidv43();
+  const clientProvidedId = req.body.id && UUID_REGEX.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv43();
   try {
+    if (clientProvidedId) {
+      const existing = await db_default`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
     const resolvedCatId = await resolveCategoryId(category_id);
     const transactionQueries = [
       db_default`
@@ -981,7 +1293,7 @@ router5.post("/common", requireAdmin, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router5.post("/on-behalf", requireAuth, async (req, res) => {
+router6.post("/on-behalf", requireAuth, async (req, res) => {
   const { description, expense_date, notes, items } = req.body;
   if (!description || !expense_date) {
     return res.status(400).json({ error: "description and expense_date are required" });
@@ -1009,8 +1321,16 @@ router5.post("/on-behalf", requireAuth, async (req, res) => {
     }
     totalPaise += item.amount_paise;
   }
-  const eid = uuidv43();
+  const clientProvidedId = req.body.id && UUID_REGEX.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv43();
   try {
+    if (clientProvidedId) {
+      const existing = await db_default`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
     const itemQueries = [];
     for (const item of items) {
       const iid = uuidv43();
@@ -1044,7 +1364,7 @@ router5.post("/on-behalf", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router5.delete("/:id", requireAuth, async (req, res) => {
+router6.delete("/:id", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
@@ -1068,9 +1388,12 @@ router5.delete("/:id", requireAuth, async (req, res) => {
     const settled = await db_default`
       SELECT 1 FROM settlements s
       JOIN   expense_shares es ON es.id = s.expense_share_id
-      WHERE  es.expense_id = ${id} AND s.status = 'confirmed'`;
+      WHERE  es.expense_id = ${id}
+        AND  s.status IN ('confirmed', 'pending', 'verification_pending')`;
     if (settled.length) {
-      return res.status(409).json({ error: "Cannot delete: this expense has confirmed settlements" });
+      return res.status(409).json({
+        error: "Cannot delete: this expense has active or confirmed repayments linked to it"
+      });
     }
     await db_default`UPDATE expenses SET is_deleted = TRUE, updated_at = NOW() WHERE id = ${id}`;
     await audit(uid, hid, "expense", id, "delete", { amount_paise: exp.amount_paise }, null);
@@ -1081,14 +1404,14 @@ router5.delete("/:id", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-var expenses_default = router5;
+var expenses_default = router6;
 
 // routes/purchases.ts
-import { Router as Router6 } from "express";
+import { Router as Router7 } from "express";
 import { randomUUID as uuidv44 } from "crypto";
-var router6 = Router6();
+var router7 = Router7();
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-var DATE_REGEX2 = /^\d{4}-\d{2}-\d{2}$/;
+var DATE_REGEX3 = /^\d{4}-\d{2}-\d{2}$/;
 async function resolveCategoryId2(categoryInput) {
   if (!categoryInput) return null;
   const val = String(categoryInput).trim();
@@ -1134,8 +1457,16 @@ async function handleCreatePurchase(req, res) {
     }
     totalPaise += item.amount_paise;
   }
-  const eid = uuidv44();
+  const clientProvidedId = req.body.id && UUID_REGEX2.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv44();
   try {
+    if (clientProvidedId) {
+      const existing = await db_default`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
     const itemQueries = [];
     for (const item of items) {
       const iid = uuidv44();
@@ -1169,12 +1500,12 @@ async function handleCreatePurchase(req, res) {
     res.status(500).json({ error: "Server error" });
   }
 }
-router6.post("/", requireAuth, handleCreatePurchase);
-router6.post("/on-behalf", requireAuth, handleCreatePurchase);
-router6.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
+router7.post("/", requireAuth, handleCreatePurchase);
+router7.post("/on-behalf", requireAuth, handleCreatePurchase);
+router7.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
   const { from, to } = req.query;
-  const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
-  const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
+  const validFrom = from && DATE_REGEX3.test(String(from)) ? String(from) : null;
+  const validTo = to && DATE_REGEX3.test(String(to)) ? String(to) : null;
   const minDate = validFrom || "1970-01-01";
   const maxDate = validTo || "2099-12-31";
   const session = req.session;
@@ -1231,10 +1562,10 @@ router6.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router6.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
+router7.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
   const { from, to } = req.query;
-  const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
-  const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
+  const validFrom = from && DATE_REGEX3.test(String(from)) ? String(from) : null;
+  const validTo = to && DATE_REGEX3.test(String(to)) ? String(to) : null;
   const minDate = validFrom || "1970-01-01";
   const maxDate = validTo || "2099-12-31";
   const session = req.session;
@@ -1299,14 +1630,51 @@ router6.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-var purchases_default = router6;
+router7.delete("/:id", requireAuth, async (req, res) => {
+  const id = req.params.id;
+  const session = req.session;
+  const uid = session.userId;
+  const hid = session.householdId;
+  const isAdmin = session.role === "admin";
+  if (!UUID_REGEX2.test(id)) {
+    return res.status(400).json({ error: "Invalid purchase ID" });
+  }
+  try {
+    const rows = await db_default`
+      SELECT * FROM expenses
+      WHERE id = ${id} AND household_id = ${hid} AND expense_type = 'on_behalf' AND is_deleted = FALSE`;
+    if (!rows.length) return res.status(404).json({ error: "Purchase not found" });
+    const exp = rows[0];
+    if (exp.paid_by !== uid && !isAdmin) {
+      return res.status(403).json({ error: "Unauthorized to delete this purchase" });
+    }
+    const settled = await db_default`
+      SELECT 1 FROM settlements s
+      JOIN   expense_shares es ON es.id = s.expense_share_id
+      WHERE  es.expense_id = ${id}
+        AND  s.status IN ('confirmed', 'pending', 'verification_pending')`;
+    if (settled.length) {
+      return res.status(409).json({
+        error: "Cannot delete: this purchase has active or confirmed repayments linked to it"
+      });
+    }
+    await db_default`UPDATE expenses SET is_deleted = TRUE, updated_at = NOW() WHERE id = ${id}`;
+    await audit(uid, hid, "expense", id, "delete", { amount_paise: exp.amount_paise, type: "on_behalf" }, null);
+    invalidateBalanceCache(hid);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[purchases DELETE /:id]", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+var purchases_default = router7;
 
 // routes/settlements.ts
-import { Router as Router7 } from "express";
+import { Router as Router8 } from "express";
 import { randomUUID as uuidv45 } from "crypto";
-var router7 = Router7();
+var router8 = Router8();
 var UUID_REGEX3 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router7.get("/", requireAuth, async (req, res) => {
+router8.get("/", requireAuth, async (req, res) => {
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -1333,7 +1701,7 @@ router7.get("/", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router7.post("/", requireAuth, rateLimitClaim, async (req, res) => {
+router8.post("/", requireAuth, rateLimitClaim, async (req, res) => {
   const { recipient_id, amount_paise, method, transaction_reference, note, expense_share_id } = req.body;
   if (!recipient_id || !amount_paise || !method) {
     return res.status(400).json({ error: "recipient_id, amount_paise, and method are required" });
@@ -1357,6 +1725,34 @@ router7.post("/", requireAuth, rateLimitClaim, async (req, res) => {
     return res.status(400).json({ error: "You cannot pay yourself" });
   }
   try {
+    const clientProvidedId = req.body.id && UUID_REGEX3.test(req.body.id) ? req.body.id : null;
+    const sid = clientProvidedId || uuidv45();
+    if (clientProvidedId) {
+      const existing = await db_default`
+        SELECT id FROM settlements WHERE id = ${sid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: sid, already_exists: true });
+      }
+    }
+    if (expense_share_id) {
+      const shareCheck = await db_default`
+        SELECT es.id, es.amount_paise, es.user_id, e.paid_by
+        FROM   expense_shares es
+        JOIN   expenses e ON e.id = es.expense_id
+        WHERE  es.id = ${expense_share_id}
+          AND  e.household_id = ${hid}
+          AND  e.is_deleted = FALSE`;
+      if (!shareCheck.length) {
+        return res.status(404).json({ error: "Expense share not found in this household" });
+      }
+      const share = shareCheck[0];
+      if (share.user_id !== uid) {
+        return res.status(403).json({ error: "You can only settle your own expense shares" });
+      }
+      if (share.paid_by !== recipient_id) {
+        return res.status(400).json({ error: "Recipient does not match the creditor of this expense share" });
+      }
+    }
     const recipientRows = await db_default`
       SELECT u.full_name, mup.upi_id
       FROM   users u
@@ -1369,7 +1765,6 @@ router7.post("/", requireAuth, rateLimitClaim, async (req, res) => {
       return res.status(404).json({ error: "Recipient not found in this household" });
     }
     const recip = recipientRows[0];
-    const sid = uuidv45();
     await db_default`
       INSERT INTO settlements
         (id, household_id, payer_id, recipient_id, amount_paise, method, status,
@@ -1387,7 +1782,7 @@ router7.post("/", requireAuth, rateLimitClaim, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router7.post("/:id/confirm", requireAuth, async (req, res) => {
+router8.post("/:id/confirm", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
@@ -1422,7 +1817,7 @@ router7.post("/:id/confirm", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router7.post("/:id/reject", requireAuth, async (req, res) => {
+router8.post("/:id/reject", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
@@ -1453,7 +1848,7 @@ router7.post("/:id/reject", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router7.post("/:id/cancel", requireAuth, async (req, res) => {
+router8.post("/:id/cancel", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
@@ -1484,10 +1879,10 @@ router7.post("/:id/cancel", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-var settlements_default = router7;
+var settlements_default = router8;
 
 // routes/profile.ts
-import { Router as Router8 } from "express";
+import { Router as Router9 } from "express";
 import QRCode from "qrcode";
 
 // utils/upi.ts
@@ -1507,9 +1902,9 @@ function buildUpiUri(upiId, displayName, amountPaise = null) {
 }
 
 // routes/profile.ts
-var router8 = Router8();
+var router9 = Router9();
 var UUID_REGEX4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-router8.get("/upi", requireAuth, async (req, res) => {
+router9.get("/upi", requireAuth, async (req, res) => {
   const session = req.session;
   try {
     const rows = await db_default`
@@ -1520,7 +1915,7 @@ router8.get("/upi", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router8.put("/upi", requireAuth, rateLimitUpi, async (req, res) => {
+router9.put("/upi", requireAuth, rateLimitUpi, async (req, res) => {
   const session = req.session;
   const { upi_id, display_name } = req.body;
   if (!upi_id || !display_name) {
@@ -1546,7 +1941,7 @@ router8.put("/upi", requireAuth, rateLimitUpi, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-router8.delete("/upi", requireAuth, async (req, res) => {
+router9.delete("/upi", requireAuth, async (req, res) => {
   const session = req.session;
   try {
     await db_default`DELETE FROM member_upi_profiles WHERE user_id = ${session.userId}`;
@@ -1590,14 +1985,14 @@ async function handleQrRequest(req, res) {
     res.status(500).json({ error: "Server error" });
   }
 }
-router8.get("/upi/qr", requireAuth, handleQrRequest);
-router8.get("/qr", requireAuth, handleQrRequest);
-var profile_default = router8;
+router9.get("/upi/qr", requireAuth, handleQrRequest);
+router9.get("/qr", requireAuth, handleQrRequest);
+var profile_default = router9;
 
 // routes/activity.ts
-import { Router as Router9 } from "express";
-var router9 = Router9();
-router9.get("/", requireAuth, async (req, res) => {
+import { Router as Router10 } from "express";
+var router10 = Router10();
+router10.get("/", requireAuth, async (req, res) => {
   const session = req.session;
   const hid = session.householdId;
   const uid = session.userId;
@@ -1617,12 +2012,12 @@ router9.get("/", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-var activity_default = router9;
+var activity_default = router10;
 
 // routes/ai.ts
-import { Router as Router10 } from "express";
+import { Router as Router11 } from "express";
 import { GoogleGenAI, Type } from "@google/genai";
-var router10 = Router10();
+var router11 = Router11();
 var getAIClient = () => {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
@@ -1647,14 +2042,14 @@ function getTodayKolkata() {
   const day = parts.find((p) => p.type === "day")?.value;
   return `${year}-${month}-${day}`;
 }
-router10.get("/status", requireAuth, (_req, res) => {
+router11.get("/status", requireAuth, (_req, res) => {
   const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim());
   res.json({
     available: hasKey,
     model: PREFERRED_MODELS[0] || "gemini-3.5-flash"
   });
 });
-router10.post("/parse-expense", requireAuth, rateLimitAI, async (req, res) => {
+router11.post("/parse-expense", requireAuth, rateLimitAI, async (req, res) => {
   const { transcript, clientDate } = req.body;
   if (!transcript || typeof transcript !== "string" || !transcript.trim()) {
     return res.status(400).json({ error: "Voice transcript or text input is required." });
@@ -1918,7 +2313,7 @@ Return the output strictly matching the JSON schema.`;
     });
   }
 });
-var ai_default = router10;
+var ai_default = router11;
 
 // app.ts
 var app = express();
@@ -1983,6 +2378,7 @@ app.use("/api/profile", profile_default);
 app.use("/api/upi", profile_default);
 app.use("/api/activity", activity_default);
 app.use("/api/ai", ai_default);
+app.use("/api/analytics", analytics_default);
 app.use("/auth", auth_default);
 app.use("/members", members_default);
 app.use("/categories", categories_default);
@@ -1994,6 +2390,7 @@ app.use("/profile", profile_default);
 app.use("/upi", profile_default);
 app.use("/activity", activity_default);
 app.use("/ai", ai_default);
+app.use("/analytics", analytics_default);
 app.use((err, _req, res, _next) => {
   console.error("[unhandled error]", err);
   const status = typeof err.status === "number" ? err.status : typeof err.statusCode === "number" ? err.statusCode : 500;

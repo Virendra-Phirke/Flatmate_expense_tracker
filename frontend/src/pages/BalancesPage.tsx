@@ -139,7 +139,9 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs xs:text-sm font-semibold text-foreground">{debt.creditorName}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Repaid {formatPaise(debt.confirmedPaid)} of {formatPaise(debt.grossOwe)}
+                        {debt.crossOffset && debt.crossOffset > 0
+                          ? `Repaid ${formatPaise(debt.confirmedPaid)} • Netted with mutual expenses`
+                          : `Repaid ${formatPaise(debt.confirmedPaid)} of ${formatPaise(debt.grossOwe)}`}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -186,7 +188,9 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs xs:text-sm font-semibold text-foreground">{credit.debtorName}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        Confirmed {formatPaise(credit.confirmedPaid)} of {formatPaise(credit.grossOwed)}
+                        {credit.crossOffset && credit.crossOffset > 0
+                          ? `Confirmed ${formatPaise(credit.confirmedPaid)} • Netted with mutual expenses`
+                          : `Confirmed ${formatPaise(credit.confirmedPaid)} of ${formatPaise(credit.grossOwed)}`}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

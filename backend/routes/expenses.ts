@@ -202,9 +202,18 @@ router.post('/personal', requireAuth, async (req: Request, res: Response) => {
   const session = (req as any).session;
   const uid = session.userId;
   const hid = session.householdId;
-  const eid = uuidv4();
+  const clientProvidedId = (req.body.id && UUID_REGEX.test(req.body.id)) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv4();
 
   try {
+    if (clientProvidedId) {
+      const existing = await sql`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
+
     const resolvedCatId = await resolveCategoryId(category_id);
 
     await sql.transaction([
@@ -279,9 +288,18 @@ router.post('/common', requireAdmin, async (req: Request, res: Response) => {
     });
   }
 
-  const eid = uuidv4();
+  const clientProvidedId = (req.body.id && UUID_REGEX.test(req.body.id)) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv4();
 
   try {
+    if (clientProvidedId) {
+      const existing = await sql`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
+
     const resolvedCatId = await resolveCategoryId(category_id);
 
     const transactionQueries = [
@@ -345,9 +363,18 @@ router.post('/on-behalf', requireAuth, async (req: Request, res: Response) => {
     totalPaise += item.amount_paise;
   }
 
-  const eid = uuidv4();
+  const clientProvidedId = (req.body.id && UUID_REGEX.test(req.body.id)) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv4();
 
   try {
+    if (clientProvidedId) {
+      const existing = await sql`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
+
     const itemQueries: any[] = [];
     for (const item of items) {
       const iid = uuidv4();
@@ -411,13 +438,16 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
       if (exp.paid_by !== uid && !isAdmin) return res.status(403).json({ error: 'Unauthorized to delete this purchase' });
     }
 
-    // Block deletion if any confirmed settlement references a share of this expense
+    // Safety guard: Block deletion if any active or confirmed settlement references a share of this expense
     const settled = await sql`
       SELECT 1 FROM settlements s
       JOIN   expense_shares es ON es.id = s.expense_share_id
-      WHERE  es.expense_id = ${id} AND s.status = 'confirmed'`;
+      WHERE  es.expense_id = ${id}
+        AND  s.status IN ('confirmed', 'pending', 'verification_pending')`;
     if (settled.length) {
-      return res.status(409).json({ error: 'Cannot delete: this expense has confirmed settlements' });
+      return res.status(409).json({
+        error: 'Cannot delete: this expense has active or confirmed repayments linked to it',
+      });
     }
 
     await sql`UPDATE expenses SET is_deleted = TRUE, updated_at = NOW() WHERE id = ${id}`;

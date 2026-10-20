@@ -70,6 +70,37 @@ router.post('/', requireAuth, rateLimitClaim, async (req: Request, res: Response
   }
 
   try {
+    const clientProvidedId = (req.body.id && UUID_REGEX.test(req.body.id)) ? req.body.id : null;
+    const sid = clientProvidedId || uuidv4();
+
+    if (clientProvidedId) {
+      const existing = await sql`
+        SELECT id FROM settlements WHERE id = ${sid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: sid, already_exists: true });
+      }
+    }
+
+    if (expense_share_id) {
+      const shareCheck = await sql`
+        SELECT es.id, es.amount_paise, es.user_id, e.paid_by
+        FROM   expense_shares es
+        JOIN   expenses e ON e.id = es.expense_id
+        WHERE  es.id = ${expense_share_id}
+          AND  e.household_id = ${hid}
+          AND  e.is_deleted = FALSE`;
+      if (!shareCheck.length) {
+        return res.status(404).json({ error: 'Expense share not found in this household' });
+      }
+      const share = shareCheck[0];
+      if (share.user_id !== uid) {
+        return res.status(403).json({ error: 'You can only settle your own expense shares' });
+      }
+      if (share.paid_by !== recipient_id) {
+        return res.status(400).json({ error: 'Recipient does not match the creditor of this expense share' });
+      }
+    }
+
     // Verify recipient is an active member in the same household
     const recipientRows = await sql`
       SELECT u.full_name, mup.upi_id
@@ -85,7 +116,6 @@ router.post('/', requireAuth, rateLimitClaim, async (req: Request, res: Response
     }
 
     const recip = recipientRows[0];
-    const sid   = uuidv4();
 
     await sql`
       INSERT INTO settlements

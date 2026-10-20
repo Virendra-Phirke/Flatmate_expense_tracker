@@ -533,6 +533,17 @@
   animation: slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
+/* ─── Border beam animation ─── */
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+.animate-border-beam {
+  animation: border-beam calc(var(--duration, 12)*1s) infinite linear;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-shimmer,
   .animate-mic-pulse,

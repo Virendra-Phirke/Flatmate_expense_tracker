@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { LoginPage } from '@/pages/LoginPage';
 import { Shell, NavTab } from '@/components/layout/Shell';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ExpensesPage } from '@/pages/ExpensesPage';
 import { PurchasesForMePage } from '@/pages/PurchasesForMePage';
 import { CommonExpensesPage } from '@/pages/CommonExpensesPage';
@@ -23,6 +24,7 @@ export function App() {
   useEffect(() => {
     if (user?.id) {
       queryClient.prefetchQuery({ queryKey: ['balances_summary'], queryFn: () => api('GET', '/balances/summary') });
+      queryClient.prefetchQuery({ queryKey: ['analytics', undefined, undefined, 'all', ''], queryFn: () => api('GET', '/analytics') });
       queryClient.prefetchQuery({ queryKey: ['members'], queryFn: () => api('GET', '/members'), staleTime: 5 * 60 * 1000 });
       queryClient.prefetchQuery({ queryKey: ['categories'], queryFn: () => api('GET', '/categories'), staleTime: 10 * 60 * 1000 });
       queryClient.prefetchQuery({ queryKey: ['personal_expenses'], queryFn: () => api('GET', '/expenses?type=personal') });
@@ -63,6 +65,7 @@ export function App() {
           }}
         />
       )}
+      {activeTab === 'analytics' && <AnalyticsPage />}
       {(activeTab === 'expenses' || activeTab === 'personal') && (
         <ExpensesPage initialSubTab="personal" />
       )}

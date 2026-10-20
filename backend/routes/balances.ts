@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import sql from '../db/index';
 import { requireAuth } from '../middleware/auth';
+import { invalidateAnalyticsCache } from './analytics';
 
 const router = Router();
 
@@ -17,6 +18,10 @@ export function invalidateBalanceCache(householdId?: string) {
   } else {
     balanceCache.clear();
   }
+  // Also invalidate analytics cache whenever expenses or balances mutate
+  try {
+    invalidateAnalyticsCache(householdId);
+  } catch {}
 }
 
 // ── GET /api/balances & /api/balances/summary ────────────────────────────────
@@ -137,6 +142,7 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
           debtorName:    peerName,
           grossOwed:     theyOweGross,
           confirmedPaid: settlementsReceived,
+          crossOffset:   myDebtGross + settlementsPaid,
           outstanding:   netOwedToMe,
         });
       } else if (netOwedToMe < 0) {
@@ -145,6 +151,7 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
           creditorName:  peerName,
           grossOwe:      myDebtGross,
           confirmedPaid: settlementsPaid,
+          crossOffset:   theyOweGross + settlementsReceived,
           outstanding:   Math.abs(netOwedToMe),
         });
       }

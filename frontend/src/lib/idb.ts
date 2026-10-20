@@ -144,6 +144,20 @@ export async function setCachedData(key: string, data: any): Promise<void> {
 }
 
 /**
+ * Standard RFC4122 v4 UUID generator for client idempotency and offline queues
+ */
+export function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
  * Enqueue a mutation to be replayed when connection is restored
  */
 export async function enqueueOfflineMutation(mutation: {
@@ -153,12 +167,17 @@ export async function enqueueOfflineMutation(mutation: {
   userId?: string;
   householdId?: string;
 }): Promise<string> {
-  const id = `mut_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const bodyId = mutation.body && typeof mutation.body === 'object' && mutation.body.id;
+  const id = (bodyId && typeof bodyId === 'string') ? bodyId : generateUUID();
+  const processedBody = mutation.body && typeof mutation.body === 'object'
+    ? { ...mutation.body, id }
+    : mutation.body;
+
   const item: QueuedMutation = {
     id,
     method: mutation.method,
     path: mutation.path,
-    body: mutation.body,
+    body: processedBody,
     userId: mutation.userId,
     householdId: mutation.householdId,
     createdAt: Date.now(),
@@ -362,6 +381,8 @@ export async function hydrateTanStackQuery(queryClient: any): Promise<number> {
       } else if (key.includes('/activity')) {
         queryClient.setQueryData(['recent_activity'], item.data);
         queryKey = ['activity'];
+      } else if (key === '/analytics' || key.startsWith('/analytics?')) {
+        queryClient.setQueryData(['analytics', undefined, undefined, 'all', ''], item.data);
       }
 
       if (queryKey) {

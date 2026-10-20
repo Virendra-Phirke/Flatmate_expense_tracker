@@ -14,6 +14,7 @@ import settlementsRouter from './routes/settlements';
 import profileRouter from './routes/profile';
 import activityRouter from './routes/activity';
 import aiRouter from './routes/ai';
+import analyticsRouter from './routes/analytics';
 
 export const app = express();
 
@@ -99,6 +100,7 @@ app.use('/api/profile', profileRouter);
 app.use('/api/upi', profileRouter); // AUD-04 route alias for UPI QR generation
 app.use('/api/activity', activityRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/analytics', analyticsRouter);
 
 // ── Root route aliases (resilience against proxies or serverless rewriting that strips /api) ──
 app.use('/auth', authRouter);
@@ -112,6 +114,7 @@ app.use('/profile', profileRouter);
 app.use('/upi', profileRouter);
 app.use('/activity', activityRouter);
 app.use('/ai', aiRouter);
+app.use('/analytics', analyticsRouter);
 
 // ── Global error handler ──────────────────────────────────────────────────────
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

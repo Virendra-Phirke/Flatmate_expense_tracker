@@ -101,6 +101,7 @@ export interface PairwiseDebt {
   creditorName: string;
   grossOwe: number;
   confirmedPaid: number;
+  crossOffset?: number;
   outstanding: number;
 }
 
@@ -109,6 +110,7 @@ export interface PairwiseCredit {
   debtorName: string;
   grossOwed: number;
   confirmedPaid: number;
+  crossOffset?: number;
   outstanding: number;
 }
 
@@ -172,3 +174,72 @@ export interface ParsedAiExpense {
   }>;
   summary?: string;
 }
+
+export interface AnalyticsKpi {
+  totalSpendingPaise: number;
+  personalSpendingPaise: number;
+  commonSharePaise: number;
+  onBehalfPaidPaise: number;
+  transactionCount: number;
+  dailyAveragePaise: number;
+  topCategoryName: string;
+  topCategoryPaise: number;
+}
+
+export interface AnalyticsTypeDistribution {
+  personalPaise: number;
+  personalPercentage: number;
+  commonPaise: number;
+  commonPercentage: number;
+  onBehalfPaise: number;
+  onBehalfPercentage: number;
+}
+
+export interface AnalyticsCategory {
+  categoryName: string;
+  totalPaise: number;
+  percentage: number;
+  count: number;
+  personalPaise: number;
+  commonPaise: number;
+  onBehalfPaise: number;
+}
+
+export interface AnalyticsDailyTrend {
+  date: string;
+  totalPaise: number;
+  personalPaise: number;
+  commonPaise: number;
+  onBehalfPaise: number;
+  cumulativePaise: number;
+  count: number;
+}
+
+export interface AnalyticsRoommate {
+  roommateId: string;
+  roommateName: string;
+  totalPaise: number;
+  count: number;
+}
+
+export interface AnalyticsTopTransaction {
+  id: string;
+  description: string;
+  expenseDate: string;
+  expenseType: 'personal' | 'common' | 'on_behalf';
+  categoryName: string;
+  amountPaise: number;
+  otherUserName?: string;
+}
+
+export interface AnalyticsData {
+  kpi: AnalyticsKpi;
+  typeDistribution: AnalyticsTypeDistribution;
+  categories: AnalyticsCategory[];
+  dailyTrend: AnalyticsDailyTrend[];
+  roommates: AnalyticsRoommate[];
+  topTransactions: AnalyticsTopTransaction[];
+}
+
+export type AnalyticsVisualMode = 'donut' | 'trend' | 'distribution' | 'roommates' | 'table';
+

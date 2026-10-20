@@ -16,9 +16,19 @@ import {
   MoreHorizontal,
   ChevronRight,
   Palette,
+  ChartPie,
+  Key,
 } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { VoiceAssistantModal } from '@/components/voice/VoiceAssistantModal';
 import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 import { ThemePaletteModal } from '@/components/layout/ThemePaletteModal';
@@ -30,6 +40,7 @@ import { api } from '@/lib/api';
 
 export type NavTab =
   | 'dashboard'
+  | 'analytics'
   | 'expenses'
   | 'personal'
   | 'purchases_made'
@@ -47,6 +58,7 @@ interface ShellProps {
 
 const mainNavItems = [
   { id: 'dashboard' as NavTab, label: 'Home', icon: LayoutDashboard },
+  { id: 'analytics' as NavTab, label: 'Analytics', icon: ChartPie },
   { id: 'expenses' as NavTab, label: 'Expenses', icon: Receipt },
   { id: 'balances' as NavTab, label: 'Balances', icon: Scale },
   { id: 'repayments' as NavTab, label: 'Repay', icon: ArrowRightLeft },
@@ -63,6 +75,7 @@ const accountNavItems = [
 
 const pageTitles: Record<NavTab, string> = {
   dashboard: 'Home',
+  analytics: 'Analytics',
   expenses: 'Expenses',
   personal: 'Expenses',
   purchases_made: 'Bought for others',
@@ -266,25 +279,50 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
           </div>
         </nav>
 
-        {/* User footer */}
+        {/* User footer with Dropdown Menu */}
         <div className="border-t border-border p-3">
-          <div className="flex items-center gap-2.5 rounded-lg p-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-primary">
-              {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-semibold">{user?.fullName}</div>
-              <div className="truncate text-[10px] text-muted-foreground">@{user?.username}</div>
-            </div>
-            <button
-              type="button"
-              onClick={logout}
-              aria-label="Sign out"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-negative"
-            >
-              <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2.5 rounded-xl p-2 text-left hover:bg-muted/70 transition-colors active:scale-[0.98] outline-none"
+                aria-label="User account menu"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-primary">
+                  {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-semibold">{user?.fullName}</div>
+                  <div className="truncate text-[10px] text-muted-foreground">@{user?.username}</div>
+                </div>
+                <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" side="top" className="w-56 p-1.5 mb-1">
+              <DropdownMenuLabel>
+                <p className="text-xs font-semibold text-foreground">{user?.fullName}</p>
+                <p className="text-[10px] text-muted-foreground lowercase">@{user?.username} • {user?.role || 'Member'}</p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setPasswordModalOpen(true)}>
+                <Key className="h-3.5 w-3.5" />
+                <span>Change Password</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPaletteModalOpen(true)}>
+                <Palette className="h-3.5 w-3.5" />
+                <span>Theme Palette</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setVoiceModalOpen(true)}>
+                <Mic className="h-3.5 w-3.5" />
+                <span>Voice Assistant</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={logout} className="text-negative focus:text-negative">
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 
@@ -313,7 +351,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
                 className="h-2.5 w-2.5 rounded-full shrink-0 border border-black/10"
                 style={{ backgroundColor: currentPalette.primaryHex }}
               />
-              <span className="text-[11px] font-medium">Palette</span>
+              <span className="text-[11px] font-medium hidden xs:inline">Palette</span>
             </button>
             <button
               type="button"
@@ -324,6 +362,39 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
             >
               <Mic className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
+
+            {/* Mobile Header Account Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="User account menu"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-primary font-bold text-xs border border-primary/20 active:scale-95 touch-manipulation"
+                >
+                  {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52 p-1.5">
+                <DropdownMenuLabel>
+                  <p className="text-xs font-semibold text-foreground">{user?.fullName}</p>
+                  <p className="text-[10px] text-muted-foreground lowercase">@{user?.username} • {user?.role || 'Member'}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setPasswordModalOpen(true)}>
+                  <Key className="h-3.5 w-3.5" />
+                  <span>Change Password</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setPaletteModalOpen(true)}>
+                  <Palette className="h-3.5 w-3.5" />
+                  <span>Theme Palette</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={logout} className="text-negative focus:text-negative">
+                  <LogOut className="h-3.5 w-3.5" />
+                  <span>Sign out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

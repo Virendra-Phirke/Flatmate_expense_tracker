@@ -61,6 +61,7 @@ import {
   getSyncCachedData,
   enqueueOfflineMutation,
   applyOptimisticOfflineMutation,
+  generateUUID,
 } from './idb';
 import { refreshPendingCount } from './offlineQueue';
 
@@ -83,19 +84,34 @@ export async function api<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  const cleanPath = path.startsWith('/api/') ? path.slice(4) : (path === '/api' ? '' : path);
+  const normalizedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
+
+  // Idempotency: Attach client UUID for new expenses, purchases, or settlements
+  let processedBody = body;
+  const isResourceCreation =
+    method === 'POST' &&
+    (normalizedPath.startsWith('/expenses') ||
+      normalizedPath.startsWith('/purchases') ||
+      normalizedPath.startsWith('/settlements'));
+
+  if (isResourceCreation && body && typeof body === 'object' && !Array.isArray(body)) {
+    if (!body.id) {
+      processedBody = { ...body, id: generateUUID() };
+    }
+  }
+
   const opts: RequestInit = {
     method,
     headers,
     credentials: 'include',
   };
 
-  if (body !== undefined) {
-    opts.body = JSON.stringify(body);
+  if (processedBody !== undefined) {
+    opts.body = JSON.stringify(processedBody);
   }
 
   const apiBase = getApiBase();
-  const cleanPath = path.startsWith('/api/') ? path.slice(4) : (path === '/api' ? '' : path);
-  const normalizedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
   const targetUrl = `${apiBase}/api${normalizedPath}`;
 
   // If completely offline and reading data (GET), serve directly from IndexedDB cache
@@ -113,7 +129,7 @@ export async function api<T = any>(
     const tempId = await enqueueOfflineMutation({
       method,
       path: normalizedPath,
-      body,
+      body: processedBody,
       userId: payload?.userId,
       householdId: payload?.householdId,
     });
@@ -121,13 +137,13 @@ export async function api<T = any>(
       id: tempId,
       method,
       path: normalizedPath,
-      body,
+      body: processedBody,
       userId: payload?.userId,
       householdId: payload?.householdId,
       createdAt: Date.now(),
     });
     void refreshPendingCount();
-    return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
+    return { ok: true, offlineQueued: true, id: tempId, ...(processedBody || {}) } as T;
   }
 
   let res: Response;
@@ -148,7 +164,7 @@ export async function api<T = any>(
       const tempId = await enqueueOfflineMutation({
         method,
         path: normalizedPath,
-        body,
+        body: processedBody,
         userId: payload?.userId,
         householdId: payload?.householdId,
       });
@@ -156,13 +172,13 @@ export async function api<T = any>(
         id: tempId,
         method,
         path: normalizedPath,
-        body,
+        body: processedBody,
         userId: payload?.userId,
         householdId: payload?.householdId,
         createdAt: Date.now(),
       });
       void refreshPendingCount();
-      return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
+      return { ok: true, offlineQueued: true, id: tempId, ...(processedBody || {}) } as T;
     }
 
     throw new Error(
@@ -197,7 +213,7 @@ export async function api<T = any>(
       const tempId = await enqueueOfflineMutation({
         method,
         path: normalizedPath,
-        body,
+        body: processedBody,
         userId: payload?.userId,
         householdId: payload?.householdId,
       });
@@ -205,13 +221,13 @@ export async function api<T = any>(
         id: tempId,
         method,
         path: normalizedPath,
-        body,
+        body: processedBody,
         userId: payload?.userId,
         householdId: payload?.householdId,
         createdAt: Date.now(),
       });
       void refreshPendingCount();
-      return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
+      return { ok: true, offlineQueued: true, id: tempId, ...(processedBody || {}) } as T;
     }
 
     throw new Error(data.error || (res.status === 404 ? `API endpoint not found (404: ${path})` : `HTTP ${res.status}`));

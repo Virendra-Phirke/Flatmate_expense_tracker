@@ -71,9 +71,18 @@ async function handleCreatePurchase(req: Request, res: Response) {
     totalPaise += item.amount_paise;
   }
 
-  const eid = uuidv4();
+  const clientProvidedId = (req.body.id && UUID_REGEX.test(req.body.id)) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv4();
 
   try {
+    if (clientProvidedId) {
+      const existing = await sql`
+        SELECT id FROM expenses WHERE id = ${eid} AND household_id = ${hid}`;
+      if (existing.length) {
+        return res.status(200).json({ id: eid, already_exists: true });
+      }
+    }
+
     const itemQueries: any[] = [];
     for (const item of items) {
       const iid = uuidv4();
@@ -262,6 +271,53 @@ router.get(['/made-for-me', '/for-me'], requireAuth, async (req: Request, res: R
     res.json(result);
   } catch (err) {
     console.error('[purchases GET /made-for-me]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── DELETE /api/purchases/:id (soft delete with settlement safety guard) ────
+router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const session = (req as any).session;
+  const uid = session.userId;
+  const hid = session.householdId;
+  const isAdmin = session.role === 'admin';
+
+  if (!UUID_REGEX.test(id)) {
+    return res.status(400).json({ error: 'Invalid purchase ID' });
+  }
+
+  try {
+    const rows = await sql`
+      SELECT * FROM expenses
+      WHERE id = ${id} AND household_id = ${hid} AND expense_type = 'on_behalf' AND is_deleted = FALSE`;
+    if (!rows.length) return res.status(404).json({ error: 'Purchase not found' });
+    const exp = rows[0];
+
+    // Authorization: only the purchaser or admin can delete
+    if (exp.paid_by !== uid && !isAdmin) {
+      return res.status(403).json({ error: 'Unauthorized to delete this purchase' });
+    }
+
+    // Safety guard: Block deletion if any active or confirmed settlement references a share of this purchase
+    const settled = await sql`
+      SELECT 1 FROM settlements s
+      JOIN   expense_shares es ON es.id = s.expense_share_id
+      WHERE  es.expense_id = ${id}
+        AND  s.status IN ('confirmed', 'pending', 'verification_pending')`;
+    if (settled.length) {
+      return res.status(409).json({
+        error: 'Cannot delete: this purchase has active or confirmed repayments linked to it',
+      });
+    }
+
+    await sql`UPDATE expenses SET is_deleted = TRUE, updated_at = NOW() WHERE id = ${id}`;
+    await audit(uid, hid, 'expense', id, 'delete', { amount_paise: exp.amount_paise, type: 'on_behalf' }, null);
+    invalidateBalanceCache(hid);
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[purchases DELETE /:id]', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
