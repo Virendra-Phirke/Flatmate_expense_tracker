@@ -457,6 +457,11 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       if (!Number.isInteger(amount_paise) || amount_paise <= 0 || amount_paise > 1000000000) {
         return res.status(400).json({ error: 'amount_paise must be a valid positive integer' });
       }
+      if (exp.expense_type !== 'personal' && amount_paise !== exp.amount_paise) {
+        return res.status(400).json({
+          error: 'Amount cannot be directly modified on communal or on-behalf expenses to preserve participant share balance. Please re-create the expense to update split allocations.',
+        });
+      }
     }
 
     if (expense_date !== undefined && !DATE_REGEX.test(expense_date)) {

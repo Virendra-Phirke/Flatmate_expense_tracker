@@ -351,8 +351,8 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* Mobile top header */}
         <header className="sticky top-0 z-30 flex min-h-[52px] items-center justify-between gap-2 border-b border-border bg-background px-3 xs:px-4 py-2 md:hidden">
-          <div className="flex min-w-0 items-center gap-2">
-            <AppLogo size={28} className="h-7 w-7" />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <AppLogo size={36} className="h-9 w-9 shrink-0 drop-shadow-sm" />
             <div className="min-w-0">
               <h1 className="truncate text-sm font-bold leading-tight">{pageTitles[activeTab]}</h1>
               <p className="truncate text-xs text-muted-foreground leading-tight">{user?.householdName || 'Household'}</p>

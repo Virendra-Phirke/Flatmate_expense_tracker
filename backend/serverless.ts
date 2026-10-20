@@ -22,7 +22,9 @@ export default function handler(req: any, res: any) {
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.end(JSON.stringify({
         error: 'Backend Serverless Execution Error',
-        message: err?.message || String(err),
+        message: process.env.NODE_ENV === 'production'
+          ? 'Internal server execution error'
+          : (err?.message || String(err)),
       }));
     }
   }

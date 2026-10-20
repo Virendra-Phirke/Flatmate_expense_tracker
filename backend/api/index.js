@@ -1506,6 +1506,11 @@ router6.put("/:id", requireAuth, async (req, res) => {
       if (!Number.isInteger(amount_paise) || amount_paise <= 0 || amount_paise > 1e9) {
         return res.status(400).json({ error: "amount_paise must be a valid positive integer" });
       }
+      if (exp.expense_type !== "personal" && amount_paise !== exp.amount_paise) {
+        return res.status(400).json({
+          error: "Amount cannot be directly modified on communal or on-behalf expenses to preserve participant share balance. Please re-create the expense to update split allocations."
+        });
+      }
     }
     if (expense_date !== void 0 && !DATE_REGEX2.test(expense_date)) {
       return res.status(400).json({ error: "Invalid expense_date format (YYYY-MM-DD required)" });
@@ -2610,7 +2615,7 @@ function handler(req, res) {
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.end(JSON.stringify({
         error: "Backend Serverless Execution Error",
-        message: err?.message || String(err)
+        message: process.env.NODE_ENV === "production" ? "Internal server execution error" : err?.message || String(err)
       }));
     }
   }
