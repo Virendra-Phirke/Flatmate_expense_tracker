@@ -112,6 +112,37 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const STORAGE_PALETTE_KEY = 'flatmate_theme_palette';
 const STORAGE_DARK_KEY = 'flatmate_theme_dark';
 
+function runThemeTransition(updateFn: () => void) {
+  if (typeof document === 'undefined') {
+    updateFn();
+    return;
+  }
+
+  const root = document.documentElement;
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Modern browser GPU-accelerated View Transition API
+  if (!prefersReduced && typeof (document as any).startViewTransition === 'function') {
+    (document as any).startViewTransition(() => {
+      updateFn();
+    });
+    return;
+  }
+
+  // Lightweight CSS transition fallback for 60fps mobile transitions
+  if (!prefersReduced) {
+    root.classList.add('theme-transitioning');
+  }
+
+  updateFn();
+
+  if (!prefersReduced) {
+    window.setTimeout(() => {
+      root.classList.remove('theme-transitioning');
+    }, 180);
+  }
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [palette, setPaletteState] = useState<ThemePaletteId>(() => {
     const saved = localStorage.getItem(STORAGE_PALETTE_KEY) as ThemePaletteId | null;
@@ -124,29 +155,58 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   const setPalette = (id: ThemePaletteId) => {
-    setPaletteState(id);
-    localStorage.setItem(STORAGE_PALETTE_KEY, id);
-    document.documentElement.setAttribute('data-theme', id);
+    if (id === palette) return;
+    runThemeTransition(() => {
+      document.documentElement.setAttribute('data-theme', id);
+      setPaletteState(id);
+    });
+
+    // Non-blocking persistent save to keep touch response instantaneous
+    window.requestAnimationFrame(() => {
+      try {
+        localStorage.setItem(STORAGE_PALETTE_KEY, id);
+      } catch (e) {
+        console.error('Failed to save theme palette to localStorage', e);
+      }
+    });
   };
 
   const setIsDark = (dark: boolean) => {
-    setIsDarkState(dark);
-    localStorage.setItem(STORAGE_DARK_KEY, String(dark));
-    if (dark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    if (dark === isDark) return;
+    runThemeTransition(() => {
+      if (dark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      setIsDarkState(dark);
+    });
+
+    // Non-blocking persistent save
+    window.requestAnimationFrame(() => {
+      try {
+        localStorage.setItem(STORAGE_DARK_KEY, String(dark));
+      } catch (e) {
+        console.error('Failed to save theme dark mode to localStorage', e);
+      }
+    });
   };
 
   const toggleDark = () => setIsDark(!isDark);
 
+  // Sync only on external/initial state changes without redundant double-mutation
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', palette);
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    if (currentTheme !== palette) {
+      document.documentElement.setAttribute('data-theme', palette);
+    }
+    const hasDarkClass = document.documentElement.classList.contains('dark');
+    if (isDark !== hasDarkClass) {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   }, [palette, isDark]);
 

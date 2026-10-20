@@ -174,36 +174,49 @@ export function CommonExpensesPage() {
             Shared flat costs split among flatmates (Wi-Fi, maid, cook, utilities)
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <div className="text-[10px] uppercase font-semibold text-muted-foreground">
-              {isFilterActive ? 'Filtered Common' : 'Total Common'}
-            </div>
-            <div className="text-lg font-bold font-mono text-foreground">
-              {formatPaise(totalCommon)}
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <div className="text-[10px] uppercase font-semibold text-muted-foreground">
+                {isFilterActive ? 'Filtered Common' : 'Total Common'}
+              </div>
+              <div className="text-lg font-bold font-mono text-foreground">
+                {formatPaise(totalCommon)}
+              </div>
             </div>
           </div>
-          {isAdmin && (
-            <Button
-              onClick={() => setModalOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-semibold"
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              Add Common Expense
-            </Button>
-          )}
-        </div>
-      </header>
+        </header>
 
-      {/* Date Filter Bar */}
-      <section aria-label="Date filter" className="rounded-lg border border-border bg-card p-3 sm:p-3.5 shadow-xs">
-        <DateFilter
-          value={dateFilter}
-          onChange={setDateFilter}
-          totalRecords={expenses.length}
-          filteredCount={filteredExpenses.length}
-        />
-      </section>
+        {/* Date Filter & Actions Bar: Button in the SAME row as filter */}
+        <section aria-label="Date filter and actions" className="rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between gap-2.5">
+            <DateFilter
+              value={dateFilter}
+              onChange={setDateFilter}
+              totalRecords={expenses.length}
+              filteredCount={filteredExpenses.length}
+            />
+            {isAdmin && (
+              <Button
+                onClick={() => setModalOpen(true)}
+                size="sm"
+                className="min-h-10 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-semibold shrink-0"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Add Common Expense
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs sm:hidden">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              {isFilterActive ? 'Filtered:' : 'Total common:'}{' '}
+              <strong className="font-mono text-xs text-foreground font-bold">{formatPaise(totalCommon)}</strong>
+            </span>
+            <Badge variant="outline" className="text-xs font-mono py-0.5">
+              {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
+            </Badge>
+          </div>
+        </section>
 
       {isLoading ? (
         <ResponsiveTableSkeleton rows={5} mobileCards={3} />

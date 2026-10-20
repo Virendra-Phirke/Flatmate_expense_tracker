@@ -146,69 +146,97 @@ export function PersonalExpensesPage({
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
+              <div className="text-right">
                 <div className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">
                   {isFilterActive ? 'Filtered total' : 'Total spent'}
                 </div>
                 <div className="text-lg font-bold font-mono text-foreground">{formatPaise(totalSpent)}</div>
               </div>
-              <Button
-                onClick={() => setModalOpen(true)}
-                className="min-h-11 text-xs sm:text-sm font-semibold"
-              >
-                <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                Add Expense
-              </Button>
             </div>
           </header>
 
-          {/* Standalone DateFilter bar */}
-          <section aria-label="Date filter" className="rounded-lg border border-border bg-card p-3 shadow-xs">
+          {/* Unified Filter and Action Bar: Button in the SAME row as filter */}
+          <section aria-label="Date filter and actions" className="rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between gap-2.5">
+              <DateFilter
+                value={activeDateFilter}
+                onChange={handleDateFilterChange}
+                totalRecords={expenses.length}
+                filteredCount={filteredExpenses.length}
+              />
+              <Button
+                onClick={() => setModalOpen(true)}
+                size="sm"
+                className="min-h-10 text-xs sm:text-sm font-semibold shrink-0"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+                Add Expense
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs sm:hidden">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                {isFilterActive ? 'Filtered:' : 'Total spent:'}{' '}
+                <strong className="font-mono text-xs text-foreground font-bold">{formatPaise(totalSpent)}</strong>
+              </span>
+              <Badge variant="outline" className="text-xs font-mono py-0.5">
+                {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
+              </Badge>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {hideTitle && (
+        <section aria-label="Date filter and actions" className="rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-xs space-y-2.5">
+          {/* Row 1: Filter on left, Button on right in the EXACT same row */}
+          <div className="flex items-center justify-between gap-2.5">
             <DateFilter
               value={activeDateFilter}
               onChange={handleDateFilterChange}
               totalRecords={expenses.length}
               filteredCount={filteredExpenses.length}
             />
-          </section>
-        </div>
-      )}
-
-      {hideTitle && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              {isFilterActive ? 'Filtered:' : 'Total personal:'}{' '}
-              <strong className="font-mono text-sm text-foreground">{formatPaise(totalSpent)}</strong>
-            </span>
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-xs font-mono',
-                isFilterActive && 'border-primary/40 bg-primary/5 text-primary'
-              )}
+            <Button
+              onClick={() => setModalOpen(true)}
+              size="sm"
+              className="min-h-10 text-xs sm:text-sm font-semibold shrink-0"
             >
-              {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
-            </Badge>
-            {isFilterActive && (
-              <button
-                type="button"
-                onClick={() => handleDateFilterChange({ mode: 'all' })}
-                className="text-xs text-muted-foreground hover:text-foreground underline decoration-dotted transition-colors"
-              >
-                Show all
-              </button>
-            )}
+              <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+              Add Expense
+            </Button>
           </div>
-          <Button
-            onClick={() => setModalOpen(true)}
-            size="sm"
-            className="min-h-10 text-xs sm:text-sm"
-          >
-            <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-            Add Expense
-          </Button>
-        </div>
+
+          {/* Row 2: Metric strip */}
+          <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                {isFilterActive ? 'Filtered:' : 'Total personal:'}
+              </span>
+              <strong className="font-mono text-xs sm:text-sm text-foreground">{formatPaise(totalSpent)}</strong>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className={cn(
+                  'text-xs font-mono py-0.5',
+                  isFilterActive && 'border-primary/40 bg-primary/5 text-primary'
+                )}
+              >
+                {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
+              </Badge>
+              {isFilterActive && (
+                <button
+                  type="button"
+                  onClick={() => handleDateFilterChange({ mode: 'all' })}
+                  className="text-xs text-muted-foreground hover:text-foreground underline decoration-dotted transition-colors"
+                >
+                  Show all
+                </button>
+              )}
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Main Content */}

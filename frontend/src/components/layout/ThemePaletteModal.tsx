@@ -21,14 +21,14 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[88vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-xl max-h-[88vh] overflow-y-auto p-4 sm:p-6 bg-card text-card-foreground border-border">
         <DialogHeader className="space-y-1.5 pb-2 text-left">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-primary">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Palette className="h-4 w-4" aria-hidden="true" />
               </span>
-              <DialogTitle className="text-base sm:text-lg font-bold">
+              <DialogTitle className="text-base sm:text-lg font-bold text-foreground tracking-tight">
                 Theme & Color Palettes
               </DialogTitle>
             </div>
@@ -37,7 +37,7 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
               variant="outline"
               size="sm"
               onClick={toggleDark}
-              className="h-8 gap-1.5 text-xs font-medium"
+              className="h-8 gap-1.5 text-xs font-semibold border-border text-foreground hover:bg-muted active:scale-95 transition-transform"
             >
               {isDark ? (
                 <>
@@ -66,10 +66,10 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
                 key={p.id}
                 type="button"
                 onClick={() => setPalette(p.id)}
-                className={`group relative flex flex-col text-left rounded-lg border p-3.5 transition-[color,background-color,border-color,box-shadow] duration-100 ease-out text-foreground ${
+                className={`group relative flex flex-col text-left rounded-lg border p-3.5 transition-colors duration-150 active:scale-[0.99] text-card-foreground ${
                   isSelected
-                    ? 'border-primary ring-2 ring-primary/30 bg-accent/40 shadow-sm'
-                    : 'border-border bg-card hover:border-primary/50 hover:bg-muted/40'
+                    ? 'border-primary ring-2 ring-primary/30 bg-primary/5 shadow-xs'
+                    : 'border-border bg-card hover:border-primary/50 hover:bg-muted/30'
                 }`}
               >
                 {/* Active check pill */}
@@ -82,21 +82,21 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
                 {/* Color swatches preview bar */}
                 <div className="flex items-center gap-1.5 mb-2.5">
                   <span
-                    className="h-6 w-6 rounded-lg shadow-xs shrink-0 border border-black/10"
+                    className="h-6 w-6 rounded-md shadow-xs shrink-0 border border-black/10"
                     style={{ backgroundColor: p.primaryHex }}
                     title={`Primary: ${p.primaryHex}`}
                   />
                   <span
-                    className="h-6 w-6 rounded-lg shadow-xs shrink-0 border border-black/10"
+                    className="h-6 w-6 rounded-md shadow-xs shrink-0 border border-black/10"
                     style={{ backgroundColor: p.accentHex }}
                     title={`Accent: ${p.accentHex}`}
                   />
                   <span
-                    className="h-6 w-6 rounded-lg shadow-xs shrink-0 border border-black/10"
+                    className="h-6 w-6 rounded-md shadow-xs shrink-0 border border-black/10"
                     style={{ backgroundColor: p.bgHex }}
                     title={`Background: ${p.bgHex}`}
                   />
-                  <span className="ml-auto text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                  <span className="ml-auto text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
                     {p.primaryHex}
                   </span>
                 </div>
@@ -125,7 +125,7 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
 
                 {/* Live Action footer */}
                 <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-[11px]">
-                  <span className={isSelected ? 'font-semibold text-primary' : 'text-muted-foreground'}>
+                  <span className={isSelected ? 'font-bold text-primary' : 'text-muted-foreground'}>
                     {isSelected ? '✓ Active on app' : 'Click to preview'}
                   </span>
                   <span

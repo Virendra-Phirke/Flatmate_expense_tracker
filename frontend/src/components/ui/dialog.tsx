@@ -37,7 +37,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Mobile: fixed to bottom, full-width bottom sheet
-        'fixed z-50 bg-card border-border shadow-2xl duration-200',
+        'fixed z-50 bg-card border-border text-card-foreground shadow-2xl duration-200',
         'inset-x-0 bottom-0 rounded-t-xl border-t px-0 pb-0',
         'max-h-[90dvh] overflow-y-auto',
         // sm+: centred modal

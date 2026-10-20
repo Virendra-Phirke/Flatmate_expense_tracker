@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { PersonalExpensesPage } from './PersonalExpensesPage';
 import { PurchasesMadePage } from './PurchasesMadePage';
 import { Receipt, ShoppingBag } from '@/components/ui/icons';
-import { DateFilter, DateFilterValue } from '@/components/ui/DateFilter';
+import { DateFilterValue } from '@/components/ui/DateFilter';
 
 interface ExpensesPageProps {
   initialSubTab?: 'personal' | 'purchases_made';
@@ -59,11 +59,6 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
           </button>
         </div>
       </header>
-
-      {/* Date Filter Bar */}
-      <section aria-label="Date filter" className="rounded-lg border border-border bg-card p-3 sm:p-3.5 shadow-xs">
-        <DateFilter value={dateFilter} onChange={setDateFilter} />
-      </section>
 
       {/* Render sub-view */}
       {subTab === 'personal' ? (
