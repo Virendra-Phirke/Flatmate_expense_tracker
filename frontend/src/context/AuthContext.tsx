@@ -7,6 +7,7 @@ interface AuthContextType {
   user: CurrentUser | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
+  biometricLogin: (username: string, credentialId?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setPasswordChanged: () => void;
@@ -69,6 +70,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const biometricLogin = async (username: string, credentialId?: string) => {
+    const res = await api<{ success: boolean; user: any; token?: string }>('POST', '/auth/biometric-login', {
+      username,
+      credentialId,
+    });
+    if (res.token) {
+      setAuthToken(res.token);
+    }
+    if (res.user) {
+      setUser({
+        id: res.user.id,
+        username: res.user.username,
+        fullName: res.user.fullName || res.user.full_name,
+        role: res.user.role,
+        householdId: res.user.householdId || res.user.household_id,
+        householdName: res.user.householdName || res.user.household_name || 'Household',
+        mustChangePassword: !!res.user.mustChangePassword,
+        authenticated: true,
+      });
+    }
+  };
+
   const logout = async () => {
     try {
       await api('POST', '/auth/logout');
@@ -91,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         login,
+        biometricLogin,
         logout,
         refreshUser: fetchCurrentUser,
         setPasswordChanged,

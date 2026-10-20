@@ -49,6 +49,10 @@ export function getApiBase(): string {
   if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
     let url = envUrl.trim().replace(/\/$/, '');
     if (url.endsWith('/api')) url = url.slice(0, -4);
+    // Automatically upgrade non-localhost insecure HTTP URLs to secure HTTPS
+    if (url.startsWith('http://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+      url = 'https://' + url.slice(7);
+    }
     return url;
   }
 

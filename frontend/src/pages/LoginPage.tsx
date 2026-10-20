@@ -3,15 +3,49 @@ import { useAuth } from '@/context/AuthContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Home, Eye, EyeOff, Loader2, AlertCircle, Shield } from '@/components/ui/icons';
+import { Home, Eye, EyeOff, Loader2, AlertCircle, Shield, Fingerprint, Lock } from '@/components/ui/icons';
+import {
+  isBiometricAvailable,
+  getRegisteredBiometric,
+  authenticateWithBiometrics,
+  StoredBiometricCredential,
+} from '@/lib/biometrics';
+import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
+import { TermsPage } from '@/pages/TermsPage';
+import { SecurityPage } from '@/pages/SecurityPage';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, biometricLogin } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [registeredBiometric, setRegisteredBiometric] = useState<StoredBiometricCredential | null>(null);
+  const [legalView, setLegalView] = useState<'login' | 'privacy' | 'terms' | 'security'>('login');
+
+  React.useEffect(() => {
+    async function checkBio() {
+      const avail = await isBiometricAvailable();
+      setBiometricAvailable(avail);
+      setRegisteredBiometric(getRegisteredBiometric());
+    }
+    checkBio();
+  }, []);
+
+  const handleBiometricLogin = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const bio = await authenticateWithBiometrics();
+      await biometricLogin(bio.username, bio.credentialId);
+    } catch (err: any) {
+      setError(err.message || 'Fingerprint verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +60,16 @@ export function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (legalView === 'privacy') {
+    return <PrivacyPolicyPage onBack={() => setLegalView('login')} />;
+  }
+  if (legalView === 'terms') {
+    return <TermsPage onBack={() => setLegalView('login')} />;
+  }
+  if (legalView === 'security') {
+    return <SecurityPage onBack={() => setLegalView('login')} />;
+  }
 
   return (
     <main className="min-h-screen min-h-[100dvh] w-full flex items-center justify-center px-3 xs:px-4 py-8 bg-background text-foreground">
@@ -124,12 +168,61 @@ export function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-border flex items-center justify-center text-xs text-muted-foreground gap-1.5">
-              <Shield className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Household data is private to active members</span>
+            {/* Biometric / Fingerprint Quick Unlock for Mobile Devices */}
+            {biometricAvailable && registeredBiometric && (
+              <div className="mt-4 pt-3 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBiometricLogin}
+                  disabled={loading}
+                  className="w-full h-11 border-primary/40 bg-primary/5 hover:bg-primary/10 text-primary font-semibold rounded-lg flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                >
+                  <Fingerprint className="h-5 w-5" />
+                  <span>Unlock with Fingerprint (@{registeredBiometric.username})</span>
+                </Button>
+              </div>
+            )}
+
+            <div className="mt-6 pt-4 border-t border-border flex flex-col items-center justify-center text-xs text-muted-foreground gap-2">
+              <div className="flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                <span>Household data is private to active members</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground/80">
+                <Lock className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                <span>Enforced HTTPS TLS 1.3 Encryption</span>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Legal & Compliance Footer Links */}
+        <div className="mt-4 flex items-center justify-center gap-2.5 text-xs text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setLegalView('privacy')}
+            className="hover:text-primary transition-colors hover:underline"
+          >
+            Privacy Policy
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => setLegalView('terms')}
+            className="hover:text-primary transition-colors hover:underline"
+          >
+            Terms of Service
+          </button>
+          <span>·</span>
+          <button
+            type="button"
+            onClick={() => setLegalView('security')}
+            className="hover:text-primary transition-colors hover:underline"
+          >
+            Security
+          </button>
+        </div>
       </div>
     </main>
   );

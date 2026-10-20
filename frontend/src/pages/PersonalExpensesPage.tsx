@@ -42,6 +42,7 @@ import {
   formatFilterLabel,
   getDateFilterRange,
 } from '@/components/ui/DateFilter';
+import { PersonalBudgetCard } from '@/components/personal/PersonalBudgetCard';
 
 import { ResponsivePagination } from '@/components/ui/pagination';
 
@@ -171,6 +172,9 @@ export function PersonalExpensesPage({
               </div>
             </div>
           </header>
+
+          {/* Personal Monthly Budget Pacing Card */}
+          <PersonalBudgetCard expenses={expenses} />
 
           {/* Unified Filter and Action Bar: Button in the SAME row as filter */}
           <section aria-label="Date filter and actions" className="rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-xs space-y-2.5">

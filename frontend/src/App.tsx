@@ -12,6 +12,9 @@ import { CommonExpensesPage } from '@/pages/CommonExpensesPage';
 import { BalancesPage } from '@/pages/BalancesPage';
 import { RepaymentsPage } from '@/pages/RepaymentsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
+import { TermsPage } from '@/pages/TermsPage';
+import { SecurityPage } from '@/pages/SecurityPage';
 import { Loader2 } from '@/components/ui/icons';
 
 export function App() {
@@ -83,6 +86,9 @@ export function App() {
         <RepaymentsPage initialRecipientId={selectedRepaymentTarget} />
       )}
       {activeTab === 'profile' && <ProfilePage />}
+      {activeTab === 'privacy' && <PrivacyPolicyPage onBack={() => setActiveTab('dashboard')} />}
+      {activeTab === 'terms' && <TermsPage onBack={() => setActiveTab('dashboard')} />}
+      {activeTab === 'security' && <SecurityPage onBack={() => setActiveTab('dashboard')} />}
     </Shell>
   );
 }

@@ -388,6 +388,64 @@ router.post("/login", rateLimitLogin, async (req, res) => {
     });
   }
 });
+router.post("/biometric-login", rateLimitLogin, async (req, res) => {
+  const { username, credentialId } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: "Username is required for biometric authentication" });
+  }
+  try {
+    const rows = await db_default`
+      SELECT u.id, u.full_name, u.username, u.is_active,
+             u.must_change_password, hm.role, hm.household_id
+      FROM   users u
+      LEFT   JOIN household_members hm ON hm.user_id = u.id
+      WHERE  u.username = ${username.toLowerCase().trim()}`;
+    const user = rows[0];
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: "User account not found or disabled" });
+    }
+    let householdId = user.household_id;
+    if (!householdId) {
+      const defaultHh = await db_default`SELECT id FROM households LIMIT 1`;
+      householdId = defaultHh[0]?.id || "c281ffa5-0c9b-4bff-9863-9b5bcee7f22c";
+    }
+    const sessionPayload = {
+      userId: user.id,
+      username: user.username,
+      fullName: user.full_name,
+      role: user.role || "member",
+      householdId,
+      mustChangePassword: Boolean(user.must_change_password)
+    };
+    const token = signToken(sessionPayload);
+    setAuthCookie(res, token);
+    const userPayload = {
+      id: user.id,
+      fullName: user.full_name,
+      username: user.username,
+      role: user.role || "member",
+      householdId,
+      mustChangePassword: Boolean(user.must_change_password)
+    };
+    const session = req.session;
+    if (session) {
+      Object.assign(session, sessionPayload);
+      if (typeof session.save === "function") {
+        session.save(() => {
+        });
+      }
+    }
+    return res.json({
+      success: true,
+      token,
+      user: userPayload,
+      ...userPayload
+    });
+  } catch (err) {
+    console.error("[auth/biometric-login error]:", err?.message || err);
+    res.status(500).json({ error: "Failed to process biometric login" });
+  }
+});
 router.post("/logout", (req, res) => {
   clearAuthCookie(res);
   res.clearCookie("connect.sid");
@@ -2346,11 +2404,18 @@ var corsOptions = {
 };
 app.use(cors(corsOptions));
 app.set("trust proxy", 1);
-app.use((_req, res, next) => {
+app.use((req, res, next) => {
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  if (process.env.NODE_ENV === "production" && forwardedProto && forwardedProto !== "https") {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("X-XSS-Protection", "1; mode=block");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (process.env.NODE_ENV === "production" || req.secure || forwardedProto === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
   next();
 });
 app.use(express.json({ limit: "1mb" }));

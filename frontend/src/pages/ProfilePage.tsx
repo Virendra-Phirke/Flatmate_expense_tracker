@@ -20,8 +20,16 @@ import {
   Sun,
   Moon,
   Check,
+  Fingerprint,
 } from '@/components/ui/icons';
 import { useTheme, THEME_PALETTES } from '@/context/ThemeContext';
+import {
+  isBiometricAvailable,
+  getRegisteredBiometric,
+  registerBiometrics,
+  removeRegisteredBiometric,
+  StoredBiometricCredential,
+} from '@/lib/biometrics';
 
 import { ProfileSkeleton } from '@/components/ui/skeleton';
 
@@ -30,6 +38,42 @@ export function ProfilePage() {
   const { palette, setPalette, isDark, toggleDark } = useTheme();
   const queryClient = useQueryClient();
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+
+  // Biometric state
+  const [bioSupported, setBioSupported] = useState(false);
+  const [enrolledBio, setEnrolledBio] = useState<StoredBiometricCredential | null>(null);
+  const [bioMsg, setBioMsg] = useState<{ text: string; error?: boolean } | null>(null);
+  const [bioLoading, setBioLoading] = useState(false);
+
+  React.useEffect(() => {
+    async function checkBio() {
+      const avail = await isBiometricAvailable();
+      setBioSupported(avail);
+      setEnrolledBio(getRegisteredBiometric());
+    }
+    checkBio();
+  }, []);
+
+  const handleEnrollBiometric = async () => {
+    if (!user) return;
+    setBioLoading(true);
+    setBioMsg(null);
+    try {
+      await registerBiometrics(user.username, user.id, user.fullName || user.username);
+      setEnrolledBio(getRegisteredBiometric());
+      setBioMsg({ text: 'Fingerprint enrolled successfully on this device!' });
+    } catch (err: any) {
+      setBioMsg({ text: err.message || 'Failed to register fingerprint', error: true });
+    } finally {
+      setBioLoading(false);
+    }
+  };
+
+  const handleRemoveBiometric = () => {
+    removeRegisteredBiometric();
+    setEnrolledBio(null);
+    setBioMsg({ text: 'Fingerprint removed from this device.' });
+  };
 
   // UPI Form state
   const [upiId, setUpiId] = useState('');
@@ -137,6 +181,69 @@ export function ProfilePage() {
                   Change Password
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Biometric / Fingerprint Unlock Card */}
+          <Card className="border-border bg-card">
+            <CardHeader className="p-4 pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-foreground text-xs font-semibold">
+                  <Fingerprint className="h-4 w-4 text-primary" />
+                  <span>Fingerprint & Biometrics</span>
+                </div>
+                {enrolledBio && (
+                  <Badge variant="outline" className="text-xs bg-positive-soft text-positive border-positive/30 font-mono">
+                    Enrolled
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-1 space-y-2.5 text-xs text-muted-foreground">
+              <p>
+                {bioSupported
+                  ? 'Use your Android fingerprint scanner or device biometrics for instant 1-touch login without typing your password.'
+                  : 'Biometric platform authenticator is not supported on this browser or desktop device.'}
+              </p>
+
+              {bioMsg && (
+                <div
+                  className={`p-2 rounded-md border text-xs ${
+                    bioMsg.error
+                      ? 'border-negative/30 bg-negative-soft text-negative'
+                      : 'border-positive/30 bg-positive-soft text-positive'
+                  }`}
+                >
+                  {bioMsg.text}
+                </div>
+              )}
+
+              {bioSupported && (
+                <div className="pt-1">
+                  {enrolledBio ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRemoveBiometric}
+                      className="w-full h-9 text-xs border-negative/30 text-negative hover:bg-negative-soft/50"
+                    >
+                      Remove Fingerprint from this Device
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={bioLoading}
+                      onClick={handleEnrollBiometric}
+                      className="w-full h-9 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                    >
+                      <Fingerprint className="h-4 w-4" />
+                      {bioLoading ? 'Scanning...' : 'Enable Fingerprint Unlock'}
+                    </Button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 

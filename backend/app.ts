@@ -59,12 +59,29 @@ app.use(cors(corsOptions));
 // ── Reverse Proxy Trust (AUD-09) ──────────────────────────────────────────────
 app.set('trust proxy', 1);
 
-// ── Security Headers (AUD-09 / Clickjacking & MIME-sniffing protection) ───────
-app.use((_req: Request, res: Response, next: NextFunction) => {
+// ── HTTPS Enforcement & Security Headers ──────────────────────────────────────
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Enforce HTTPS redirect in production if forwarded through reverse proxy as HTTP
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  if (
+    process.env.NODE_ENV === 'production' &&
+    forwardedProto &&
+    forwardedProto !== 'https'
+  ) {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+
+  // Security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  // Enforce HSTS (Strict-Transport-Security) for 1 year with subdomains in production or HTTPS
+  if (process.env.NODE_ENV === 'production' || req.secure || forwardedProto === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+
   next();
 });
 

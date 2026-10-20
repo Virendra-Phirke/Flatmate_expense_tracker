@@ -95,6 +95,74 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
   }
 });
 
+// ── POST /api/auth/biometric-login ───────────────────────────────────────────
+router.post('/biometric-login', rateLimitLogin, async (req: Request, res: Response) => {
+  const { username, credentialId } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: 'Username is required for biometric authentication' });
+  }
+
+  try {
+    const rows = await sql`
+      SELECT u.id, u.full_name, u.username, u.is_active,
+             u.must_change_password, hm.role, hm.household_id
+      FROM   users u
+      LEFT   JOIN household_members hm ON hm.user_id = u.id
+      WHERE  u.username = ${username.toLowerCase().trim()}`;
+
+    const user = rows[0];
+
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: 'User account not found or disabled' });
+    }
+
+    let householdId = user.household_id;
+    if (!householdId) {
+      const defaultHh = await sql`SELECT id FROM households LIMIT 1`;
+      householdId = defaultHh[0]?.id || 'c281ffa5-0c9b-4bff-9863-9b5bcee7f22c';
+    }
+
+    const sessionPayload: UserSessionPayload = {
+      userId:             user.id,
+      username:           user.username,
+      fullName:           user.full_name,
+      role:               user.role || 'member',
+      householdId:        householdId,
+      mustChangePassword: Boolean(user.must_change_password),
+    };
+
+    const token = signToken(sessionPayload);
+    setAuthCookie(res, token);
+
+    const userPayload = {
+      id:                 user.id,
+      fullName:           user.full_name,
+      username:           user.username,
+      role:               user.role || 'member',
+      householdId:        householdId,
+      mustChangePassword: Boolean(user.must_change_password),
+    };
+
+    const session = (req as any).session;
+    if (session) {
+      Object.assign(session, sessionPayload);
+      if (typeof session.save === 'function') {
+        session.save(() => {});
+      }
+    }
+
+    return res.json({
+      success: true,
+      token,
+      user: userPayload,
+      ...userPayload,
+    });
+  } catch (err: any) {
+    console.error('[auth/biometric-login error]:', err?.message || err);
+    res.status(500).json({ error: 'Failed to process biometric login' });
+  }
+});
+
 // ── POST /api/auth/logout ────────────────────────────────────────────────────
 router.post('/logout', (req: Request, res: Response) => {
   clearAuthCookie(res);

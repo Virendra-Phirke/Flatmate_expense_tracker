@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { BalanceSummary } from '@/types';
@@ -6,20 +6,41 @@ import { formatPaise } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Scale, ArrowRight, ArrowUpRight, ArrowDownLeft, CheckCircle2, AlertCircle } from '@/components/ui/icons';
+import {
+  Scale,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownLeft,
+  CheckCircle2,
+  AlertCircle,
+  MessageSquare,
+  Share2,
+} from '@/components/ui/icons';
 
 import { BalancesSkeleton } from '@/components/ui/skeleton';
 import { getSyncCachedData } from '@/lib/idb';
+import { useAuth } from '@/context/AuthContext';
+import { openWhatsAppReminder } from '@/lib/whatsapp';
+import { MonthlyStatementModal } from '@/components/analytics/MonthlyStatementModal';
 
 interface BalancesPageProps {
   onNavigateToRepayments: (targetMemberId?: string) => void;
 }
 
 export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
+  const { user } = useAuth();
+  const [statementModalOpen, setStatementModalOpen] = useState(false);
+
   const { data: summary, isLoading, error, refetch } = useQuery<BalanceSummary>({
     queryKey: ['balances_summary'],
     queryFn: () => api<BalanceSummary>('GET', '/balances/summary'),
     initialData: () => getSyncCachedData<BalanceSummary>('/balances/summary'),
+  });
+
+  const { data: myUpi } = useQuery<{ upi_id: string } | null>({
+    queryKey: ['my_upi_profile'],
+    queryFn: () => api('GET', '/profile/upi'),
+    staleTime: 5 * 60 * 1000,
   });
 
   if (isLoading && !summary) {
@@ -57,10 +78,21 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
             Bilateral netting across household bills and individual flatmate advances.
           </p>
         </div>
-        <Button onClick={() => onNavigateToRepayments()} className="w-full sm:w-auto h-10 text-xs sm:text-sm font-semibold">
-          Initiate repayment
-          <ArrowRight className="h-3.5 w-3.5 shrink-0 ml-1.5" aria-hidden="true" />
-        </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setStatementModalOpen(true)}
+            className="h-10 text-xs sm:text-sm font-semibold border-border hover:bg-muted"
+          >
+            <Share2 className="h-3.5 w-3.5 shrink-0 mr-1.5" aria-hidden="true" />
+            Share Statement
+          </Button>
+          <Button onClick={() => onNavigateToRepayments()} className="h-10 text-xs sm:text-sm font-semibold">
+            Initiate repayment
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 ml-1.5" aria-hidden="true" />
+          </Button>
+        </div>
       </header>
 
       {/* ── Net position card ────────────────────────────── */}
@@ -202,15 +234,36 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
                           : `Confirmed ${formatPaise(credit.confirmedPaid)} of ${formatPaise(credit.grossOwed)}`}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="amount-display text-xs xs:text-sm font-bold text-positive">{formatPaise(credit.outstanding)}</span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="amount-display text-xs xs:text-sm font-bold text-positive mr-0.5">
+                        {formatPaise(credit.outstanding)}
+                      </span>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => onNavigateToRepayments(credit.debtorId)}
-                        className="h-8 px-3 text-xs font-semibold"
+                        onClick={() =>
+                          openWhatsAppReminder({
+                            debtorName: credit.debtorName,
+                            amountPaise: credit.outstanding,
+                            myUpiId: myUpi?.upi_id,
+                            myFullName: user?.fullName,
+                            householdName: user?.householdName,
+                          })
+                        }
+                        className="h-8 px-2.5 text-xs font-semibold text-positive border-positive/30 hover:bg-positive-soft/50 active:scale-95 transition-transform"
+                        title="Send reminder on WhatsApp with UPI payment link"
                       >
-                        Remind
+                        <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onNavigateToRepayments(credit.debtorId)}
+                        className="h-8 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground active:scale-95"
+                        title="View settlement details"
+                      >
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -220,6 +273,13 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
           </CardContent>
         </Card>
       </section>
+
+      {/* Monthly Settlement Statement Modal */}
+      <MonthlyStatementModal
+        open={statementModalOpen}
+        onOpenChange={setStatementModalOpen}
+        summary={summary}
+      />
     </main>
   );
 }

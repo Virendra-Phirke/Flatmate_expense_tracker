@@ -18,6 +18,8 @@ import {
   Palette,
   ChartPie,
   Key,
+  Shield,
+  Lock,
 } from '@/components/ui/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +34,7 @@ import {
 import { VoiceAssistantModal } from '@/components/voice/VoiceAssistantModal';
 import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 import { ThemePaletteModal } from '@/components/layout/ThemePaletteModal';
+import { MobileSpeedDialFAB } from '@/components/layout/MobileSpeedDialFAB';
 import { OfflineSyncBanner } from '@/components/ui/OfflineSyncBanner';
 import { useTheme } from '@/context/ThemeContext';
 import { HouseholdMember, Category } from '@/types';
@@ -48,7 +51,10 @@ export type NavTab =
   | 'common'
   | 'balances'
   | 'repayments'
-  | 'profile';
+  | 'profile'
+  | 'privacy'
+  | 'terms'
+  | 'security';
 
 interface ShellProps {
   activeTab: NavTab;
@@ -84,6 +90,9 @@ const pageTitles: Record<NavTab, string> = {
   balances: 'Balances',
   repayments: 'Repayments',
   profile: 'Profile & UPI',
+  privacy: 'Privacy Policy',
+  terms: 'Terms of Service',
+  security: 'Security Architecture',
 };
 
 export function Shell({ activeTab, onTabChange, children }: ShellProps) {
@@ -317,6 +326,19 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
                 <span>Voice Assistant</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onTabChange('privacy')}>
+                <Shield className="h-3.5 w-3.5 text-primary" />
+                <span>Privacy Policy</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onTabChange('terms')}>
+                <Scale className="h-3.5 w-3.5 text-primary" />
+                <span>Terms of Service</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onTabChange('security')}>
+                <Lock className="h-3.5 w-3.5 text-primary" />
+                <span>Security Architecture</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-negative focus:text-negative">
                 <LogOut className="h-3.5 w-3.5" />
                 <span>Sign out</span>
@@ -406,6 +428,12 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
           </div>
         </main>
       </div>
+
+      {/* ── Mobile Floating Action Speed-Dial (FAB) ────────────── */}
+      <MobileSpeedDialFAB
+        onNavigate={goTo}
+        onOpenVoice={() => setVoiceModalOpen(true)}
+      />
 
       {/* ── Mobile bottom navigation dock ────────────────────────────── */}
       <nav
@@ -591,6 +619,53 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
                   className="h-3.5 w-3.5 rounded-full border border-black/10 shrink-0"
                   style={{ backgroundColor: currentPalette.primaryHex }}
                 />
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+              </button>
+
+              {/* Legal & Security */}
+              <div className="pt-3 pb-1">
+                <div className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Legal & Security</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => goTo('privacy')}
+                className={
+                  'flex min-h-[46px] w-full items-center gap-3 rounded-lg px-3 text-left transition-colors active:scale-[0.98] ' +
+                  (activeTab === 'privacy' ? 'bg-brand-soft text-primary font-semibold' : 'hover:bg-muted text-foreground')
+                }
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-foreground">
+                  <Shield className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                </span>
+                <span className="flex-1 text-xs font-medium truncate">Privacy Policy</span>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => goTo('terms')}
+                className={
+                  'flex min-h-[46px] w-full items-center gap-3 rounded-lg px-3 text-left transition-colors active:scale-[0.98] ' +
+                  (activeTab === 'terms' ? 'bg-brand-soft text-primary font-semibold' : 'hover:bg-muted text-foreground')
+                }
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-foreground">
+                  <Scale className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                </span>
+                <span className="flex-1 text-xs font-medium truncate">Terms of Service</span>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => goTo('security')}
+                className={
+                  'flex min-h-[46px] w-full items-center gap-3 rounded-lg px-3 text-left transition-colors active:scale-[0.98] ' +
+                  (activeTab === 'security' ? 'bg-brand-soft text-primary font-semibold' : 'hover:bg-muted text-foreground')
+                }
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-foreground">
+                  <Lock className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                </span>
+                <span className="flex-1 text-xs font-medium truncate">Security Architecture</span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
               </button>
 

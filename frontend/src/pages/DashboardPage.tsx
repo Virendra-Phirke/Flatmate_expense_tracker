@@ -20,10 +20,12 @@ import {
   ArrowRight,
   AlertCircle,
   ChevronRight,
+  MessageSquare,
 } from '@/components/ui/icons';
 
 import { DashboardSkeleton } from '@/components/ui/skeleton';
 import { getSyncCachedData } from '@/lib/idb';
+import { openWhatsAppReminder } from '@/lib/whatsapp';
 
 interface ActivityItem {
   id: string;
@@ -53,6 +55,12 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
     queryFn: () => api<BalanceSummary>('GET', '/balances/summary'),
     initialData: () => getSyncCachedData<BalanceSummary>('/balances/summary'),
     staleTime: 60 * 1000,
+  });
+
+  const { data: myUpi } = useQuery<{ upi_id: string } | null>({
+    queryKey: ['my_upi_profile'],
+    queryFn: () => api('GET', '/profile/upi'),
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: activity = [], isLoading: isActivityLoading } = useQuery<ActivityItem[]>({
@@ -317,13 +325,31 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
                           : `Confirmed ${formatPaise(credit.confirmedPaid)} of ${formatPaise(credit.grossOwed)}`}
                       </p>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <span className="amount-display text-xs xs:text-sm font-bold text-positive">{formatPaise(credit.outstanding)}</span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="amount-display text-xs xs:text-sm font-bold text-positive mr-1">{formatPaise(credit.outstanding)}</span>
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() =>
+                          openWhatsAppReminder({
+                            debtorName: credit.debtorName,
+                            amountPaise: credit.outstanding,
+                            myUpiId: myUpi?.upi_id,
+                            myFullName: user?.fullName,
+                            householdName: user?.householdName,
+                          })
+                        }
+                        className="h-8 px-2.5 text-xs font-semibold text-positive border-positive/30 hover:bg-positive-soft/50 active:scale-95 transition-transform"
+                        title="Send WhatsApp reminder with UPI link"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5 mr-1" />
+                        WhatsApp
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => onNavigate('repayments')}
-                        className="h-8 px-3 text-xs font-semibold"
+                        className="h-8 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground active:scale-95"
                       >
                         View
                       </Button>

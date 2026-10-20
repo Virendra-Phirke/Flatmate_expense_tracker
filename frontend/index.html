@@ -1,36 +1,39 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="teal">
-  <head>
-    <script>
-      (function() {
-        try {
-          var p = localStorage.getItem('flatmate_theme_palette');
-          document.documentElement.setAttribute('data-theme', p || 'teal');
-          var d = localStorage.getItem('flatmate_theme_dark');
-          if (d === 'true') {
-            document.documentElement.classList.add('dark');
-          } else if (d === 'false') {
-            document.documentElement.classList.remove('dark');
-          }
-        } catch (e) {}
-      })();
-    </script>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flatmate Expenses | Shared Household Ledger</title>
-    <meta name="description" content="A clear, private way for flatmates to track shared expenses, balances, and repayments." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons@3.3.1/css/all/all.min.css" />
-    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
-    <meta name="theme-color" content="#020617" />
-  </head>
-  <body class="font-sans antialiased min-h-screen selection:bg-primary/20 selection:text-foreground">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <script>
+    (function () {
+      try {
+        var p = localStorage.getItem('flatmate_theme_palette');
+        document.documentElement.setAttribute('data-theme', p || 'teal');
+        var d = localStorage.getItem('flatmate_theme_dark');
+        if (d === 'true') {
+          document.documentElement.classList.add('dark');
+        } else if (d === 'false') {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flatmate Expenses | Shared Household Ledger</title>
+  <meta name="description"
+    content="A clear, private way for flatmates to track shared expenses, balances, and repayments." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400..700;1,6..72,400..700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons@3.3.1/css/all/all.min.css" />
+  <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg" />
+  <meta name="theme-color" content="#020617" />
+</head>
+
+<body class="font-sans antialiased min-h-screen selection:bg-primary/20 selection:text-foreground">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
