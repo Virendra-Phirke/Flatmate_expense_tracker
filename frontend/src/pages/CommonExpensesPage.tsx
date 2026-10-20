@@ -38,10 +38,37 @@ import {
 } from '@/components/ui/DateFilter';
 import { ResponsivePagination } from '@/components/ui/pagination';
 
-export function CommonExpensesPage() {
+interface CommonExpensesPageProps {
+  openAddModal?: number;
+  onAddModalClose?: () => void;
+}
+
+export function CommonExpensesPage({
+  openAddModal,
+  onAddModalClose,
+}: CommonExpensesPageProps = {}) {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (openAddModal) {
+      if (isAdmin) {
+        setModalOpen(true);
+      } else {
+        alert('Only household admins can log shared communal bills. Please ask an admin to add this expense.');
+        if (onAddModalClose) onAddModalClose();
+      }
+    }
+  }, [openAddModal, isAdmin]);
+
+  const handleModalChange = (open: boolean) => {
+    setModalOpen(open);
+    if (!open && onAddModalClose) {
+      onAddModalClose();
+    }
+  };
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ mode: 'all' });
 
   // Pagination state (10 items per page optimal for mobile Android viewport)
@@ -173,7 +200,6 @@ export function CommonExpensesPage() {
 
   const totalCommon = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_paise || 0), 0);
   const isFilterActive = dateFilter.mode !== 'all';
-  const isAdmin = user?.role === 'admin';
 
   return (
     <main className="space-y-6">
@@ -392,7 +418,7 @@ export function CommonExpensesPage() {
 
       {/* Add Common Expense Modal (Admin Only) */}
       {isAdmin && (
-        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <Dialog open={modalOpen} onOpenChange={handleModalChange}>
           <DialogContent className="max-w-xl bg-card border-border text-foreground max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">

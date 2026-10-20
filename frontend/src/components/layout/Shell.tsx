@@ -59,7 +59,7 @@ export type NavTab =
 
 interface ShellProps {
   activeTab: NavTab;
-  onTabChange: (tab: NavTab) => void;
+  onTabChange: (tab: NavTab, openModal?: boolean) => void;
   children: React.ReactNode;
 }
 
@@ -147,8 +147,8 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
   const isMoreContext =
     activeTab === 'purchases_for_me' || activeTab === 'common' || activeTab === 'profile';
 
-  const goTo = (tab: NavTab) => {
-    onTabChange(tab);
+  const goTo = (tab: NavTab, openModal: boolean = false) => {
+    onTabChange(tab, openModal);
     setMobileMoreOpen(false);
   };
 

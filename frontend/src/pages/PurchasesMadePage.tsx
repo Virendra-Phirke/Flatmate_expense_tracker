@@ -51,12 +51,16 @@ interface PurchasesMadePageProps {
   hideTitle?: boolean;
   dateFilter?: DateFilterValue;
   onDateFilterChange?: (filter: DateFilterValue) => void;
+  openAddModal?: number;
+  onAddModalClose?: () => void;
 }
 
 export function PurchasesMadePage({
   hideTitle = false,
   dateFilter,
   onDateFilterChange,
+  openAddModal,
+  onAddModalClose,
 }: PurchasesMadePageProps = {}) {
   const queryClient = useQueryClient();
   const [internalDateFilter, setInternalDateFilter] = useState<DateFilterValue>({ mode: 'all' });
@@ -64,6 +68,19 @@ export function PurchasesMadePage({
   const handleDateFilterChange = onDateFilterChange || setInternalDateFilter;
 
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (openAddModal) {
+      setModalOpen(true);
+    }
+  }, [openAddModal]);
+
+  const handleModalChange = (open: boolean) => {
+    setModalOpen(open);
+    if (!open && onAddModalClose) {
+      onAddModalClose();
+    }
+  };
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(getLocalDateString());
   const [notes, setNotes] = useState('');
@@ -481,7 +498,7 @@ export function PurchasesMadePage({
       )}
 
       {/* Add On-Behalf Purchase Modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={handleModalChange}>
         <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">

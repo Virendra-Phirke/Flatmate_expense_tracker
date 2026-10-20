@@ -35,6 +35,23 @@ export function App() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [selectedRepaymentTarget, setSelectedRepaymentTarget] = useState<string | undefined>();
+  const [modalTrigger, setModalTrigger] = useState<{
+    type: 'personal' | 'purchases_made' | 'common';
+    id: number;
+  } | null>(null);
+
+  const handleTabChange = (tab: NavTab, openModal: boolean = false) => {
+    setActiveTab(tab);
+    if (openModal) {
+      if (tab === 'personal' || tab === 'expenses') {
+        setModalTrigger({ type: 'personal', id: Date.now() });
+      } else if (tab === 'purchases_made') {
+        setModalTrigger({ type: 'purchases_made', id: Date.now() });
+      } else if (tab === 'common') {
+        setModalTrigger({ type: 'common', id: Date.now() });
+      }
+    }
+  };
 
   // Background warm-up: prefetch core tabs once authenticated so navigation is instantaneous
   useEffect(() => {
@@ -71,7 +88,7 @@ export function App() {
   };
 
   return (
-    <Shell activeTab={activeTab} onTabChange={setActiveTab}>
+    <Shell activeTab={activeTab} onTabChange={handleTabChange}>
       <Suspense fallback={<TabFallback />}>
         {activeTab === 'dashboard' && (
           <DashboardPage
@@ -84,15 +101,28 @@ export function App() {
         )}
         {activeTab === 'analytics' && <AnalyticsPage />}
         {(activeTab === 'expenses' || activeTab === 'personal') && (
-          <ExpensesPage initialSubTab="personal" />
+          <ExpensesPage
+            initialSubTab="personal"
+            openAddModal={modalTrigger?.type === 'personal' ? modalTrigger.id : undefined}
+            onAddModalClose={() => setModalTrigger(null)}
+          />
         )}
         {activeTab === 'purchases_made' && (
-          <ExpensesPage initialSubTab="purchases_made" />
+          <ExpensesPage
+            initialSubTab="purchases_made"
+            openAddModal={modalTrigger?.type === 'purchases_made' ? modalTrigger.id : undefined}
+            onAddModalClose={() => setModalTrigger(null)}
+          />
         )}
         {activeTab === 'purchases_for_me' && (
           <PurchasesForMePage onNavigateToRepayments={() => navigateToRepayments()} />
         )}
-        {activeTab === 'common' && <CommonExpensesPage />}
+        {activeTab === 'common' && (
+          <CommonExpensesPage
+            openAddModal={modalTrigger?.type === 'common' ? modalTrigger.id : undefined}
+            onAddModalClose={() => setModalTrigger(null)}
+          />
+        )}
         {activeTab === 'balances' && (
           <BalancesPage onNavigateToRepayments={navigateToRepayments} />
         )}

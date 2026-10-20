@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/icons';
 
 interface MobileSpeedDialFABProps {
-  onNavigate: (tab: NavTab) => void;
+  onNavigate: (tab: NavTab, openModal?: boolean) => void;
   onOpenVoice: () => void;
 }
 
@@ -58,7 +58,7 @@ export function MobileSpeedDialFAB({
             {/* 2. Common Shared Bill */}
             <button
               type="button"
-              onClick={() => handleAction(() => onNavigate('common'))}
+              onClick={() => handleAction(() => onNavigate('common', true))}
               className="flex items-center gap-2.5 pl-3.5 pr-2.5 py-1.5 rounded-full bg-card border border-border shadow-lg text-foreground hover:bg-muted active:scale-95 transition-transform"
             >
               <span className="text-xs font-semibold">Common Shared Bill</span>
@@ -70,7 +70,7 @@ export function MobileSpeedDialFAB({
             {/* 3. Bought for Flatmate */}
             <button
               type="button"
-              onClick={() => handleAction(() => onNavigate('purchases_made'))}
+              onClick={() => handleAction(() => onNavigate('purchases_made', true))}
               className="flex items-center gap-2.5 pl-3.5 pr-2.5 py-1.5 rounded-full bg-card border border-border shadow-lg text-foreground hover:bg-muted active:scale-95 transition-transform"
             >
               <span className="text-xs font-semibold">Bought for Flatmate</span>
@@ -82,7 +82,7 @@ export function MobileSpeedDialFAB({
             {/* 4. Personal Expense */}
             <button
               type="button"
-              onClick={() => handleAction(() => onNavigate('personal'))}
+              onClick={() => handleAction(() => onNavigate('personal', true))}
               className="flex items-center gap-2.5 pl-3.5 pr-2.5 py-1.5 rounded-full bg-card border border-border shadow-lg text-foreground hover:bg-muted active:scale-95 transition-transform"
             >
               <span className="text-xs font-semibold">Personal Expense</span>

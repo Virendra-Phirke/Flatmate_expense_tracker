@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PersonalExpensesPage } from './PersonalExpensesPage';
 import { PurchasesMadePage } from './PurchasesMadePage';
 import { Receipt, ShoppingBag } from '@/components/ui/icons';
@@ -6,11 +6,21 @@ import { DateFilterValue } from '@/components/ui/DateFilter';
 
 interface ExpensesPageProps {
   initialSubTab?: 'personal' | 'purchases_made';
+  openAddModal?: number;
+  onAddModalClose?: () => void;
 }
 
-export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps = {}) {
+export function ExpensesPage({
+  initialSubTab = 'personal',
+  openAddModal,
+  onAddModalClose,
+}: ExpensesPageProps = {}) {
   const [subTab, setSubTab] = useState<'personal' | 'purchases_made'>(initialSubTab);
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ mode: 'all' });
+
+  useEffect(() => {
+    setSubTab(initialSubTab);
+  }, [initialSubTab]);
 
   return (
     <main className="space-y-6">
@@ -66,12 +76,16 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
           hideTitle
           dateFilter={dateFilter}
           onDateFilterChange={setDateFilter}
+          openAddModal={openAddModal}
+          onAddModalClose={onAddModalClose}
         />
       ) : (
         <PurchasesMadePage
           hideTitle
           dateFilter={dateFilter}
           onDateFilterChange={setDateFilter}
+          openAddModal={openAddModal}
+          onAddModalClose={onAddModalClose}
         />
       )}
     </main>

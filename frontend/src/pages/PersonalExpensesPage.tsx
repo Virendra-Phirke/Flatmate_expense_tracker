@@ -50,12 +50,16 @@ interface PersonalExpensesPageProps {
   hideTitle?: boolean;
   dateFilter?: DateFilterValue;
   onDateFilterChange?: (filter: DateFilterValue) => void;
+  openAddModal?: number;
+  onAddModalClose?: () => void;
 }
 
 export function PersonalExpensesPage({
   hideTitle = false,
   dateFilter,
   onDateFilterChange,
+  openAddModal,
+  onAddModalClose,
 }: PersonalExpensesPageProps = {}) {
   const queryClient = useQueryClient();
   const [internalDateFilter, setInternalDateFilter] = useState<DateFilterValue>({ mode: 'all' });
@@ -63,6 +67,19 @@ export function PersonalExpensesPage({
   const handleDateFilterChange = onDateFilterChange || setInternalDateFilter;
 
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (openAddModal) {
+      setModalOpen(true);
+    }
+  }, [openAddModal]);
+
+  const handleModalChange = (open: boolean) => {
+    setModalOpen(open);
+    if (!open && onAddModalClose) {
+      onAddModalClose();
+    }
+  };
   const [description, setDescription] = useState('');
   const [amountRupees, setAmountRupees] = useState('');
   const [categoryName, setCategoryName] = useState('Food & Dining');
@@ -425,7 +442,7 @@ export function PersonalExpensesPage({
 
 
       {/* Add Modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={handleModalChange}>
         <DialogContent className="max-w-md max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
