@@ -174,6 +174,7 @@ export function PurchasesMadePage({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_for_me'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
       setModalOpen(false);
@@ -198,6 +199,7 @@ export function PurchasesMadePage({
     mutationFn: (id: string) => api('DELETE', `/purchases/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_for_me'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
     },

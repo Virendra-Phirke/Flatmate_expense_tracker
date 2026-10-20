@@ -118,6 +118,8 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       queryClient.invalidateQueries({ queryKey: ['settlements'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_for_me'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
       setModalOpen(false);
       setAmountRupees('');
       setTxRef('');
@@ -136,6 +138,8 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       queryClient.invalidateQueries({ queryKey: ['settlements'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_for_me'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
     },
   });
 
@@ -146,6 +150,20 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       queryClient.invalidateQueries({ queryKey: ['settlements'] });
       queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_for_me'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
+    },
+  });
+
+  // Cancel Mutation (payer cancels own pending claim)
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => api('POST', `/settlements/${id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['settlements'] });
+      queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_for_me'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
     },
   });
 
@@ -168,7 +186,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
     (s) => s.payer_id === user?.id && s.status === 'verification_pending'
   );
   const historySettlements = settlements.filter(
-    (s) => s.status === 'confirmed' || s.status === 'rejected'
+    (s) => s.status === 'confirmed' || s.status === 'rejected' || s.status === 'cancelled'
   );
 
   const filteredSettlements =
@@ -365,6 +383,11 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                                 Rejected
                               </Badge>
                             )}
+                            {s.status === 'cancelled' && (
+                              <Badge className="bg-muted text-muted-foreground border-border text-xs font-mono">
+                                Cancelled
+                              </Badge>
+                            )}
                           </div>
                         </div>
 
@@ -396,6 +419,25 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                             >
                               <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                               Confirm
+                            </Button>
+                          </div>
+                        )}
+
+                        {isPayer && s.status === 'verification_pending' && (
+                          <div className="flex items-center gap-2 pt-1 sm:pt-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (confirm(`Cancel your payment claim to ${s.recipient_name}?`)) {
+                                  cancelMutation.mutate(s.id);
+                                }
+                              }}
+                              disabled={cancelMutation.isPending}
+                              className="flex-1 sm:flex-none text-xs min-h-9 border-border text-muted-foreground hover:text-negative hover:border-negative/30 hover:bg-negative-soft/40 active:scale-95"
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                              Cancel Claim
                             </Button>
                           </div>
                         )}
