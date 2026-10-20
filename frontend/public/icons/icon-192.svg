@@ -1,18 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
+    <linearGradient id="bgGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#090d16"/>
     </linearGradient>
-    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.6"/>
-      <stop offset="100%" stop-color="#1e40af" stop-opacity="0.1"/>
+    <linearGradient id="tealGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <linearGradient id="rupeeGrad192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#14b8a6"/>
     </linearGradient>
   </defs>
-  <rect width="192" height="192" rx="42" fill="#0f172a"/>
-  <rect x="8" y="8" width="176" height="176" rx="36" fill="url(#glow)" stroke="rgba(59, 130, 246, 0.3)" stroke-width="3"/>
-  <g transform="translate(40, 40) scale(4.67)" stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
-  </g>
+
+  <!-- Neo-Bank Dark Squircle Badge -->
+  <rect width="192" height="192" rx="44" fill="url(#bgGrad192)"/>
+  <rect x="5" y="5" width="182" height="182" rx="39" fill="none" stroke="url(#tealGrad192)" stroke-width="2.5" stroke-opacity="0.35"/>
+
+  <!-- Chimney -->
+  <path d="M128 70 V48 H144 V82" fill="none" stroke="url(#tealGrad192)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- House Outline (Option 1 Ledger House) -->
+  <path d="M36 94 L96 44 L156 94 V152 C156 155.3 153.3 158 150 158 H42 C38.7 158 36 155.3 36 152 Z" 
+        fill="none" stroke="url(#tealGrad192)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Indian Rupee (₹) Symbol -->
+  <!-- Upper horizontal bar -->
+  <line x1="70" y1="80" x2="114" y2="80" stroke="url(#rupeeGrad192)" stroke-width="8.5" stroke-linecap="round"/>
+  <!-- Middle horizontal bar -->
+  <line x1="70" y1="96" x2="110" y2="96" stroke="url(#rupeeGrad192)" stroke-width="8.5" stroke-linecap="round"/>
+  <!-- Curved upper head -->
+  <path d="M85 80 V110 C99 110 109 104 109 95 C109 86 99 80 85 80" fill="none" stroke="url(#rupeeGrad192)" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Diagonal lower leg -->
+  <line x1="85" y1="110" x2="116" y2="142" stroke="url(#rupeeGrad192)" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- Equal-Split Ledger Balance Indicators -->
+  <line x1="126" y1="114" x2="144" y2="114" stroke="#2dd4bf" stroke-width="6.5" stroke-linecap="round"/>
+  <line x1="126" y1="126" x2="144" y2="126" stroke="#2dd4bf" stroke-width="6.5" stroke-linecap="round"/>
 </svg>

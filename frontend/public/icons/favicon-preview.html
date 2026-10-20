@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flatmate Expense Manager - Favicon & App Icon Concepts</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #111827;
+      --border: #1f293d;
+      --text: #f3f4f6;
+      --subtext: #9ca3af;
+      --accent: #14b8a6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; text-align: center; }
+    p.subtitle { color: var(--subtext); font-size: 14px; margin-bottom: 36px; text-align: center; }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      width: 100%;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+    }
+    .badge {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      background: rgba(20, 184, 166, 0.12);
+      color: var(--accent);
+      margin-bottom: 16px;
+      font-weight: 600;
+    }
+    .icon-large {
+      width: 128px;
+      height: 128px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));
+    }
+    .title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+    .desc { font-size: 13px; color: var(--subtext); text-align: center; line-height: 1.5; margin-bottom: 20px; }
+    
+    .preview-sizes {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 18px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+      margin-top: auto;
+    }
+    .size-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .size-label { font-size: 10px; color: #6b7280; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+  <h1>🏠 Flatmate Expense Manager — Favicon & App Icon Concepts</h1>
+  <p class="subtitle">Review the 4 vector-crafted options rendered at multiple responsive resolutions (16px, 32px, 64px, 128px)</p>
+
+  <div class="grid">
+    <!-- Option 1 -->
+    <div class="card">
+      <div class="badge">Option 1</div>
+      <div class="icon-large">
+        <svg viewBox="0 0 128 128" width="100%" height="100%">
+          <defs>
+            <linearGradient id="bgGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0f172a"/>
+              <stop offset="100%" stop-color="#090d16"/>
+            </linearGradient>
+            <linearGradient id="tealGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#22d3ee"/>
+              <stop offset="100%" stop-color="#0d9488"/>
+            </linearGradient>
+          </defs>
+          <rect width="128" height="128" rx="28" fill="url(#bgGrad1)" stroke="#1e293b" stroke-width="2"/>
+          <path d="M24 62 L64 28 L104 62 V102 H24 Z" fill="none" stroke="url(#tealGrad1)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M86 46 V32 H96 V54" fill="none" stroke="url(#tealGrad1)" stroke-width="5" stroke-linecap="round"/>
+          <!-- Indian Rupee + Equal Split -->
+          <path d="M48 54 H78 M48 64 H76 M48 54 C66 54 66 74 48 74 L74 98" fill="none" stroke="#38bdf8" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="84" y1="76" x2="100" y2="76" stroke="#14b8a6" stroke-width="4" stroke-linecap="round"/>
+          <line x1="84" y1="84" x2="100" y2="84" stroke="#14b8a6" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="title">Ledger House</div>
+      <div class="desc">Minimalist home envelope housing the Indian Rupee symbol with paired equal-split ledger markers. Direct, financial, and immediately recognizable.</div>
+      <div class="preview-sizes">
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="16" height="16"><use href="#opt1"/></svg>
+          <span class="size-label">16px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="32" height="32"><use href="#opt1"/></svg>
+          <span class="size-label">32px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="48" height="48"><use href="#opt1"/></svg>
+          <span class="size-label">48px</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 2 -->
+    <div class="card">
+      <div class="badge">Option 2</div>
+      <div class="icon-large">
+        <svg viewBox="0 0 128 128" width="100%" height="100%">
+          <defs>
+            <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0a101d"/>
+              <stop offset="100%" stop-color="#030712"/>
+            </linearGradient>
+            <linearGradient id="cardGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#0f766e" stop-opacity="0.3"/>
+            </linearGradient>
+            <linearGradient id="cardGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#0369a1" stop-opacity="0.35"/>
+            </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+          <rect width="128" height="128" rx="28" fill="url(#bgGrad2)" stroke="#1e293b" stroke-width="2"/>
+          <!-- Subtle House Silhouette in background -->
+          <path d="M28 66 L64 36 L100 66 V100 H28 Z" fill="none" stroke="#1e293b" stroke-width="3" stroke-dasharray="4 4"/>
+          <!-- Front Angled Card -->
+          <g transform="translate(64,68) rotate(-22) translate(-36,-24)">
+            <rect width="72" height="46" rx="8" fill="url(#cardGrad1)" stroke="#5eead4" stroke-width="2.5"/>
+            <rect x="8" y="10" width="14" height="10" rx="2" fill="#fef08a" opacity="0.9"/>
+            <line x1="8" y1="32" x2="36" y2="32" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+          </g>
+          <!-- Intersecting Card Peak -->
+          <g transform="translate(64,68) rotate(26) translate(-36,-24)">
+            <rect width="72" height="46" rx="8" fill="url(#cardGrad2)" stroke="#7dd3fc" stroke-width="2.5" opacity="0.92"/>
+            <circle cx="56" cy="30" r="5" fill="#38bdf8"/>
+            <circle cx="48" cy="30" r="5" fill="#2dd4bf" opacity="0.75"/>
+          </g>
+        </svg>
+      </div>
+      <div class="title">Split Cards Peak</div>
+      <div class="desc">Two neo-banking credit/split cards intersecting at an angle to create a dynamic roof apex. High-end modern fintech aesthetic with glassmorphism glow.</div>
+      <div class="preview-sizes">
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="16" height="16"><use href="#opt2"/></svg>
+          <span class="size-label">16px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="32" height="32"><use href="#opt2"/></svg>
+          <span class="size-label">32px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="48" height="48"><use href="#opt2"/></svg>
+          <span class="size-label">48px</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 3 -->
+    <div class="card">
+      <div class="badge">Option 3 (Recommended)</div>
+      <div class="icon-large">
+        <svg viewBox="0 0 128 128" width="100%" height="100%">
+          <defs>
+            <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0b1329"/>
+              <stop offset="100%" stop-color="#040714"/>
+            </linearGradient>
+            <linearGradient id="ringLeft" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#34d399"/>
+              <stop offset="100%" stop-color="#059669"/>
+            </linearGradient>
+            <linearGradient id="ringRight" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#22d3ee"/>
+              <stop offset="100%" stop-color="#0284c7"/>
+            </linearGradient>
+            <linearGradient id="houseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="100%" stop-color="#94a3b8"/>
+            </linearGradient>
+          </defs>
+          <rect width="128" height="128" rx="28" fill="url(#bgGrad3)" stroke="#1e293b" stroke-width="2"/>
+          <!-- Outer Bilateral Split Ring -->
+          <!-- Left half-ring -->
+          <path d="M 60 22 A 42 42 0 0 0 60 106 V 94 A 30 30 0 0 1 60 34 Z" fill="url(#ringLeft)"/>
+          <!-- Right half-ring -->
+          <path d="M 68 22 A 42 42 0 0 1 68 106 V 94 A 30 30 0 0 0 68 34 Z" fill="url(#ringRight)"/>
+          <!-- Center House Glyph -->
+          <path d="M48 68 L64 52 L80 68 V86 H48 Z" fill="url(#houseGrad)"/>
+          <rect x="59" y="74" width="10" height="12" rx="1.5" fill="#040714"/>
+        </svg>
+      </div>
+      <div class="title">Bilateral Split Coin</div>
+      <div class="desc">Two-halves bilateral ledger coin (representing debt netting between flatmates) encircling a central home sanctuary. Ultra crisp at tiny 16px/32px sizes.</div>
+      <div class="preview-sizes">
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="16" height="16"><use href="#opt3"/></svg>
+          <span class="size-label">16px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="32" height="32"><use href="#opt3"/></svg>
+          <span class="size-label">32px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="48" height="48"><use href="#opt3"/></svg>
+          <span class="size-label">48px</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 4 -->
+    <div class="card">
+      <div class="badge">Option 4</div>
+      <div class="icon-large">
+        <svg viewBox="0 0 128 128" width="100%" height="100%">
+          <defs>
+            <linearGradient id="bgGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0a131e"/>
+              <stop offset="100%" stop-color="#020617"/>
+            </linearGradient>
+          </defs>
+          <rect width="128" height="128" rx="28" fill="url(#bgGrad4)" stroke="#1e293b" stroke-width="2"/>
+          <!-- Modern Geometric 'F' + Roof Apex -->
+          <g id="geo-facets">
+            <!-- Roof ridge right -->
+            <polygon points="64,26 102,52 88,60 64,42" fill="#2dd4bf"/>
+            <!-- Roof chimney block -->
+            <polygon points="88,36 98,36 98,48 88,41" fill="#14b8a6"/>
+            <!-- Roof left facet -->
+            <polygon points="64,26 26,52 40,62 64,42" fill="#5eead4"/>
+            <!-- F spine top -->
+            <polygon points="40,62 56,52 56,80 40,88" fill="#14b8a6"/>
+            <!-- F horizontal arm -->
+            <polygon points="56,52 86,60 74,72 56,66" fill="#0d9488"/>
+            <!-- F lower arm -->
+            <polygon points="56,76 76,82 68,92 56,86" fill="#0f766e"/>
+            <!-- F bottom stem -->
+            <polygon points="40,88 56,80 56,104 40,104" fill="#042f2e"/>
+          </g>
+        </svg>
+      </div>
+      <div class="title">Geo Vault (F-Mark)</div>
+      <div class="desc">Isometric faceted monogram uniting the letter 'F' (Flatmate) with an architectural vault and roofline. Clean, premium brand identity feel.</div>
+      <div class="preview-sizes">
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="16" height="16"><use href="#opt4"/></svg>
+          <span class="size-label">16px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="32" height="32"><use href="#opt4"/></svg>
+          <span class="size-label">32px</span>
+        </div>
+        <div class="size-item">
+          <svg viewBox="0 0 128 128" width="48" height="48"><use href="#opt4"/></svg>
+          <span class="size-label">48px</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

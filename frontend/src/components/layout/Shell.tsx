@@ -21,6 +21,7 @@ import {
   Shield,
   Lock,
 } from '@/components/ui/icons';
+import { AppLogo } from '@/components/ui/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -158,9 +159,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
         {/* Brand */}
         <div className="flex items-center justify-between border-b border-border p-4 lg:p-5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <CreditCard className="h-4.5 w-4.5" aria-hidden="true" />
-            </div>
+            <AppLogo size={36} className="h-9 w-9" />
             <div className="min-w-0">
               <div className="truncate text-sm font-bold tracking-tight">Flat Expenses</div>
               <div className="truncate text-xs text-muted-foreground">{user?.householdName || 'Household'}</div>
@@ -353,9 +352,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
         {/* Mobile top header */}
         <header className="sticky top-0 z-30 flex min-h-[52px] items-center justify-between gap-2 border-b border-border bg-background px-3 xs:px-4 py-2 md:hidden">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
-            </div>
+            <AppLogo size={28} className="h-7 w-7" />
             <div className="min-w-0">
               <h1 className="truncate text-sm font-bold leading-tight">{pageTitles[activeTab]}</h1>
               <p className="truncate text-xs text-muted-foreground leading-tight">{user?.householdName || 'Household'}</p>

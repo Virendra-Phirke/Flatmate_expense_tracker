@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Home, Eye, EyeOff, Loader2, AlertCircle, Shield, Fingerprint, Lock } from '@/components/ui/icons';
+import { AppLogo } from '@/components/ui/AppLogo';
 import {
   isBiometricAvailable,
   getRegisteredBiometric,
@@ -89,8 +90,8 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         <Card className="border-border bg-card shadow-sm rounded-lg">
           <CardHeader className="text-center pb-3 xs:pb-4 pt-5 xs:pt-6">
-            <div className="mx-auto mb-3 h-11 w-11 xs:h-12 xs:w-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
-              <Home className="h-5 w-5 xs:h-6 xs:w-6" aria-hidden="true" />
+            <div className="mx-auto mb-3 flex items-center justify-center">
+              <AppLogo size={52} className="h-12 w-12 xs:h-14 xs:w-14" />
             </div>
             <CardTitle className="text-xl xs:text-2xl font-serif font-bold tracking-tight text-foreground">
               Sign in to your household
