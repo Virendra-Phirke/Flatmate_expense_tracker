@@ -1,142 +1,126 @@
-# Flatmate Expense Tracker 🏠💳
-
 <div align="center">
 
-![GitHub last commit](https://img.shields.io/github/last-commit/Virendra-Phirke/Flatmate_expense_tracker?style=for-the-badge&logo=github&color=0d9488)
-![GitHub repo size](https://img.shields.io/github/repo-size/Virendra-Phirke/Flatmate_expense_tracker?style=for-the-badge&color=0284c7)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/Virendra-Phirke/Flatmate_expense_tracker?style=for-the-badge&color=8b5cf6)
-![License](https://img.shields.io/badge/license-ISC-emerald?style=for-the-badge)
+# 🏠 Flatmate Expense Tracker
+### Modern, Mobile-First Financial Ledger & Intelligent Bill Splitter
+
+[![React](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Express.js](https://img.shields.io/badge/Express-5.3-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon_Serverless-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://neon.tech/)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-2.5_Flash-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![License](https://img.shields.io/badge/License-ISC-059669?style=for-the-badge)](LICENSE)
 
 <br />
 
-**A modern, mobile-first full-stack ledger for shared living spaces, flatmates, and roommates.**  
-Track communal expenses, split personal purchases, simplify pairwise debts, settle via instant UPI QR codes, and log expenses effortlessly using AI-powered voice commands.
+**A high-precision, offline-first expense management platform tailored for flatmates, roommates, and shared living spaces.**  
+Track communal utilities, log personal grocery runs, settle pairwise debts with instant UPI QR codes, and transcribe expenses effortlessly using Google Gemini AI.
 
-[Explore Features](#-key-features) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [API Reference](#-api-endpoints) • [Contributors](#-contributors)
+[Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Getting Started](#-getting-started) • [API Specification](#-api-specification) • [Financial Model](#-financial-ledger-model) • [Testing](#-testing--validation) • [Deployment](#-production-deployment) • [Contributors](#-contributors)
 
 </div>
-
----
-
-## 📑 Table of Contents
-
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-  - [Mobile-First Neo-Banking UX](#1-mobile-first-neo-banking-ux)
-  - [Dynamic Multi-Palette Theming](#2-dynamic-multi-palette-theming)
-  - [Pairwise Debt Simplification & UPI Settlements](#3-pairwise-debt-simplification--upi-settlements)
-  - [Google Gemini Voice & Natural Language Parser](#4-google-gemini-voice--natural-language-parser)
-  - [Stateless JWT & Session Authentication](#5-stateless-jwt--session-authentication)
-- [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-  - [Database Setup](#database-setup)
-  - [Running the App](#running-the-app)
-- [API Endpoints](#-api-endpoints)
-- [Scripts](#-scripts)
-- [Security & Best Practices](#-security--best-practices)
-- [Contributors](#-contributors)
-- [License](#-license)
 
 ---
 
 ## 🌟 Overview
 
-Managing shared apartment expenses across roommates often leads to fragmented chat logs, messy spreadsheets, and awkward payment reminders. **Flatmate Expense Tracker** solves this by providing a unified, high-performance financial dashboard built specifically for shared households.
+Splitting rent, groceries, cook salaries, and daily essentials across flatmates often degenerates into forgotten payments, conflicting chat records, and chaotic spreadsheets. 
 
-Whether splitting monthly rent, utility bills, communal groceries, or a coffee run picked up for a single flatmate, the application accurately calculates net pairwise balances so no one pays more transactions than necessary.
+**Flatmate Expense Tracker** replaces that friction with a unified, dependable ledger designed like a modern neo-banking application:
+- **Zero Floating-Point Drift:** Every transaction and split is computed strictly in 64-bit integer paise ($\text{₹}1.00 = 100\text{ paise}$).
+- **Bilateral Pairwise Debt Netting:** Eliminates multi-transaction roundabouts so two flatmates settle only the single net difference between them.
+- **Offline-First Resilience:** Instant 0ms frame-0 rendering via IndexedDB and local synchronous caching with automated background replay.
+- **Voice-Assisted Expense Logging:** Natural language parsing powered by Google Gemini automatically classifies items, beneficiaries, and split weights.
+- **Instant Indian UPI Workflows:** Dynamic UPI QR generation with recipient snapshots and two-phase settlement confirmations.
 
 ---
 
 ## ✨ Key Features
 
-### 1. Mobile-First Neo-Banking UX
-- **Comfortable Bottom Dock Navigation**: 62px bottom navigation dock featuring soft active capsule pills, crisp labels, and safe-area inset support (`env(safe-area-inset-bottom)`) tailored for Android and iOS screens.
-- **Compact Mobile Overview Cards**: Spending overview cards automatically transition from multi-column desktop grids into consolidated, compact rows on handheld devices to eliminate vertical scroll fatigue.
-- **Zero-Delay Touch Interactions**: Configured with `touch-manipulation` to remove mobile browser tap delays and `white-space: nowrap` on financial amounts to prevent number wrapping.
+### 1. 📱 Mobile-First Neo-Banking UX
+- **Ergonomic Bottom Dock:** Fixed 62px bottom navigation dock with soft active capsule pills, tactile touch feedback, and full iOS/Android gesture bar safe-area padding (`env(safe-area-inset-bottom)`).
+- **Consolidated Ledger Views:** Multi-column desktop grids collapse into streamlined, scannable cards on mobile viewports to minimize scrolling fatigue.
+- **Zero-Lag Interactions:** Accelerated with `touch-manipulation` to strip mobile tap latency and strict `white-space: nowrap` typography on monetary amounts.
 
-### 2. Dynamic Multi-Palette Theming
-- **Live Theme Palette Switcher**: Switch between 5 curated color palettes without page reloads:
-  - 🌊 **Caribbean Teal** *(Default)*: Neo-bank deep teal with fresh mint highlights.
-  - 🌲 **Emerald Luxe**: High-contrast pine and forest green financial theme.
-  - 🌌 **Royal Indigo**: Deep space navy with vibrant electric violet accents.
-  - 🌅 **Sunset Amber**: Warm terracotta and golden amber tones.
-  - 🌸 **Rose Quartz**: Premium modern slate with muted berry rose accents.
-- **Dark Mode & Light Mode**: Smooth transition between light and dark modes with dedicated semantic HSL tokens.
+### 2. 🎨 Dynamic 5-Palette Theme Engine
+Seamlessly switch between 5 curated, high-contrast themes in light or dark mode without page reload:
+- 🌊 **Caribbean Teal** *(Default)*: Contemporary neo-bank teal with fresh mint highlights.
+- 🌲 **Emerald Luxe**: Refined British forest and pine financial ledger palette.
+- 🌌 **Royal Indigo**: Deep space navy with electric violet accents.
+- 🌅 **Sunset Amber**: Warm terracotta and golden amber tones.
+- 🌸 **Rose Quartz**: Minimalist slate with muted berry rose accents.
 
-### 3. Pairwise Debt Simplification & UPI Settlements
-- **Bilateral Pairwise Debt Netting**: Consolidates advances, common bill splits, and confirmed repayments across pairs of flatmates so members settle only the exact net difference `(Gross Owed + Settlements Paid) - (Gross Owe + Settlements Received)` in a single bilateral transaction.
-- **Instant UPI QR Generation**: Generates standard payment links and on-screen QR codes pre-filled with the exact settlement amount and recipient VPA.
-- **Settlement Audit Trail**: Logs confirmed repayments with timestamped receipts in the household activity feed.
+### 3. ⚖️ Bilateral Debt Netting & UPI Settlements
+- **Canonical Pairwise Netting:** Aggregates personal advances, common bill splits, and repayments to calculate the exact net balance between each pair of flatmates:
+  $$\text{Net Balance} = (\text{Gross Owed} + \text{Settlements Paid}) - (\text{Gross Owe} + \text{Settlements Received})$$
+- **On-Screen UPI QR Codes:** Auto-generates standard UPI deep links (`upi://pay?pa=...`) and crisp QR codes pre-filled with the exact settlement amount.
+- **Two-Phase Settlement Safety:** Payers submit a claim (`verification_pending`), but balance deductions occur only when the recipient confirms receipt (`confirmed`).
 
-### 4. Google Gemini Voice & Natural Language Parser
-- **Voice Expense Entry**: Speak naturally into your microphone (e.g., *"Bought ₹650 groceries from Blinkit, split equally between Rohan and me"*).
-- **Structured JSON Extraction**: Powered by `@google/genai` to automatically extract expense title, amount, payer, splits, and categories.
+### 4. 🎙️ Google Gemini Voice & NLP Parser
+- **Hands-Free Speech Transcription:** Speak natural mixed English/Hindi phrases:
+  > *"Paid 1250 rupees for groceries at Blinkit, split equally with all flatmates."*  
+  > *"Bought 450 medicine for Saurav and 180 cold drinks for Prathmesh."*
+- **Structured Schema Extraction:** Powered by `@google/genai` to automatically extract expense type, amount in paise, category, date, and individual beneficiary allocations.
+- **Odd-Paise Remainder Conservation:** Automatically distributes modulo remainder paise evenly across participants so the sum of shares always strictly equals the total amount.
 
-### 5. Stateless JWT & Session Authentication
-- **Dual Layer Auth**: Stateless JWT bearer tokens and HTTP-only signed cookies for seamless local development and serverless edge deployment.
-- **Role-Based Permissions**: Admin privileges for household member management and household settings.
+### 5. 🛡️ Enterprise Security & Role-Based Access
+- **Stateless Dual-Layer Auth:** Secure JWT authorization headers combined with HTTP-only, SameSite cookies for serverless edge deployment.
+- **Protected Biometrics:** Device-bound cryptographic tokens for fast fingerprint / Face Unlock on enrolled smartphones.
+- **Role Permissions:** Designated Household Admins manage shared communal expenses and member rosters, while personal spending remains strictly private to each member.
 
----
-
-## 🛠️ Tech Stack
-
-<div align="center">
-
-| Area | Technologies |
-|---|---|
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, Radix UI Primitives, Lucide React, Flaticon UIcons |
-| **State & Data** | TanStack React Query v5, Context API |
-| **Backend** | Node.js (ESM), Express 5, TypeScript |
-| **Database & ORM** | PostgreSQL, Neon Serverless Postgres, Drizzle ORM, Drizzle Kit |
-| **AI / Voice** | Google Gemini API (`@google/genai`) |
-| **Authentication** | JSON Web Tokens (`jsonwebtoken`), bcryptjs, cookie-parser |
-| **Payments** | Dynamic UPI QR Code Generation (`qrcode`) |
-
-</div>
+### 6. ⚡ Offline-First PWA Architecture
+- **Instant Frame-0 Startup:** Client queries load instantaneously from IndexedDB before revalidating over the network.
+- **Durable Mutation Queue:** Expense creation and status changes made while offline are enqueued locally in IndexedDB and automatically replayed with backoff upon reconnection.
+- **Installable Web App:** Complete Web App Manifest with maskable icons, standalone display mode, and safe-area geometry for home-screen mobile installation.
 
 ---
 
-## 🏛️ Architecture
+## 🏛️ System Architecture
 
 ```mermaid
 graph TD
-    subgraph Client ["Client (Frontend - React 19 + Vite)"]
-        UI["Modern UI / Theme Engine"]
-        Dock["Mobile Dock Navigation"]
+    subgraph Client ["Frontend Client (React 19 + Vite)"]
+        UI["UI Primitives & Theme Engine"]
+        Dock["Mobile Bottom Dock"]
         VoiceModal["Voice Assistant (Web Audio)"]
-        QueryCache["TanStack Query Cache"]
+        TanStack["TanStack React Query Cache"]
+        IDB[("IndexedDB + Local Cache")]
+        SyncQueue["Offline Mutation Queue"]
     end
 
-    subgraph API ["API Server (Express 5 + Node.js)"]
-        AuthMid["JWT & Session Auth Middleware"]
-        ExpRouter["/api/expenses"]
-        BalRouter["/api/balances (Debt Simplification)"]
-        AIRouter["/api/ai (Natural Language Parser)"]
-        SettRouter["/api/settlements (QR Generation)"]
+    subgraph Server ["Backend API (Express 5 + TypeScript)"]
+        AuthMid["JWT & Biometric Guard Middleware"]
+        ExpRoute["/api/expenses (Personal, Common, On-Behalf)"]
+        BalRoute["/api/balances (Bilateral Netting)"]
+        SettRoute["/api/settlements (Two-Phase Confirmations)"]
+        AIRoute["/api/ai (Gemini Structured Parser)"]
+        ProfRoute["/api/profile & /api/upi (QR Generator)"]
     end
 
-    subgraph External ["External Services & Database"]
-        Postgres[("PostgreSQL / Neon DB<br/>(Drizzle ORM)")]
-        Gemini["Google Gemini AI"]
+    subgraph Data ["Database & External Services"]
+        NeonDB[("Neon PostgreSQL<br/>(Drizzle ORM Schema)")]
+        GeminiAPI["Google Gemini 2.5 Flash"]
     end
 
-    UI --> QueryCache
-    VoiceModal --> QueryCache
-    QueryCache -->|REST HTTP / Cookie Auth| AuthMid
-    AuthMid --> ExpRouter
-    AuthMid --> BalRouter
-    AuthMid --> AIRouter
-    AuthMid --> SettRouter
+    UI --> TanStack
+    VoiceModal --> TanStack
+    TanStack <--> IDB
+    TanStack --> SyncQueue
+    SyncQueue -->|Auto-Replay on Reconnect| AuthMid
 
-    ExpRouter --> Postgres
-    BalRouter --> Postgres
-    SettRouter --> Postgres
-    AIRouter --> Gemini
+    TanStack -->|REST / Bearer JWT| AuthMid
+    AuthMid --> ExpRoute
+    AuthMid --> BalRoute
+    AuthMid --> SettRoute
+    AuthMid --> AIRoute
+    AuthMid --> ProfRoute
+
+    ExpRoute --> NeonDB
+    BalRoute --> NeonDB
+    SettRoute --> NeonDB
+    ProfRoute --> NeonDB
+    AIRoute --> GeminiAPI
 ```
 
 ---
@@ -146,45 +130,89 @@ graph TD
 ```text
 Flatmate_expense_tracker/
 ├── backend/
-│   ├── api/                 # Serverless Vercel endpoints
+│   ├── api/                 # Bundled serverless handler for Vercel
 │   ├── db/
-│   │   ├── drizzle.ts       # Drizzle database client instance
-│   │   ├── init.ts          # Table initializers and seed script
-│   │   └── schema.ts        # PostgreSQL schema definitions
-│   ├── middleware/          # JWT, session, rate-limiting & error handlers
-│   │   └── auth.ts
-│   ├── routes/              # Express REST route controllers
-│   │   ├── activity.ts      # Household activity feed
-│   │   ├── ai.ts            # Gemini natural language expense logging
-│   │   ├── auth.ts          # Register, login, session, logout
-│   │   ├── balances.ts      # Debt simplification & net balance calculations
-│   │   ├── categories.ts    # Expense category management
-│   │   ├── expenses.ts      # Shared household expense ledger
-│   │   ├── members.ts       # Flatmate directory & roles
-│   │   ├── profile.ts       # User profile & UPI VPA settings
-│   │   ├── purchases.ts     # Personal & targeted expense splits
-│   │   └── settlements.ts   # Debt resolution & UPI QR generation
-│   ├── app.ts               # Express application configuration
-│   ├── server.ts            # Local HTTP server entry point
-│   ├── drizzle.config.ts    # Drizzle ORM configuration
+│   │   ├── drizzle.ts       # Drizzle client configuration
+│   │   ├── init.ts          # Schema migrations & initial seed data
+│   │   ├── index.ts         # Neon serverless connection with resilient DNS cache
+│   │   └── schema.ts        # Drizzle PostgreSQL schema definitions
+│   ├── middleware/
+│   │   ├── auth.ts          # requireAuth, requireAdmin & session guards
+│   │   └── rateLimiter.ts   # Throttling limits for auth, claims, and AI
+│   ├── routes/
+│   │   ├── activity.ts      # Timestamped household activity stream
+│   │   ├── ai.ts            # Gemini AI voice expense extraction
+│   │   ├── auth.ts          # Password & biometric enrollment endpoints
+│   │   ├── balances.ts      # Bilateral netting & summary calculations
+│   │   ├── categories.ts    # Household category management
+│   │   ├── expenses.ts      # Expense creation, update, and soft delete
+│   │   ├── members.ts       # Roommate roster and permissions
+│   │   ├── profile.ts       # Profile settings & UPI VPA configuration
+│   │   ├── purchases.ts     # On-behalf purchases & multi-item allocation
+│   │   └── settlements.ts   # Repayment tracking & state transitions
+│   ├── utils/
+│   │   ├── audit.ts         # Non-blocking event logging helper
+│   │   ├── jwt.ts           # Session and biometric device token crypto
+│   │   ├── password.ts      # Salted bcrypt password hashing
+│   │   └── upi.ts           # UPI deep link builder and validation
+│   ├── app.ts               # Express 5 app configuration with strict CORS
+│   ├── server.ts            # Local development HTTP listener
+│   ├── serverless.ts        # Vercel serverless lambda entry
 │   └── package.json
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── layout/      # Shell, Mobile Dock, ThemePaletteModal, Header
-│   │   │   └── ui/          # Radix dialogs, buttons, cards, badges, inputs
-│   │   ├── context/         # AuthContext, ThemeContext (5 palettes + dark mode)
+│   │   │   ├── analytics/   # KPI metrics cards, trend charts, spend breakdown
+│   │   │   ├── layout/      # Application Shell, MobileDock, ThemeModal
+│   │   │   ├── ui/          # Radix dialogs, buttons, cards, date filters
+│   │   │   └── voice/       # VoiceAssistantModal recording interface
+│   │   ├── context/         # AuthContext & ThemeContext
+│   │   ├── lib/
+│   │   │   ├── api.ts       # Typed API client with custom ApiError
+│   │   │   ├── biometrics.ts# WebAuthn credential enrollment & verification
+│   │   │   ├── idb.ts       # IndexedDB query cache & offline mutation storage
+│   │   │   ├── offlineQueue.ts # Replay engine with non-recoverable 4xx purge
+│   │   │   └── utils.ts     # Currency formatters, date helpers, cn utility
 │   │   ├── pages/           # Dashboard, Expenses, Balances, Repayments, Profile
-│   │   ├── lib/             # API clients, formatters, utilities
-│   │   ├── index.css        # Tailwind CSS & HSL semantic theme variables
-│   │   └── App.tsx          # Root routing and query provider
-│   ├── vite.config.ts       # Vite bundler configuration
+│   │   ├── index.css        # Tailwind CSS & HSL theme color definitions
+│   │   └── App.tsx          # Code-split lazy routing & query warmup
+│   ├── vite.config.ts       # Vite bundler with Rollup vendor chunking
 │   └── package.json
 │
-├── .env.example             # Template for environment variables (no secrets)
-├── package.json             # Root monorepo workspace configuration
+├── test/
+│   └── comprehensive_suite.ts # 880+ lines automated integration test suite
+├── vercel.json              # Vercel deployment rewrites
+├── package.json             # Root monorepo workspace scripts
 └── README.md                # Project documentation
+```
+
+---
+
+## 💰 Financial Ledger Model
+
+The application operates on strict financial accounting principles:
+
+### 1. Integer Arithmetic Standard
+All monetary units are stored and computed in integer **paise**:
+$$\text{Amount (Paise)} = \text{Round}(\text{Rupees} \times 100)$$
+
+### 2. Remainder Conservation (No Phantom Loss)
+When splitting an odd number of paise among $N$ roommates:
+$$\text{Base Share} = \lfloor \text{Total Paise} / N \rfloor$$
+$$\text{Remainder} = \text{Total Paise} \pmod N$$
+The remainder is distributed sequentially ($+1\text{ paise}$) across the first beneficiaries so:
+$$\sum_{i=1}^N \text{Share}_i \equiv \text{Total Amount}$$
+
+### 3. Settlement State Machine
+Repayments proceed through an atomic, multi-step verification state machine:
+
+```
+ [Created] ──► verification_pending ──► [Recipient Confirms] ──► confirmed
+                     │
+                     ├──► [Recipient Rejects]  ──► rejected
+                     │
+                     └──► [Payer Cancels]      ──► cancelled
 ```
 
 ---
@@ -192,11 +220,11 @@ Flatmate_expense_tracker/
 ## 🚀 Getting Started
 
 ### Prerequisites
+- **Node.js** `>= 18.0.0`
+- **npm** `>= 9.0.0`
+- A **PostgreSQL** database (Local instance or free cloud database on [Neon.tech](https://neon.tech))
 
-Ensure you have the following installed locally:
-- [Node.js](https://nodejs.org/) `>= 18.0.0`
-- [npm](https://www.npmjs.com/) `>= 9.0.0` (or `pnpm` / `yarn`)
-- A [PostgreSQL](https://www.postgresql.org/) database or a free [Neon](https://neon.tech/) cloud instance
+---
 
 ### Installation
 
@@ -206,156 +234,172 @@ Ensure you have the following installed locally:
    cd Flatmate_expense_tracker
    ```
 
-2. **Install all dependencies** (for both frontend and backend):
+2. **Install monorepo dependencies:**
    ```bash
    npm install
    ```
 
 ---
 
-### Environment Variables
+### Environment Setup
 
-Create environment configuration files using the provided templates:
-
+Create your environment configuration files:
 ```bash
-# In backend
+# In backend directory
 cp backend/.env.example backend/.env
 
-# In root (optional, for unified runner)
+# In root directory
 cp .env.example .env
 ```
 
-#### Required Backend Variables (`backend/.env`):
-
-> ⚠️ **Security Notice**: Never commit real database passwords, secret keys, or API tokens to version control. Use secure environment managers in production.
-
+#### Configure `backend/.env`:
 ```env
-# Server Port
-PORT=5000
-
-# PostgreSQL Connection String (Local PostgreSQL or Neon Cloud)
-DATABASE_URL=postgresql://your_db_user:your_db_password@localhost:5432/flatmate_db?sslmode=prefer
-
-# Authentication Secrets (Generate secure random 32+ character strings)
-JWT_SECRET=your_super_secret_jwt_key_here
-SESSION_SECRET=your_super_secret_session_key_here
-
-# Frontend Client URL (for CORS allowance)
-FRONTEND_URL=http://localhost:5173
-
-# Google Gemini API Key (for Voice & Natural Language expense parser)
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Environment
+PORT=3000
 NODE_ENV=development
+DATABASE_URL=postgresql://user:password@ep-sample-pooler.neon.tech/neondb?sslmode=require
+JWT_SECRET=your_super_secret_jwt_key_min_32_characters
+SESSION_SECRET=your_super_secret_session_key_min_32_characters
+FRONTEND_URL=http://localhost:5173
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+#### Configure `frontend/.env`:
+```env
+VITE_API_URL=http://localhost:3000
 ```
 
 ---
 
-### Database Setup
+### Database Provisioning
 
-1. **Push database schema migrations** using Drizzle Kit:
-   ```bash
-   npm run db:push
-   ```
+Run Drizzle schema migration and seed initial flatmate accounts:
+```bash
+# Push table schemas to PostgreSQL
+npm run db:push
 
-2. *(Optional)* **Launch Drizzle Studio** to visually inspect tables and test records:
-   ```bash
-   npm run db:studio
-   ```
+# (Optional) Open Drizzle Studio visual table inspector
+npm run db:studio
+```
 
 ---
 
-### Running the App
+### Running the Application
 
-Start both the backend server and frontend client concurrently:
-
+Launch both frontend and backend concurrently with live reload:
 ```bash
 npm run dev
 ```
 
-The application will be accessible at:
-- **Frontend Web App**: `http://localhost:5173` *(or `http://localhost:5174`)*
-- **Backend API**: `http://localhost:5000/api`
+- **Frontend Application:** `http://localhost:5173`
+- **Backend API:** `http://localhost:3000/api`
+- **Health Check:** `http://localhost:3000/api/health`
 
-To run services individually:
+To start services independently:
 ```bash
-# Backend only
-npm run dev:backend
-
-# Frontend only
-npm run dev:frontend
+npm run dev:backend   # Backend only on port 3000
+npm run dev:frontend  # Frontend only on port 5173
 ```
 
 ---
 
-## 🔌 API Endpoints
+## 🔌 API Specification
 
-All API endpoints are prefixed with `/api`. Protected routes require authentication via session cookie or `Authorization: Bearer <token>`.
+All routes are mounted under `/api` and require session cookies or `Authorization: Bearer <token>` unless marked public.
 
 | Module | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|:---:|
-| **Auth** | `POST` | `/api/auth/register` | Register a new user and household | ❌ |
 | **Auth** | `POST` | `/api/auth/login` | Authenticate with username and password | ❌ |
+| **Auth** | `POST` | `/api/auth/biometric-enroll` | Register a device token for fingerprint unlock | ✅ |
+| **Auth** | `POST` | `/api/auth/biometric-login` | Verify fingerprint with enrolled device token | ❌ |
 | **Auth** | `GET` | `/api/auth/me` | Retrieve authenticated user profile | ✅ |
-| **Auth** | `POST` | `/api/auth/logout` | Terminate session and clear cookies | ✅ |
-| **Expenses** | `GET` | `/api/expenses` | List all shared expenses for household | ✅ |
-| **Expenses** | `POST` | `/api/expenses` | Log a new shared expense with split weights | ✅ |
-| **Expenses** | `DELETE` | `/api/expenses/:id` | Remove an expense entry | ✅ |
-| **Balances** | `GET` | `/api/balances/summary` | Get net balances, debts, and credits | ✅ |
-| **Balances** | `GET` | `/api/balances/pairwise`| Get simplified pairwise debt matrix | ✅ |
-| **Settlements** | `POST` | `/api/settlements` | Record a repayment between roommates | ✅ |
-| **Settlements** | `GET` | `/api/settlements/qr` | Generate UPI QR code for outstanding debt | ✅ |
-| **Purchases** | `GET` | `/api/purchases` | List personal purchases & specific splits | ✅ |
-| **AI** | `POST` | `/api/ai/parse-expense` | Parse natural language text or voice transcript | ✅ |
-| **Members** | `GET` | `/api/members` | Get flatmate roster and household members | ✅ |
-| **Activity** | `GET` | `/api/activity` | Retrieve recent household audit logs | ✅ |
+| **Auth** | `POST` | `/api/auth/change-password` | Update current account password | ✅ |
+| **Auth** | `POST` | `/api/auth/logout` | Invalidate token and clear auth cookies | ✅ |
+| **Expenses** | `GET` | `/api/expenses?type=personal\|common` | Retrieve filtered household expenses | ✅ |
+| **Expenses** | `POST` | `/api/expenses/personal` | Log an expense paid purely for oneself | ✅ |
+| **Expenses** | `POST` | `/api/expenses/common` | Create communal expense with split shares *(Admin)* | ✅ |
+| **Expenses** | `POST` | `/api/expenses/on-behalf` | Record purchases made on behalf of roommates | ✅ |
+| **Expenses** | `PUT` | `/api/expenses/:id` | Update description, amount, date, or category | ✅ |
+| **Expenses** | `DELETE`| `/api/expenses/:id` | Soft-delete an expense *(Settlement guarded)* | ✅ |
+| **Balances** | `GET` | `/api/balances/summary` | Consolidated bilateral netted balances & debts | ✅ |
+| **Settlements**| `GET` | `/api/settlements` | History of repayment claims and verifications | ✅ |
+| **Settlements**| `POST`| `/api/settlements` | Submit a payment claim to a roommate | ✅ |
+| **Settlements**| `POST`| `/api/settlements/:id/confirm`| Confirm receipt of payment *(Recipient only)* | ✅ |
+| **Settlements**| `POST`| `/api/settlements/:id/reject` | Reject unverified payment claim *(Recipient only)* | ✅ |
+| **Settlements**| `POST`| `/api/settlements/:id/cancel` | Cancel an unverified claim *(Payer only)* | ✅ |
+| **Profile** | `GET` | `/api/profile/upi` | Get current user's registered UPI ID | ✅ |
+| **Profile** | `PUT` | `/api/profile/upi` | Update UPI VPA and display name | ✅ |
+| **Profile** | `GET` | `/api/upi/qr?userId=&amount=` | Generate pre-filled UPI QR code image | ✅ |
+| **AI Parser**| `POST`| `/api/ai/parse-expense` | Parse natural language voice transcript | ✅ |
+| **Analytics**| `GET` | `/api/analytics` | Category breakdown, daily trend & KPI metrics | ✅ |
+| **Members** | `GET` | `/api/members` | Get flatmate directory and household roles | ✅ |
+| **Activity** | `GET` | `/api/activity` | Retrieve timestamped household activity stream | ✅ |
 
 ---
 
-## 📜 Scripts
+## 📜 Monorepo Scripts
 
 | Command | Action |
 |---|---|
-| `npm run dev` | Runs backend and frontend concurrently |
-| `npm run build` | Builds both backend and frontend workspaces for production |
-| `npm run build:frontend` | Compiles Vite production bundle into `frontend/dist` |
-| `npm run build:backend` | Compiles TypeScript backend |
-| `npm run typecheck` | Executes TypeScript type-checking across all workspaces |
-| `npm run db:push` | Applies Drizzle schema changes directly to PostgreSQL |
-| `npm run db:studio` | Launches Drizzle Studio GUI on `https://local.drizzle.studio` |
+| `npm run dev` | Runs backend (port 3000) and frontend (port 5173) concurrently |
+| `npm run build` | Compiles both backend esbuild bundle and frontend Vite assets |
+| `npm run build:frontend` | Generates minified client production bundle in `frontend/dist` |
+| `npm run build:backend` | Bundles Node.js serverless backend to `backend/api/index.js` |
+| `npm run typecheck` | Executes strict TypeScript compilation checks across all workspaces |
+| `npm test` | Runs the full automated end-to-end integration test suite |
+| `npm run db:push` | Pushes Drizzle ORM schema changes directly to PostgreSQL |
+| `npm run db:studio` | Launches visual Drizzle Studio database explorer |
 
 ---
 
-## 🔒 Security & Best Practices
+## 🧪 Testing & Validation
 
-- **Zero Credentials in Code**: All sensitive strings (tokens, API keys, database strings) are loaded via environment variables and excluded through `.gitignore`.
-- **Stateless Tokens**: Protected against unauthorized session hijacking with HTTP-only cookie flags and signed JWT validation.
-- **SQL Injection Prevention**: Completely parameterized SQL queries via Drizzle ORM.
-- **Input Sanitization**: Request bodies validated before database insertion.
-- **Safe Area Inset Handling**: Full adherence to iOS notch and Android gesture pill safe boundaries.
+The project includes an end-to-end integration and mathematical verification suite checking ledger precision, token security, and settlement invariants:
+
+```bash
+# Execute integration test suite against live backend
+npm test
+
+# Run strict TypeScript compiler checks across all workspaces
+npm run typecheck
+```
+
+---
+
+## 🌐 Production Deployment
+
+### Frontend (Vercel / Netlify / Cloudflare Pages)
+- **Framework Preset:** Vite
+- **Root Directory:** `frontend`
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Environment Variables:** `VITE_API_URL=https://your-backend-api.vercel.app`
+
+### Backend (Vercel Serverless / Node.js)
+- Serverless entrypoint in `backend/serverless.ts` bundled into an edge-ready Node.js handler (`backend/api/index.js`) using `esbuild`.
+- Configured via root [vercel.json](file:///c:/Users/viren/Music/Flatmate%20Expense%20Manager/vercel.json) for automatic `/api` route forwarding.
+- Connects to [Neon PostgreSQL](https://neon.tech) over SSL with connection pooling and DNS-resilient caching.
 
 ---
 
 ## 👥 Contributors
 
-Thanks to the contributors who have helped build the Flatmate Expense Tracker:
+Built with precision for seamless shared apartment living:
 
 <table>
   <tr>
     <td align="center">
       <a href="https://github.com/Virendra-Phirke">
-        <img src="https://github.com/Virendra-Phirke.png" width="80px;" alt="Virendra Phirke"/><br />
+        <img src="https://github.com/Virendra-Phirke.png" width="85px;" alt="Virendra Phirke"/><br />
         <sub><b>Virendra Phirke</b></sub>
       </a><br />
-      <sub>Architecture & Backend</sub>
+      <sub>Architecture, Backend & Ledger Engine</sub>
     </td>
     <td align="center">
       <a href="https://github.com/Saurav-Shelke">
-        <img src="https://github.com/Saurav-Shelke.png" width="80px;" alt="Saurav H Shelke"/><br />
+        <img src="https://github.com/Saurav-Shelke.png" width="85px;" alt="Saurav H Shelke"/><br />
         <sub><b>Saurav H Shelke</b></sub>
       </a><br />
-      <sub>Mobile UI/UX, Theme System & Frontend</sub>
+      <sub>Mobile UI/UX, Theme Engine & Client State</sub>
     </td>
   </tr>
 </table>
