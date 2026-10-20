@@ -29,13 +29,13 @@ export function CategoryDonutChart({ categories, totalSpendingPaise }: CategoryD
 
   if (!categories || categories.length === 0 || totalSpendingPaise === 0) {
     return (
-      <Card className="p-6 sm:p-8 text-center border-border/80 bg-card/60 backdrop-blur-xs">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/80 text-muted-foreground mb-3">
-          <ChartPie className="h-6 w-6 opacity-75" />
+      <Card className="p-6 sm:p-8 text-center border-border bg-card">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground mb-3">
+          <ChartPie className="h-6 w-6" />
         </div>
         <p className="text-sm font-semibold text-foreground">No category spending data</p>
         <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-          Add expenses or widen the active date filter to view your category spending breakdown.
+          Add expenses or widen the date filter to see your category breakdown.
         </p>
       </Card>
     );
@@ -126,7 +126,6 @@ export function CategoryDonutChart({ categories, totalSpendingPaise }: CategoryD
                     }
                   }}
                   style={{
-                    filter: isHovered ? `drop-shadow(0 0 10px ${slice.color}95)` : undefined,
                     opacity: hoveredIdx === null || isHovered ? 1 : 0.45,
                   }}
                 />

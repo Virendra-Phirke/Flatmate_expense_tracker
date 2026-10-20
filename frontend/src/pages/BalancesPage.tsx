@@ -46,69 +46,78 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
   const credits = summary.pairwise?.filter((item) => Number(item.outstanding || 0) > 0) ?? [];
 
   return (
-    <div className="space-y-4 xs:space-y-5 sm:space-y-6">
+    <main className="space-y-5 sm:space-y-6">
       {/* ── Header ──────────────────────────────────────── */}
-      <header className="space-y-3">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3 sm:pb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-              <Scale className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <h1 className="text-xl xs:text-2xl font-bold tracking-tight sm:text-3xl">Balances</h1>
-          </div>
-          <p className="mt-1.5 text-xs text-muted-foreground">See who you need to pay and who still owes you.</p>
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-foreground">
+            Balances & Settlement
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
+            Bilateral netting across household bills and individual flatmate advances.
+          </p>
         </div>
-        <Button onClick={() => onNavigateToRepayments()} className="w-full xs:w-auto h-10 xs:h-11 text-xs xs:text-sm">
+        <Button onClick={() => onNavigateToRepayments()} className="w-full sm:w-auto h-10 text-xs sm:text-sm font-semibold">
           Initiate repayment
-          <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 ml-1.5" aria-hidden="true" />
         </Button>
       </header>
 
       {/* ── Net position card ────────────────────────────── */}
-      <Card>
-        <CardContent className="p-3 xs:p-4 sm:p-5">
+      <Card className="overflow-hidden">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] xs:text-xs font-medium text-muted-foreground">Net position</p>
-              <p className="mt-1 amount-display text-2xl xs:text-3xl font-semibold tracking-tight sm:text-4xl">
+              <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Net position</p>
+              <p className="mt-1 font-serif text-3xl xs:text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
                 {formatPaise(Math.abs(netBalance))}
               </p>
-              <p className="mt-1 text-xs font-medium">
+              <p className="mt-1.5 text-xs font-medium">
                 {netBalance > 0 ? 'You are owed overall' : netBalance < 0 ? 'You owe overall' : 'Everything is settled'}
               </p>
             </div>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2.5">
             <div className="rounded-xl bg-negative-soft px-3.5 py-2.5">
               <p className="text-xs font-medium text-muted-foreground">You owe</p>
-              <p className="mt-0.5 amount-display text-sm xs:text-base font-bold text-negative">{formatPaise(summary.owedByMe)}</p>
+              <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-negative">{formatPaise(summary.owedByMe)}</p>
             </div>
             <div className="rounded-xl bg-positive-soft px-3.5 py-2.5">
               <p className="text-xs font-medium text-muted-foreground">Owed to you</p>
-              <p className="mt-0.5 amount-display text-sm xs:text-base font-bold text-positive">{formatPaise(summary.owedToMe)}</p>
+              <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-positive">{formatPaise(summary.owedToMe)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* ── Spending totals – 2 compact cards ────────────── */}
-      <section aria-labelledby="other-totals-heading">
-        <h2 id="other-totals-heading" className="mb-2.5 text-sm font-semibold">Spending totals</h2>
-        <div className="grid grid-cols-1 xs:grid-cols-2 gap-2.5">
-          <Card>
-            <CardContent className="p-3.5 xs:p-4">
-              <p className="text-xs text-muted-foreground">Common-expense share</p>
-              <p className="mt-0.5 amount-display text-base xs:text-lg font-bold">{formatPaise(summary.commonShare || 0)}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Paid: {formatPaise(summary.commonPaid || 0)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-3.5 xs:p-4">
-              <p className="text-xs text-muted-foreground">Personal spending</p>
-              <p className="mt-0.5 amount-display text-base xs:text-lg font-bold">{formatPaise(summary.personalSpending || 0)}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Not shared with household</p>
-            </CardContent>
-          </Card>
+      {/* ── Spending totals – 2 column editorial ledger ── */}
+      <section aria-labelledby="other-totals-heading" className="space-y-2">
+        <h2 id="other-totals-heading" className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+          Spending Totals
+        </h2>
+        <div className="rounded-xl border border-border bg-card divide-y xs:divide-y-0 xs:divide-x divide-border grid grid-cols-1 xs:grid-cols-2 shadow-xs overflow-hidden">
+          <article className="p-4 sm:p-5 flex flex-col justify-between">
+            <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+              Common Share
+            </span>
+            <div className="my-2.5">
+              <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
+                {formatPaise(summary.commonShare || 0)}
+              </p>
+            </div>
+            <p className="text-[11px] text-muted-foreground font-mono">Paid: {formatPaise(summary.commonPaid || 0)}</p>
+          </article>
+          <article className="p-4 sm:p-5 flex flex-col justify-between">
+            <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+              Personal Costs
+            </span>
+            <div className="my-2.5">
+              <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
+                {formatPaise(summary.personalSpending || 0)}
+              </p>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Not shared with flatmates</p>
+          </article>
         </div>
       </section>
 
@@ -211,6 +220,6 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
           </CardContent>
         </Card>
       </section>
-    </div>
+    </main>
   );
 }

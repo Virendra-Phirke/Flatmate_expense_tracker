@@ -43,14 +43,11 @@ import {
   TrendingUp,
   RefreshCw,
   X,
-  Sparkles,
   ChevronDown,
   Check,
   Calendar,
 } from '@/components/ui/icons';
 
-import { DotPattern } from '@/components/magicui/dot-pattern';
-import { AnimatedShinyText } from '@/components/magicui/animated-shiny-text';
 import { AnalyticsKpiCards } from '@/components/analytics/AnalyticsKpiCards';
 import { AnalyticsActionsMenu } from '@/components/analytics/AnalyticsActionsMenu';
 import { CategoryDonutChart } from '@/components/analytics/CategoryDonutChart';
@@ -148,52 +145,42 @@ export function AnalyticsPage() {
     selectedCategory !== 'all_categories';
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* ── Page Hero Header with Magic UI DotPattern & Actions Dropdown Menu ── */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-card/70 p-3.5 sm:p-6 shadow-xs backdrop-blur-md">
-        <DotPattern glow className="opacity-40" />
-
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <TrendingUp className="h-4 w-4" />
-              </span>
-              <h1 className="text-lg xs:text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-                Expense Analytics
-              </h1>
-              <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-mono text-[9px] xs:text-[10px] sm:text-xs">
-                <Sparkles className="h-2.5 w-2.5 mr-1 text-primary hidden xs:inline" />
-                <AnimatedShinyText shimmerWidth={70}>Live Insights</AnimatedShinyText>
-              </Badge>
-            </div>
-            <p className="text-[11px] xs:text-xs sm:text-sm text-muted-foreground mt-1">
-              Unified financial intelligence across household common bills, personal costs, and on-behalf flatmate purchases
-            </p>
-          </div>
-
-          {/* Actions Dropdown Menu & Refresh Status */}
-          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-            {isFetching && (
-              <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-mono text-primary bg-primary/10 border border-primary/30 px-2 py-0.5 rounded-md">
-                <RefreshCw className="h-3 w-3 animate-spin" />
-                Refreshing...
-              </span>
-            )}
-            <AnalyticsActionsMenu
-              analytics={analytics}
-              onRefresh={() => void refetch()}
-              isFetching={isFetching}
-            />
-          </div>
+    <main className="space-y-5 sm:space-y-6">
+      {/* ── Semantic Editorial Header ── */}
+      <header className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 border-b border-border/80 pb-3 sm:pb-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-foreground">
+            Expense Analytics
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Household shared bills, personal costs, and flatmate advances in one ledger.
+          </p>
         </div>
-      </div>
 
-      {/* ── Executive KPI Cards (MagicCard, ShineBorder & NumberTicker) ─ */}
+        {/* Actions Dropdown & Live Indicator */}
+        <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+          {isFetching && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
+              <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+              Updating
+            </span>
+          )}
+          <AnalyticsActionsMenu
+            analytics={analytics}
+            onRefresh={() => void refetch()}
+            isFetching={isFetching}
+          />
+        </div>
+      </header>
+
+      {/* ── Executive Financial Ledger Breakdown ───────────────── */}
       <AnalyticsKpiCards kpi={analytics.kpi} typeDistribution={analytics.typeDistribution} />
 
       {/* ── Multi-Dimensional Filter Controls ───────────────── */}
-      <div className="space-y-3 rounded-2xl border border-border/80 bg-card/60 p-3 sm:p-4 shadow-xs backdrop-blur-xs">
+      <section
+        aria-label="Expense filter controls"
+        className="space-y-3 rounded-xl border border-border bg-card p-3 sm:p-4 shadow-xs"
+      >
         {/* Date Filter Bar */}
         <div>
           <DateFilter value={dateFilter} onChange={setDateFilter} />
@@ -270,10 +257,13 @@ export function AnalyticsPage() {
             )}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Visual Mode Switcher (Dropdown Menu on Mobile & Tabs on Desktop) ── */}
-      <div className="rounded-2xl border border-border/80 bg-card/60 p-3.5 sm:p-5 shadow-xs backdrop-blur-xs">
+      {/* ── Visual Perspective Views ── */}
+      <section
+        aria-label="Spending charts and transaction views"
+        className="rounded-xl border border-border bg-card p-3.5 sm:p-5 shadow-xs"
+      >
         <Tabs
           value={visualMode}
           onValueChange={(val) => setVisualMode(val as AnalyticsVisualMode)}
@@ -378,7 +368,7 @@ export function AnalyticsPage() {
             <AnalyticsTable transactions={analytics.topTransactions} />
           </TabsContent>
         </Tabs>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

@@ -27,20 +27,21 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
   );
 
   return (
-    <div className="space-y-4 xs:space-y-5 sm:space-y-6">
+    <main className="space-y-5 sm:space-y-6">
       {/* ── Header ──────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 xs:gap-4">
+      <header className="flex flex-col gap-2 border-b border-border/80 pb-3 sm:pb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl xs:text-2xl font-bold tracking-tight">Bought for me</h1>
-            <Badge variant="outline" className="font-mono text-[10px] xs:text-xs">
-              {purchases.length} items
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Bought for Me</h1>
+            <Badge variant="outline" className="font-mono text-xs">
+              {purchases.length} {purchases.length === 1 ? 'item' : 'items'}
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Items your flatmates paid for on your behalf
           </p>
         </div>
+      </header>
 
         {/* Summary + CTA row */}
         {totalOwed > 0 && (
@@ -55,7 +56,6 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
             </Button>
           </div>
         )}
-      </div>
 
       {isLoading && purchases.length === 0 ? (
         <ResponsiveTableSkeleton rows={5} mobileCards={3} />
@@ -140,6 +140,6 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
           })}
         </div>
       )}
-    </div>
+    </main>
   );
 }

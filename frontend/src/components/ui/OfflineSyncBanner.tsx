@@ -42,27 +42,27 @@ export function OfflineSyncBanner() {
     >
       {!status.isOnline ? (
         // Offline Banner
-        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-300 shadow-xs backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-200 shadow-xs">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
               <CloudOff className="h-3.5 w-3.5" />
             </span>
             <div className="min-w-0">
-              <span className="font-semibold text-amber-200">Offline Mode:</span>{' '}
-              <span className="text-amber-300/90">
+              <span className="font-semibold text-amber-950 dark:text-amber-100">Offline Mode:</span>{' '}
+              <span className="text-amber-900/90 dark:text-amber-200/90">
                 Data is saved locally in IndexedDB.
               </span>
             </div>
           </div>
           {status.pendingCount > 0 && (
-            <div className="flex items-center gap-1.5 shrink-0 ml-auto font-mono text-[11px] font-semibold bg-amber-500/20 text-amber-200 px-2.5 py-1 rounded-md border border-amber-500/30">
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto font-mono text-[11px] font-semibold bg-amber-500/20 text-amber-900 dark:text-amber-100 px-2.5 py-1 rounded-md border border-amber-500/40">
               {status.pendingCount} pending {status.pendingCount === 1 ? 'change' : 'changes'}
             </div>
           )}
         </div>
       ) : status.isSyncing ? (
         // Syncing Banner
-        <div className="flex items-center justify-between gap-2.5 rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-2 text-xs text-primary shadow-xs backdrop-blur-md">
+        <div className="flex items-center justify-between gap-2.5 rounded-xl border border-primary/40 bg-primary/10 px-3.5 py-2 text-xs text-foreground shadow-xs">
           <div className="flex items-center gap-2">
             <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
             <span className="font-medium text-foreground">
@@ -72,17 +72,17 @@ export function OfflineSyncBanner() {
         </div>
       ) : showRecentlySynced ? (
         // Synced Success Flash
-        <div className="flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-300 shadow-xs backdrop-blur-md animate-in fade-in slide-in-from-top-1">
+        <div className="flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-900 dark:text-emerald-200 shadow-xs animate-in fade-in slide-in-from-top-1">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-            <span className="font-semibold text-emerald-200">
+            <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="font-semibold text-emerald-950 dark:text-emerald-100">
               All changes synced with cloud database
             </span>
           </div>
         </div>
       ) : status.pendingCount > 0 ? (
         // Back Online with pending items
-        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border bg-card/80 px-3.5 py-2 text-xs text-foreground shadow-xs backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground shadow-xs">
           <div className="flex items-center gap-2">
             <Cloud className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>{status.pendingCount} changes queued locally.</span>
@@ -90,7 +90,7 @@ export function OfflineSyncBanner() {
           <button
             type="button"
             onClick={handleManualSync}
-            className="flex items-center gap-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary px-2.5 py-1 font-medium transition-colors ml-auto text-[11px]"
+            className="flex items-center gap-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground px-2.5 py-1 font-medium transition-colors ml-auto text-[11px] border border-border"
           >
             <RefreshCw className="h-3 w-3" />
             Sync Now

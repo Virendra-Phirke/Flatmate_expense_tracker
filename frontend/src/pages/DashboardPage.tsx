@@ -92,15 +92,15 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
   const hasCredits = summary.pairwise?.some((credit) => Number(credit.outstanding || 0) > 0) ?? false;
 
   return (
-    <div className="space-y-4 xs:space-y-5 sm:space-y-6">
+    <main className="space-y-5 sm:space-y-6">
       {/* ── Page header ──────────────────────────────────── */}
       <header className="space-y-3">
         <div className="min-w-0">
-          <p className="text-[11px] xs:text-xs font-medium text-muted-foreground">{user?.householdName || 'Household ledger'}</p>
-          <h1 className="mt-0.5 text-xl xs:text-2xl font-bold tracking-tight sm:text-3xl">
+          <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{user?.householdName || 'Household ledger'}</p>
+          <h1 className="mt-1 text-2xl xs:text-3xl font-serif font-bold tracking-tight text-foreground sm:text-4xl">
             Hi, {user?.fullName?.split(' ')[0] || 'there'} 👋
           </h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">Here's where things stand today.</p>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">Current standing across all flat expenses and settlements.</p>
         </div>
         {/* Action buttons – 2-col grid on mobile, row on sm+ */}
         <div className="grid grid-cols-2 gap-2 xs:gap-2.5 sm:flex sm:flex-wrap">
@@ -121,15 +121,15 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
 
       {/* ── Net position hero card ────────────────────────── */}
       <Card className="overflow-hidden">
-        <CardContent className="p-3 xs:p-4 sm:p-5">
+        <CardContent className="p-4 sm:p-6">
           {/* Top: large net amount */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] xs:text-xs font-medium text-muted-foreground">Your net position</p>
-              <p className="mt-1 amount-display text-2xl xs:text-3xl font-semibold tracking-tight sm:text-4xl">
+              <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Your net position</p>
+              <p className="mt-1 font-serif text-3xl xs:text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
                 {formatPaise(Math.abs(netBalance))}
               </p>
-              <div className="mt-2 flex items-center gap-1.5">
+              <div className="mt-2.5 flex items-center gap-1.5">
                 <span
                   className={
                     'flex h-6 w-6 shrink-0 items-center justify-center rounded-full ' +
@@ -147,17 +147,17 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
             </div>
           </div>
 
-          {/* Bottom: owe / owed-to-you mini chips */}
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-negative-soft px-3 py-2">
-              <p className="text-[10px] xs:text-xs font-medium text-muted-foreground">You owe</p>
-              <p className="mt-0.5 amount-display text-sm xs:text-base font-bold text-negative">
+          {/* Bottom: owe / owed-to-you chips */}
+          <div className="mt-4 grid grid-cols-2 gap-2.5">
+            <div className="rounded-xl bg-negative-soft px-3.5 py-2.5">
+              <p className="text-xs font-medium text-muted-foreground">You owe</p>
+              <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-negative">
                 {formatPaise(summary.owedByMe)}
               </p>
             </div>
-            <div className="rounded-xl bg-positive-soft px-3 py-2">
-              <p className="text-[10px] xs:text-xs font-medium text-muted-foreground">Owed to you</p>
-              <p className="mt-0.5 amount-display text-sm xs:text-base font-bold text-positive">
+            <div className="rounded-xl bg-positive-soft px-3.5 py-2.5">
+              <p className="text-xs font-medium text-muted-foreground">Owed to you</p>
+              <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-positive">
                 {formatPaise(summary.owedToMe)}
               </p>
             </div>
@@ -165,145 +165,77 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
         </CardContent>
       </Card>
 
-      {/* ── Spending overview – 3 stat cards ─────────────── */}
-      <section aria-labelledby="spending-summary-heading">
-        <div className="mb-2.5 flex items-center justify-between">
-          <h2 id="spending-summary-heading" className="text-sm font-semibold">Spending overview</h2>
-          <span className="text-[11px] text-muted-foreground">Current totals</span>
+      {/* ── Spending Ledger Row (Editorial Typographic Ledger) ── */}
+      <section aria-labelledby="spending-summary-heading" className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 id="spending-summary-heading" className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            Current Outflow
+          </h2>
+          <span className="text-xs text-muted-foreground">Household active totals</span>
         </div>
-        {/* Mobile: Unified list card (< sm) */}
-        <Card className="sm:hidden divide-y divide-border overflow-hidden">
-          {/* Personal */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => onNavigate('personal')}
-            className="flex items-center gap-3 p-3 transition-colors hover:bg-muted/40 active:bg-muted cursor-pointer"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-              <Wallet className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-foreground">Personal spending</p>
-                <span className="amount-display text-xs font-bold text-foreground">
-                  {formatPaise(summary.personalSpending || 0)}
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Not shared with household</p>
-            </div>
-          </div>
 
-          {/* Common share */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => onNavigate('common')}
-            className="flex items-center gap-3 p-3 transition-colors hover:bg-muted/40 active:bg-muted cursor-pointer"
+        <div className="rounded-xl border border-border bg-card divide-y sm:divide-y-0 sm:divide-x divide-border grid grid-cols-1 sm:grid-cols-3 shadow-xs overflow-hidden">
+          {/* Personal */}
+          <button
+            type="button"
+            onClick={() => onNavigate('personal')}
+            className="p-4 sm:p-5 flex flex-col justify-between text-left transition-colors hover:bg-secondary/40 active:bg-secondary/60 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-              <Users className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-foreground">Common share</p>
-                <span className="amount-display text-xs font-bold text-foreground">
-                  {formatPaise(summary.commonShare || 0)}
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground">
-                Your share • Paid: {formatPaise(summary.commonPaid || 0)}
+            <div className="flex items-baseline justify-between gap-1 w-full">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+                Personal
+              </span>
+              <span className="text-[11px] text-muted-foreground">Not shared</span>
+            </div>
+            <div className="my-2.5">
+              <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
+                {formatPaise(summary.personalSpending || 0)}
               </p>
             </div>
-          </div>
-
-          {/* Bought for others */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => onNavigate('purchases_made')}
-            className="flex items-center gap-3 p-3 transition-colors hover:bg-muted/40 active:bg-muted cursor-pointer"
-          >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-              <CreditCard className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-foreground">Bought for others</p>
-                <span className="amount-display text-xs font-bold text-foreground">
-                  {formatPaise(summary.advancedForOthers || 0)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] text-muted-foreground">Advanced for flatmates</p>
-                <span className="text-[10px] font-semibold text-primary inline-flex items-center gap-0.5">
-                  View <ChevronRight className="h-3 w-3" />
-                </span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Tablet & Desktop: 3 individual cards (sm:grid) */}
-        <div className="hidden sm:grid sm:grid-cols-3 gap-3">
-          {/* Personal */}
-          <Card
-            onClick={() => onNavigate('personal')}
-            className="transition-colors hover:border-primary/40 cursor-pointer"
-          >
-            <CardContent className="flex items-center gap-3 p-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                <Wallet className="h-4.5 w-4.5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted-foreground truncate">Personal</p>
-                <p className="mt-0.5 amount-display text-base font-bold text-foreground">
-                  {formatPaise(summary.personalSpending || 0)}
-                </p>
-                <p className="text-[11px] text-muted-foreground truncate">Not shared</p>
-              </div>
-            </CardContent>
-          </Card>
+            <p className="text-[11px] text-muted-foreground">Individual expenses paid strictly for yourself.</p>
+          </button>
 
           {/* Common share */}
-          <Card
+          <button
+            type="button"
             onClick={() => onNavigate('common')}
-            className="transition-colors hover:border-primary/40 cursor-pointer"
+            className="p-4 sm:p-5 flex flex-col justify-between text-left transition-colors hover:bg-secondary/40 active:bg-secondary/60 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <CardContent className="flex items-center gap-3 p-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                <Users className="h-4.5 w-4.5" aria-hidden="true" />
+            <div className="flex items-baseline justify-between gap-1 w-full">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+                Common Share
               </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted-foreground truncate">Common share</p>
-                <p className="mt-0.5 amount-display text-base font-bold text-foreground">
-                  {formatPaise(summary.commonShare || 0)}
-                </p>
-                <p className="text-[11px] text-muted-foreground truncate">Paid: {formatPaise(summary.commonPaid || 0)}</p>
-              </div>
-            </CardContent>
-          </Card>
+              <span className="text-[11px] text-muted-foreground font-mono">Paid {formatPaise(summary.commonPaid || 0)}</span>
+            </div>
+            <div className="my-2.5">
+              <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
+                {formatPaise(summary.commonShare || 0)}
+              </p>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Your portion of split rent, utilities, and flat groceries.</p>
+          </button>
 
           {/* Bought for others */}
-          <Card
+          <button
+            type="button"
             onClick={() => onNavigate('purchases_made')}
-            className="transition-colors hover:border-primary/40 cursor-pointer"
+            className="p-4 sm:p-5 flex flex-col justify-between text-left transition-colors hover:bg-secondary/40 active:bg-secondary/60 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <CardContent className="flex items-center gap-3 p-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                <CreditCard className="h-4.5 w-4.5" aria-hidden="true" />
+            <div className="flex items-baseline justify-between gap-1 w-full">
+              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+                Flatmate Advances
               </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-muted-foreground truncate">Bought for others</p>
-                <p className="mt-0.5 amount-display text-base font-bold text-foreground">
-                  {formatPaise(summary.advancedForOthers || 0)}
-                </p>
-                <span className="text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
-                  View purchases <ChevronRight className="h-3 w-3" />
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+              <span className="text-[11px] text-primary font-medium inline-flex items-center gap-0.5">
+                View <ChevronRight className="h-3 w-3" />
+              </span>
+            </div>
+            <div className="my-2.5">
+              <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
+                {formatPaise(summary.advancedForOthers || 0)}
+              </p>
+            </div>
+            <p className="text-[11px] text-muted-foreground">Purchases fronted for flatmates to be settled and repaid.</p>
+          </button>
         </div>
       </section>
 
@@ -459,6 +391,6 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
           )}
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 }

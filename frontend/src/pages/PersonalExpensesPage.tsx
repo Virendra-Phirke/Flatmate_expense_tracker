@@ -129,19 +129,19 @@ export function PersonalExpensesPage({
   const isFilterActive = activeDateFilter.mode !== 'all';
 
   return (
-    <div className="space-y-6">
+    <main className="space-y-6">
       {/* Page Header */}
       {!hideTitle && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-3 sm:pb-4">
             <div>
               <div className="flex items-center gap-2.5">
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">Personal expenses</h1>
+                <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Personal Expenses</h1>
                 <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
                   {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Expenses only for yourself that are not shared with flatmates
               </p>
             </div>
@@ -154,23 +154,23 @@ export function PersonalExpensesPage({
               </div>
               <Button
                 onClick={() => setModalOpen(true)}
-                className="min-h-11 text-xs sm:text-sm"
+                className="min-h-11 text-xs sm:text-sm font-semibold"
               >
                 <Plus className="h-4 w-4 mr-1.5" aria-hidden="true" />
                 Add Expense
               </Button>
             </div>
-          </div>
+          </header>
 
           {/* Standalone DateFilter bar */}
-          <div className="rounded-2xl border border-border/80 bg-card/60 p-3 shadow-xs">
+          <section aria-label="Date filter" className="rounded-xl border border-border bg-card p-3 shadow-xs">
             <DateFilter
               value={activeDateFilter}
               onChange={handleDateFilterChange}
               totalRecords={expenses.length}
               filteredCount={filteredExpenses.length}
             />
-          </div>
+          </section>
         </div>
       )}
 
@@ -512,6 +512,6 @@ export function PersonalExpensesPage({
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 }

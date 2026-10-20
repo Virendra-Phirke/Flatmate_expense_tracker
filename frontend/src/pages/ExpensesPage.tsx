@@ -13,17 +13,17 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ mode: 'all' });
 
   return (
-    <div className="space-y-6">
+    <main className="space-y-6">
       {/* Top Header & Segmented Control */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Expenses</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-foreground">Expenses</h1>
+          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Manage your personal spending and items purchased on behalf of flatmates
           </p>
         </div>
 
-        {/* Segmented Control (Section 9.7 & 10.3) */}
+        {/* Segmented Control */}
         <div
           role="tablist"
           aria-label="Expense views"
@@ -58,12 +58,12 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
             <span className="truncate">Bought for others</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Date Filter Bar */}
-      <div className="rounded-2xl border border-border/80 bg-card/60 p-3 sm:p-3.5 shadow-xs backdrop-blur-xs">
+      <section aria-label="Date filter" className="rounded-xl border border-border bg-card p-3 sm:p-3.5 shadow-xs">
         <DateFilter value={dateFilter} onChange={setDateFilter} />
-      </div>
+      </section>
 
       {/* Render sub-view */}
       {subTab === 'personal' ? (
@@ -79,7 +79,7 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
           onDateFilterChange={setDateFilter}
         />
       )}
-    </div>
+    </main>
   );
 }
 

@@ -160,12 +160,12 @@ export function CommonExpensesPage() {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <div className="space-y-6">
+    <main className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-3 sm:pb-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Common Expenses</h1>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Common Expenses</h1>
             <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
               {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
             </Badge>
@@ -186,24 +186,24 @@ export function CommonExpensesPage() {
           {isAdmin && (
             <Button
               onClick={() => setModalOpen(true)}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-semibold"
             >
               <Plus className="h-4 w-4 mr-1.5" />
               Add Common Expense
             </Button>
           )}
         </div>
-      </div>
+      </header>
 
       {/* Date Filter Bar */}
-      <div className="rounded-2xl border border-border/80 bg-card/60 p-3 sm:p-3.5 shadow-xs backdrop-blur-xs">
+      <section aria-label="Date filter" className="rounded-xl border border-border bg-card p-3 sm:p-3.5 shadow-xs">
         <DateFilter
           value={dateFilter}
           onChange={setDateFilter}
           totalRecords={expenses.length}
           filteredCount={filteredExpenses.length}
         />
-      </div>
+      </section>
 
       {isLoading ? (
         <ResponsiveTableSkeleton rows={5} mobileCards={3} />
@@ -602,6 +602,6 @@ export function CommonExpensesPage() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </main>
   );
 }

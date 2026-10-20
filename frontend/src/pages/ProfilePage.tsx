@@ -86,14 +86,14 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="space-y-4 xs:space-y-5 sm:space-y-6 max-w-4xl">
+    <main className="space-y-5 sm:space-y-6 max-w-4xl">
       {/* Header */}
-      <div>
-        <h1 className="text-xl xs:text-2xl font-bold text-foreground tracking-tight">Profile & Security</h1>
-        <p className="text-xs text-muted-foreground mt-1">
+      <header className="border-b border-border/80 pb-3 sm:pb-4">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Profile & Security</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           Manage your UPI receiving details and account settings
         </p>
-      </div>
+      </header>
 
       <div className="grid grid-cols-1 gap-4 xs:gap-5 sm:gap-6 lg:grid-cols-3">
         {/* Left Column: Account Details & Security */}
@@ -359,6 +359,6 @@ export function ProfilePage() {
         open={passwordModalOpen}
         onOpenChange={setPasswordModalOpen}
       />
-    </div>
+    </main>
   );
 }

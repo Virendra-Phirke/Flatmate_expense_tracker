@@ -473,7 +473,7 @@ export function DateFilter({
       {isOpen && (
         <div
           className={cn(
-            'absolute left-0 mt-2 z-50 w-full sm:w-[350px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-md animate-in fade-in-50 zoom-in-95 duration-150',
+            'absolute left-0 mt-2 z-50 w-full sm:w-[350px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card p-4 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150',
             'top-full'
           )}
         >

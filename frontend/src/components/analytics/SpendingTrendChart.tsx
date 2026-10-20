@@ -50,10 +50,10 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
 
   if (data.length === 0) {
     return (
-      <Card className="p-6 sm:p-8 text-center border-border bg-card/60 backdrop-blur-xs">
+      <Card className="p-6 sm:p-8 text-center border-border bg-card">
         <ChartLine className="mx-auto h-8 w-8 text-muted-foreground/60 mb-2" />
         <p className="text-sm font-semibold">No timeline data available</p>
-        <p className="text-xs text-muted-foreground mt-1">Add expenses to track your daily and cumulative spending trends over time.</p>
+        <p className="text-xs text-muted-foreground mt-1">Add expenses to track your spending trajectory over time.</p>
       </Card>
     );
   }
@@ -107,19 +107,14 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
     >
       {/* Controls row */}
       <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <TrendingUp className="h-4 w-4" />
+        <header className="flex items-baseline gap-2">
+          <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            {viewMode === 'daily' ? 'Daily Spend' : 'Cumulative Spend'}
+          </h3>
+          <span className="font-mono text-xs text-muted-foreground">
+            ({data.length} {data.length === 1 ? 'entry' : 'entries'})
           </span>
-          <div>
-            <span className="text-xs font-semibold text-foreground">
-              {viewMode === 'daily' ? 'Daily Spending Velocity' : 'Cumulative Spending Velocity'}
-            </span>
-            <span className="text-[10px] text-muted-foreground block xs:hidden">
-              {data.length} recorded data points
-            </span>
-          </div>
-        </div>
+        </header>
 
         {/* View mode toggle with ARIA tab roles */}
         <div
@@ -159,7 +154,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
       {/* SVG Chart Container */}
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-2xl border border-border/80 bg-card/60 p-2 sm:p-4 shadow-xs backdrop-blur-xs select-none touch-pan-y"
+        className="relative w-full overflow-hidden rounded-xl border border-border bg-card p-3 sm:p-4 shadow-xs select-none touch-pan-y"
       >
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -179,12 +174,9 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
         >
           <defs>
             <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.4" />
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
               <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.0" />
             </linearGradient>
-            <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="hsl(var(--primary))" floodOpacity="0.35" />
-            </filter>
           </defs>
 
           {/* Grid lines & Y-axis labels */}
@@ -218,16 +210,15 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
           {/* Smooth Area fill */}
           {areaD && <path d={areaD} fill="url(#trendGradient)" />}
 
-          {/* Smooth Line stroke with ambient glow */}
+          {/* Smooth Line stroke */}
           {pathD && (
             <path
               d={pathD}
               fill="none"
               stroke="hsl(var(--primary))"
-              strokeWidth="2.5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              filter="url(#glowEffect)"
             />
           )}
 
@@ -293,7 +284,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
         {/* Floating Tooltip Box (smart positioning on mobile vs desktop) */}
         {activePoint && (
           <div
-            className={`absolute top-2 z-10 p-2 sm:p-2.5 rounded-xl border border-primary/40 bg-card/95 shadow-lg backdrop-blur-md text-xs space-y-1 animate-in fade-in zoom-in-95 pointer-events-none min-w-[140px] sm:min-w-[170px] ${
+            className={`absolute top-2 z-10 p-2 sm:p-2.5 rounded-xl border border-border bg-card shadow-lg text-xs space-y-1 animate-in fade-in zoom-in-95 pointer-events-none min-w-[140px] sm:min-w-[170px] ${
               activePoint.x > innerWidth / 2 ? 'left-3 sm:left-4' : 'right-3 sm:right-4'
             }`}
           >

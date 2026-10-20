@@ -329,7 +329,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
       {/* ── Main content area ───────────────────────────────────── */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* Mobile top header */}
-        <header className="sticky top-0 z-30 flex min-h-[52px] items-center justify-between gap-2 border-b border-border bg-background/95 px-3 xs:px-4 py-2 backdrop-blur-md md:hidden">
+        <header className="sticky top-0 z-30 flex min-h-[52px] items-center justify-between gap-2 border-b border-border bg-background px-3 xs:px-4 py-2 md:hidden">
           <div className="flex min-w-0 items-center gap-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
@@ -410,7 +410,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
       {/* ── Mobile bottom navigation dock ────────────────────────────── */}
       <nav
         aria-label="Primary mobile navigation"
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border/80 bg-card/95 backdrop-blur-xl shadow-lg md:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-border bg-card shadow-lg md:hidden"
         style={{
           minHeight: '62px',
           paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))',
@@ -487,7 +487,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
             type="button"
             aria-label="Close More menu"
             onClick={() => setMobileMoreOpen(false)}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] md:hidden"
+            className="fixed inset-0 z-40 bg-black/60 md:hidden"
           />
           {/* Sheet */}
           <section

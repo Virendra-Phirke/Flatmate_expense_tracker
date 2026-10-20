@@ -74,25 +74,25 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
     switch (type) {
       case 'personal':
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+          <Badge variant="outline" className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
             Personal
           </Badge>
         );
       case 'common':
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+          <Badge variant="outline" className="text-[10px] font-semibold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30">
             Household
           </Badge>
         );
       case 'on_behalf':
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-violet-500/10 text-violet-400 border-violet-500/30">
+          <Badge variant="outline" className="text-[10px] font-semibold bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30">
             For Flatmate
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-muted text-muted-foreground">
+          <Badge variant="outline" className="text-[10px] font-semibold bg-secondary text-secondary-foreground border-border">
             {type}
           </Badge>
         );
@@ -231,14 +231,14 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
       {/* ── MOBILE CARD VIEW (Phones < 640px) ───────────────── */}
       <div className="block sm:hidden space-y-2">
         {filtered.length === 0 ? (
-          <div className="p-4 text-center text-xs text-muted-foreground bg-card/40 rounded-xl border border-border">
+          <div className="p-4 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border">
             No matching transactions found
           </div>
         ) : (
           filtered.map((t) => (
             <div
               key={t.id}
-              className="p-3 rounded-xl border border-border/80 bg-card/75 shadow-xs space-y-2 touch-manipulation active:scale-[0.99] transition-transform"
+              className="p-3 rounded-xl border border-border bg-card shadow-xs space-y-2 touch-manipulation active:scale-[0.99] transition-transform"
             >
               <div className="flex items-center justify-between text-xs">
                 <span className="font-mono text-[10px] text-muted-foreground flex items-center gap-1">
@@ -254,8 +254,8 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
                     {t.description}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-1 bg-secondary/60 px-1.5 py-0.5 rounded">
-                      <Tag className="h-2.5 w-2.5 text-muted-foreground/70" />
+                    <span className="inline-flex items-center gap-1 bg-secondary px-1.5 py-0.5 rounded text-secondary-foreground font-medium">
+                      <Tag className="h-2.5 w-2.5 text-muted-foreground" />
                       {t.categoryName}
                     </span>
                     {t.otherUserName && (
@@ -277,7 +277,7 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
       </div>
 
       {/* ── DESKTOP TABLE VIEW (Tablets & Desktops >= 640px) ── */}
-      <div className="hidden sm:block overflow-hidden rounded-2xl border border-border/80 bg-card/60 shadow-xs backdrop-blur-xs">
+      <div className="hidden sm:block overflow-hidden rounded-xl border border-border bg-card shadow-xs">
         <Table>
           <TableHeader>
             <TableRow>

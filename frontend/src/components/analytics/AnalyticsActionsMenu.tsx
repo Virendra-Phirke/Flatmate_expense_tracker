@@ -14,10 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import {
   MoreHorizontal,
   RefreshCw,
-  Sparkles,
+  Copy,
+  Download,
   Check,
 } from '@/components/ui/icons';
-import { AnimatedShinyText } from '@/components/magicui/animated-shiny-text';
 
 interface AnalyticsActionsMenuProps {
   analytics: AnalyticsData;
@@ -32,7 +32,6 @@ interface AnalyticsActionsMenuProps {
 function sanitizeCSVField(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '""';
   const str = String(value).trim();
-  // If field starts with formula triggers, prepend a single quote to neutralize execution in Excel/Sheets
   if (/^[=+@-|\t\r]/.test(str)) {
     return `"'${str.replace(/"/g, '""')}"`;
   }
@@ -46,7 +45,7 @@ export function AnalyticsActionsMenu({
 }: AnalyticsActionsMenuProps) {
   const [copied, setCopied] = useState(false);
 
-  // ── 1. Export CSV Handler (Secured against CWE-1236) ────────
+  // ── 1. Export CSV Handler ──────────────────────────────────
   const handleExportCSV = () => {
     if (!analytics.topTransactions || analytics.topTransactions.length === 0) return;
 
@@ -72,21 +71,21 @@ export function AnalyticsActionsMenu({
     URL.revokeObjectURL(url);
   };
 
-  // ── 2. Copy Financial Summary Report (With Cross-Browser Fallback) ─
+  // ── 2. Copy Financial Summary Report ───────────────────────
   const handleCopySummary = async () => {
     const topCategory =
       analytics.categories && analytics.categories.length > 0
         ? `${analytics.categories[0].categoryName} (${formatPaise(analytics.categories[0].totalPaise)})`
-        : 'N/A';
+        : 'None';
 
     const text = [
-      '📊 *Expense Intelligence Summary*',
-      `💰 Total Spending: ${formatPaise(analytics.kpi.totalSpendingPaise)} (${analytics.kpi.transactionCount} transactions)`,
-      `🏠 Household Share: ${formatPaise(analytics.kpi.commonSharePaise)} (${analytics.typeDistribution.commonPercentage.toFixed(1)}%)`,
-      `👤 Personal Spend: ${formatPaise(analytics.kpi.personalSpendingPaise)} (${analytics.typeDistribution.personalPercentage.toFixed(1)}%)`,
-      `🛍️ Advanced for Flatmates: ${formatPaise(analytics.kpi.onBehalfPaidPaise)} (${analytics.typeDistribution.onBehalfPercentage.toFixed(1)}%)`,
-      `🏷️ Top Category: ${topCategory}`,
-      `⚡ Daily Velocity: ~${formatPaise(analytics.kpi.dailyAveragePaise)}/day`,
+      'Flatmate Expense Summary',
+      `Total Spent: ${formatPaise(analytics.kpi.totalSpendingPaise)} (${analytics.kpi.transactionCount} transactions)`,
+      `Household Split: ${formatPaise(analytics.kpi.commonSharePaise)} (${analytics.typeDistribution.commonPercentage.toFixed(1)}%)`,
+      `Personal Costs: ${formatPaise(analytics.kpi.personalSpendingPaise)} (${analytics.typeDistribution.personalPercentage.toFixed(1)}%)`,
+      `Fronted for Flatmates: ${formatPaise(analytics.kpi.onBehalfPaidPaise)} (${analytics.typeDistribution.onBehalfPercentage.toFixed(1)}%)`,
+      `Top Category: ${topCategory}`,
+      `Daily Average: ${formatPaise(analytics.kpi.dailyAveragePaise)}/day`,
       `Generated on ${new Date().toLocaleDateString()}`,
     ].join('\n');
 
@@ -94,7 +93,6 @@ export function AnalyticsActionsMenu({
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
       } else {
-        // Fallback for non-secure context or older mobile WebViews
         const textArea = document.createElement('textarea');
         textArea.value = text;
         textArea.style.position = 'fixed';
@@ -108,7 +106,6 @@ export function AnalyticsActionsMenu({
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Fallback grace
       console.warn('Clipboard write was not permitted');
     }
   };
@@ -124,52 +121,47 @@ export function AnalyticsActionsMenu({
         <Button
           variant="outline"
           size="sm"
-          className="h-9 px-3 gap-1.5 border-border/80 bg-card/80 hover:bg-card hover:border-primary/50 text-foreground transition-all active:scale-95 touch-manipulation shadow-xs"
-          aria-label="Analytics options and export menu"
+          className="h-9 px-3 gap-1.5 border-border bg-card hover:bg-secondary text-foreground transition-colors shadow-xs"
+          aria-label="Export and reports menu"
         >
-          <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-          <span className="text-xs font-semibold">
-            <AnimatedShinyText shimmerWidth={70}>Actions</AnimatedShinyText>
-          </span>
-          <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground ml-0.5" />
+          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-medium">Export & Actions</span>
         </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-56 p-1.5">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Intelligence Actions</span>
+        <DropdownMenuLabel className="flex items-center justify-between text-xs">
+          <span>Reports & Export</span>
           {copied && (
-            <Badge variant="outline" className="text-[9px] font-mono bg-positive/10 text-positive border-positive/30 py-0">
-              Copied!
+            <Badge variant="outline" className="text-[10px] font-mono bg-positive/10 text-positive border-positive/30 py-0">
+              Copied
             </Badge>
           )}
         </DropdownMenuLabel>
 
-        <DropdownMenuItem onClick={handleCopySummary} className="flex items-center gap-2">
-          {copied ? <Check className="h-4 w-4 text-positive" /> : <Sparkles className="h-4 w-4 text-primary" />}
+        <DropdownMenuItem onClick={handleCopySummary} className="flex items-center gap-2 cursor-pointer">
+          {copied ? <Check className="h-4 w-4 text-positive" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
           <div className="flex-1">
-            <p className="text-xs font-medium">Copy Summary Brief</p>
-            <p className="text-[10px] text-muted-foreground">Formatted metrics to clipboard</p>
+            <p className="text-xs font-medium">Copy Summary</p>
+            <p className="text-[10px] text-muted-foreground">Text breakdown to clipboard</p>
           </div>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={handleExportCSV} className="flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/10 text-emerald-400 font-bold text-[10px]">
-            CSV
-          </span>
+        <DropdownMenuItem onClick={handleExportCSV} className="flex items-center gap-2 cursor-pointer">
+          <Download className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
-            <p className="text-xs font-medium">Export CSV Report</p>
-            <p className="text-[10px] text-muted-foreground">Filtered transactions spreadsheet</p>
+            <p className="text-xs font-medium">Export CSV</p>
+            <p className="text-[10px] text-muted-foreground">Download transactions spreadsheet</p>
           </div>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={handlePrint} className="flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded bg-blue-500/10 text-blue-400 font-bold text-[10px]">
-            PDF
+        <DropdownMenuItem onClick={handlePrint} className="flex items-center gap-2 cursor-pointer">
+          <span className="flex h-4 w-4 items-center justify-center font-mono font-bold text-[9px] text-muted-foreground border border-border rounded">
+            P
           </span>
           <div className="flex-1">
-            <p className="text-xs font-medium">Print / Save PDF</p>
-            <p className="text-[10px] text-muted-foreground">Clean visual report preview</p>
+            <p className="text-xs font-medium">Print Report</p>
+            <p className="text-[10px] text-muted-foreground">Printable view of this page</p>
           </div>
         </DropdownMenuItem>
 
@@ -178,15 +170,16 @@ export function AnalyticsActionsMenu({
         <DropdownMenuItem
           onClick={onRefresh}
           disabled={isFetching}
-          className="flex items-center gap-2 text-primary focus:text-primary"
+          className="flex items-center gap-2 text-foreground cursor-pointer"
         >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
           <div className="flex-1">
-            <p className="text-xs font-semibold">Force Recalculate</p>
-            <p className="text-[10px] text-muted-foreground">Flush cache and query live</p>
+            <p className="text-xs font-medium">Refresh Data</p>
+            <p className="text-[10px] text-muted-foreground">Reload latest entries</p>
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
+

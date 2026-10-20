@@ -171,12 +171,12 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       : settlements;
 
   return (
-    <div className="space-y-6">
+    <main className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-3 sm:pb-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Repayments & Claims</h1>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Repayments & Claims</h1>
             <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
               {settlements.length} total
             </Badge>
@@ -195,7 +195,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
           <Plus className="h-4 w-4 mr-1.5" />
           Settle / Pay Flatmate
         </Button>
-      </div>
+      </header>
 
       {/* Segmented Control per Section 10.9 */}
       <div className="grid grid-cols-4 w-full sm:max-w-md p-1 bg-surface-subtle border border-border rounded-xl gap-0.5">
@@ -575,6 +575,6 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 }

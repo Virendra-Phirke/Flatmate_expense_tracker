@@ -17,6 +17,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['DM Sans', 'Arial', 'Helvetica', 'sans-serif'],
+        serif: ['Newsreader', 'Georgia', 'serif'],
+        display: ['Newsreader', 'Georgia', 'serif'],
         mono: ['IBM Plex Mono', 'ui-monospace', 'SFMono-Regular', 'Consolas', 'monospace'],
       },
       colors: {
