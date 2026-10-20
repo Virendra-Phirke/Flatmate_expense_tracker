@@ -196,7 +196,7 @@ export function CommonExpensesPage() {
       </header>
 
       {/* Date Filter Bar */}
-      <section aria-label="Date filter" className="rounded-xl border border-border bg-card p-3 sm:p-3.5 shadow-xs">
+      <section aria-label="Date filter" className="rounded-lg border border-border bg-card p-3 sm:p-3.5 shadow-xs">
         <DateFilter
           value={dateFilter}
           onChange={setDateFilter}
@@ -364,7 +364,7 @@ export function CommonExpensesPage() {
             </DialogHeader>
 
             {formError && (
-              <div className="rounded-xl border border-negative/30 bg-negative-soft p-3 text-xs text-negative flex items-start space-x-2">
+              <div className="rounded-lg border border-negative/30 bg-negative-soft p-3 text-xs text-negative flex items-start space-x-2">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>{formError}</span>
               </div>
@@ -502,7 +502,7 @@ export function CommonExpensesPage() {
               </div>
 
               {/* Split breakdown preview */}
-              <div className="rounded-xl border border-border bg-surface-subtle/50 p-3 min-[360px]:p-3.5 space-y-2">
+              <div className="rounded-lg border border-border bg-surface-subtle/50 p-3 min-[360px]:p-3.5 space-y-2">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Split Allocations ({members.length} members)
                 </div>

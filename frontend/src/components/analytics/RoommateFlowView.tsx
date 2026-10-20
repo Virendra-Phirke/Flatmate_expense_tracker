@@ -43,7 +43,7 @@ export function RoommateFlowView({ roommates, onBehalfTotalPaise }: RoommateFlow
         </Badge>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div className={`grid gap-3 sm:gap-4 ${roommates.length === 1 ? 'grid-cols-1 max-w-xl' : 'grid-cols-1 md:grid-cols-2'}`}>
         {roommates.map((rm) => {
           const percentage = onBehalfTotalPaise > 0 ? (rm.totalPaise / onBehalfTotalPaise) * 100 : 0;
           const initial = rm.roommateName ? rm.roommateName.charAt(0).toUpperCase() : 'F';
@@ -51,11 +51,11 @@ export function RoommateFlowView({ roommates, onBehalfTotalPaise }: RoommateFlow
           return (
             <article
               key={rm.roommateId}
-              className="p-4 border border-border bg-card rounded-xl shadow-xs transition-colors hover:border-foreground/30"
+              className="p-4 border border-border bg-card rounded-lg shadow-xs transition-[border-color] duration-100 hover:border-foreground/30"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground font-mono font-bold text-xs border border-border">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground font-mono font-bold text-xs border border-border">
                     {initial}
                   </div>
                   <div className="min-w-0">
@@ -81,7 +81,7 @@ export function RoommateFlowView({ roommates, onBehalfTotalPaise }: RoommateFlow
               {/* Progress bar */}
               <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden mt-3">
                 <div
-                  className="bg-primary h-full rounded-full transition-all duration-300"
+                  className="bg-primary h-full rounded-full transition-[width] duration-300 ease-out"
                   style={{ width: `${Math.max(3, percentage)}%` }}
                 />
               </div>

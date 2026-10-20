@@ -149,13 +149,13 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
 
           {/* Bottom: owe / owed-to-you chips */}
           <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <div className="rounded-xl bg-negative-soft px-3.5 py-2.5">
+            <div className="rounded-lg bg-negative-soft px-3.5 py-2.5">
               <p className="text-xs font-medium text-muted-foreground">You owe</p>
               <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-negative">
                 {formatPaise(summary.owedByMe)}
               </p>
             </div>
-            <div className="rounded-xl bg-positive-soft px-3.5 py-2.5">
+            <div className="rounded-lg bg-positive-soft px-3.5 py-2.5">
               <p className="text-xs font-medium text-muted-foreground">Owed to you</p>
               <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-positive">
                 {formatPaise(summary.owedToMe)}
@@ -174,7 +174,7 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
           <span className="text-xs text-muted-foreground">Household active totals</span>
         </div>
 
-        <div className="rounded-xl border border-border bg-card divide-y sm:divide-y-0 sm:divide-x divide-border grid grid-cols-1 sm:grid-cols-3 shadow-xs overflow-hidden">
+        <div className="rounded-lg border border-border bg-card divide-y sm:divide-y-0 sm:divide-x divide-border grid grid-cols-1 sm:grid-cols-3 shadow-xs overflow-hidden">
           {/* Personal */}
           <button
             type="button"

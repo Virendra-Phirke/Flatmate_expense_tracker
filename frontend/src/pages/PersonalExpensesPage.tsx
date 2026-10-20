@@ -163,7 +163,7 @@ export function PersonalExpensesPage({
           </header>
 
           {/* Standalone DateFilter bar */}
-          <section aria-label="Date filter" className="rounded-xl border border-border bg-card p-3 shadow-xs">
+          <section aria-label="Date filter" className="rounded-lg border border-border bg-card p-3 shadow-xs">
             <DateFilter
               value={activeDateFilter}
               onChange={handleDateFilterChange}

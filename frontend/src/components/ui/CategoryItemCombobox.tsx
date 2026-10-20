@@ -234,7 +234,7 @@ export function CategoryCombobox({
       {isOpen && (
         <div
           className={cn(
-            'absolute left-0 z-50 max-h-60 w-full min-w-[220px] overflow-auto rounded-xl border border-border bg-card p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95',
+            'absolute left-0 z-50 max-h-60 w-full min-w-[220px] overflow-auto rounded-lg border border-border bg-card p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95',
             dropPlacement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
           )}
         >
@@ -502,7 +502,7 @@ export function ItemCombobox({
       {isOpen && (
         <div
           className={cn(
-            'absolute left-0 z-50 max-h-56 w-full min-w-[220px] overflow-auto rounded-xl border border-border bg-card p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95',
+            'absolute left-0 z-50 max-h-56 w-full min-w-[220px] overflow-auto rounded-lg border border-border bg-card p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95',
             dropPlacement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
           )}
         >

@@ -25,7 +25,7 @@ export function StatsSkeletonGrid() {
       {[1, 2, 3, 4].map((i) => (
         <div
           key={i}
-          className="rounded-xl border border-border bg-card p-4 sm:p-5 relative overflow-hidden"
+          className="rounded-lg border border-border bg-card p-4 sm:p-5 relative overflow-hidden"
         >
           <div className="flex items-center justify-between mb-3">
             <Skeleton className="h-4 w-20 sm:w-24" />
@@ -57,7 +57,7 @@ export function ResponsiveTableSkeleton({
         {Array.from({ length: mobileCards }).map((_, i) => (
           <div
             key={i}
-            className="rounded-xl border border-border bg-card p-4 space-y-2.5"
+            className="rounded-lg border border-border bg-card p-4 space-y-2.5"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -77,7 +77,7 @@ export function ResponsiveTableSkeleton({
       </div>
 
       {/* Desktop view (>= md): Card with table */}
-      <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden">
+      <div className="hidden md:block rounded-lg border border-border bg-card overflow-hidden">
         <div className="border-b border-border px-5 py-3.5 flex items-center justify-between bg-surface-subtle">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-24" />
@@ -126,7 +126,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Net Position Hero Card Skeleton */}
-      <div className="rounded-xl border border-border bg-card p-3.5 min-[360px]:p-5 sm:p-6">
+      <div className="rounded-lg border border-border bg-card p-3.5 min-[360px]:p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2 min-w-0">
             <Skeleton className="h-3.5 w-32" />
@@ -137,11 +137,11 @@ export function DashboardSkeleton() {
             </div>
           </div>
           <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2 sm:w-64 sm:grid-cols-1">
-            <div className="rounded-xl border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
+            <div className="rounded-lg border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
               <Skeleton className="h-3 w-16" />
               <Skeleton className="h-6 w-24" />
             </div>
-            <div className="rounded-xl border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
+            <div className="rounded-lg border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-6 w-24" />
             </div>
@@ -157,7 +157,7 @@ export function DashboardSkeleton() {
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+            <div key={i} className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
               <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
               <div className="space-y-1.5 flex-1 min-w-0">
                 <Skeleton className="h-3.5 w-24" />
@@ -170,7 +170,7 @@ export function DashboardSkeleton() {
 
       {/* Debts & Credits 2-Column Skeleton */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
             <div className="space-y-1">
               <Skeleton className="h-4 w-20" />
@@ -194,7 +194,7 @@ export function DashboardSkeleton() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
             <div className="space-y-1">
               <Skeleton className="h-4 w-24" />
@@ -220,7 +220,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Recent Activity Skeleton Card */}
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
         <div className="p-4 sm:p-5 border-b border-border space-y-1">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-48" />
@@ -261,7 +261,7 @@ export function BalancesSkeleton() {
       </div>
 
       {/* Hero Summary Card */}
-      <div className="rounded-xl border border-border bg-card p-3.5 min-[360px]:p-5 sm:p-6">
+      <div className="rounded-lg border border-border bg-card p-3.5 min-[360px]:p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2 min-w-0">
             <Skeleton className="h-3.5 w-32" />
@@ -272,11 +272,11 @@ export function BalancesSkeleton() {
             </div>
           </div>
           <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2 sm:w-64 sm:grid-cols-1">
-            <div className="rounded-xl border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
+            <div className="rounded-lg border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
               <Skeleton className="h-3 w-16" />
               <Skeleton className="h-6 w-24" />
             </div>
-            <div className="rounded-xl border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
+            <div className="rounded-lg border border-border bg-surface-subtle p-2.5 min-[360px]:p-3 space-y-1.5">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="h-6 w-24" />
             </div>
@@ -286,7 +286,7 @@ export function BalancesSkeleton() {
 
       {/* Debts & Credits List Cards */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
             <div className="space-y-1">
               <Skeleton className="h-4 w-20" />
@@ -313,7 +313,7 @@ export function BalancesSkeleton() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
             <div className="space-y-1">
               <Skeleton className="h-4 w-24" />
@@ -360,9 +360,9 @@ export function ProfileSkeleton() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Account Details */}
         <div className="space-y-6 lg:col-span-1">
-          <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+          <div className="rounded-lg border border-border bg-card p-5 space-y-4">
             <div className="flex items-center space-x-3">
-              <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
+              <Skeleton className="h-12 w-12 rounded-lg shrink-0" />
               <div className="space-y-1.5 flex-1 min-w-0">
                 <Skeleton className="h-4 w-28" />
                 <Skeleton className="h-3 w-20" />
@@ -381,7 +381,7 @@ export function ProfileSkeleton() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 space-y-2.5">
+          <div className="rounded-lg border border-border bg-card p-4 space-y-2.5">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-full" />
             <Skeleton className="h-3 w-5/6" />
@@ -391,7 +391,7 @@ export function ProfileSkeleton() {
 
         {/* Right Column: UPI Settings */}
         <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-xl border border-border bg-card p-5 space-y-5">
+          <div className="rounded-lg border border-border bg-card p-5 space-y-5">
             <div className="space-y-1 pb-3 border-b border-border">
               <Skeleton className="h-5 w-44" />
               <Skeleton className="h-3 w-64" />

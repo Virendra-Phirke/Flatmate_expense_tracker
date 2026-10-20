@@ -303,7 +303,7 @@ export function VoiceAssistantModal({
         <div className="p-6 pb-4 bg-surface-subtle/50 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="h-10 w-10 rounded-xl bg-brand-soft border border-primary/20 flex items-center justify-center text-primary">
+              <div className="h-10 w-10 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-primary">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
@@ -324,7 +324,7 @@ export function VoiceAssistantModal({
         <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
           {/* Success State */}
           {successMsg && (
-            <div className="rounded-xl border border-positive/30 bg-positive-soft p-5 text-center flex flex-col items-center justify-center space-y-2">
+            <div className="rounded-lg border border-positive/30 bg-positive-soft p-5 text-center flex flex-col items-center justify-center space-y-2">
               <CheckCircle2 className="h-10 w-10 text-positive" />
               <div className="text-base font-semibold text-positive">{successMsg}</div>
               <div className="text-xs text-muted-foreground">Expense saved and ledger updated.</div>
@@ -333,7 +333,7 @@ export function VoiceAssistantModal({
 
           {/* Error Message */}
           {error && (
-            <div className="rounded-xl border border-negative/30 bg-negative-soft p-4 text-sm text-negative flex items-start space-x-3">
+            <div className="rounded-lg border border-negative/30 bg-negative-soft p-4 text-sm text-negative flex items-start space-x-3">
               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
               <div className="flex-1 text-xs leading-relaxed">{error}</div>
             </div>
@@ -391,7 +391,7 @@ export function VoiceAssistantModal({
                   )}
                 </div>
 
-                <div className="relative rounded-xl border border-border bg-surface-subtle p-3.5 focus-within:border-primary/60 transition-all">
+                <div className="relative rounded-lg border border-border bg-surface-subtle p-3.5 focus-within:border-primary/60 transition-[border-color] duration-100 ease-out">
                   <textarea
                     rows={3}
                     value={transcript + (interimText ? ' ' + interimText : '')}
@@ -408,7 +408,7 @@ export function VoiceAssistantModal({
               </div>
 
               {/* Sample Voice Prompts */}
-              <div className="rounded-xl border border-border bg-surface-subtle/50 p-3 space-y-1.5">
+              <div className="rounded-lg border border-border bg-surface-subtle/50 p-3 space-y-1.5">
                 <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
                   Quick examples to try:
                 </div>
@@ -473,7 +473,7 @@ export function VoiceAssistantModal({
                 </button>
               </div>
 
-              <div className="rounded-xl border border-border bg-surface-subtle/50 p-5 space-y-4">
+              <div className="rounded-lg border border-border bg-surface-subtle/50 p-5 space-y-4">
                 {/* Expense Type Badge & Total Amount */}
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <div className="flex items-center gap-2">

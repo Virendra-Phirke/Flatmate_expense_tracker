@@ -38,12 +38,12 @@ const DialogContent = React.forwardRef<
       className={cn(
         // Mobile: fixed to bottom, full-width bottom sheet
         'fixed z-50 bg-card border-border shadow-2xl duration-200',
-        'inset-x-0 bottom-0 rounded-t-2xl border-t px-0 pb-0',
+        'inset-x-0 bottom-0 rounded-t-xl border-t px-0 pb-0',
         'max-h-[90dvh] overflow-y-auto',
         // sm+: centred modal
         'sm:inset-auto sm:left-1/2 sm:top-1/2 sm:bottom-auto sm:right-auto',
         'sm:-translate-x-1/2 sm:-translate-y-1/2',
-        'sm:w-full sm:max-w-lg sm:rounded-2xl sm:border sm:p-6',
+        'sm:w-full sm:max-w-lg sm:rounded-lg sm:border sm:p-6',
         'sm:max-h-[88dvh]',
         // Animations
         'data-[state=open]:animate-in data-[state=closed]:animate-out',

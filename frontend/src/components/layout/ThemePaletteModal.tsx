@@ -25,7 +25,7 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
         <DialogHeader className="space-y-1.5 pb-2 text-left">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-soft text-primary">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-soft text-primary">
                 <Palette className="h-4 w-4" aria-hidden="true" />
               </span>
               <DialogTitle className="text-base sm:text-lg font-bold">
@@ -66,7 +66,7 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
                 key={p.id}
                 type="button"
                 onClick={() => setPalette(p.id)}
-                className={`group relative flex flex-col text-left rounded-xl border p-3.5 transition-all text-foreground ${
+                className={`group relative flex flex-col text-left rounded-lg border p-3.5 transition-[color,background-color,border-color,box-shadow] duration-100 ease-out text-foreground ${
                   isSelected
                     ? 'border-primary ring-2 ring-primary/30 bg-accent/40 shadow-sm'
                     : 'border-border bg-card hover:border-primary/50 hover:bg-muted/40'

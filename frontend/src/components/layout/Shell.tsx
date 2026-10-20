@@ -149,7 +149,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
         {/* Brand */}
         <div className="flex items-center justify-between border-b border-border p-4 lg:p-5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <CreditCard className="h-4.5 w-4.5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
@@ -285,10 +285,10 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2.5 rounded-xl p-2 text-left hover:bg-muted/70 transition-colors active:scale-[0.98] outline-none"
+                className="flex w-full items-center gap-2.5 rounded-lg p-2 text-left hover:bg-muted/70 transition-colors active:scale-[0.98] outline-none"
                 aria-label="User account menu"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-xs font-bold text-primary">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-xs font-bold text-primary">
                   {user?.fullName?.charAt(0).toUpperCase() || 'U'}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -532,7 +532,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
                     type="button"
                     onClick={() => goTo(item.id)}
                     className={
-                      'flex min-h-[46px] w-full items-center gap-3 rounded-xl px-3 text-left transition-colors active:scale-[0.98] ' +
+                      'flex min-h-[46px] w-full items-center gap-3 rounded-lg px-3 text-left transition-colors active:scale-[0.98] ' +
                       (isActive ? 'bg-brand-soft text-primary font-semibold' : 'hover:bg-muted text-foreground')
                     }
                   >
@@ -558,7 +558,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
                     type="button"
                     onClick={() => goTo(item.id)}
                     className={
-                      'flex min-h-[46px] w-full items-center gap-3 rounded-xl px-3 text-left transition-colors active:scale-[0.98] ' +
+                      'flex min-h-[46px] w-full items-center gap-3 rounded-lg px-3 text-left transition-colors active:scale-[0.98] ' +
                       (isActive ? 'bg-brand-soft text-primary font-semibold' : 'hover:bg-muted text-foreground')
                     }
                   >
@@ -578,7 +578,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
                   setMobileMoreOpen(false);
                   setPaletteModalOpen(true);
                 }}
-                className="flex min-h-[46px] w-full items-center gap-3 rounded-xl border border-border bg-card px-3 text-left transition-colors active:scale-[0.98] hover:bg-muted text-foreground"
+                className="flex min-h-[46px] w-full items-center gap-3 rounded-lg border border-border bg-card px-3 text-left transition-colors active:scale-[0.98] hover:bg-muted text-foreground"
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-primary">
                   <Palette className="h-3.5 w-3.5" aria-hidden="true" />

@@ -27,7 +27,7 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
         <div
           role="tablist"
           aria-label="Expense views"
-          className="grid grid-cols-2 w-full sm:w-auto sm:inline-flex rounded-xl bg-secondary p-1 border border-border shrink-0"
+          className="grid grid-cols-2 w-full sm:w-auto sm:inline-flex rounded-lg bg-secondary p-1 border border-border shrink-0"
         >
           <button
             role="tab"
@@ -61,7 +61,7 @@ export function ExpensesPage({ initialSubTab = 'personal' }: ExpensesPageProps =
       </header>
 
       {/* Date Filter Bar */}
-      <section aria-label="Date filter" className="rounded-xl border border-border bg-card p-3 sm:p-3.5 shadow-xs">
+      <section aria-label="Date filter" className="rounded-lg border border-border bg-card p-3 sm:p-3.5 shadow-xs">
         <DateFilter value={dateFilter} onChange={setDateFilter} />
       </section>
 

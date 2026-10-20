@@ -198,11 +198,11 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       </header>
 
       {/* Segmented Control per Section 10.9 */}
-      <div className="grid grid-cols-4 w-full sm:max-w-md p-1 bg-surface-subtle border border-border rounded-xl gap-0.5">
+      <div className="grid grid-cols-4 w-full sm:max-w-md p-1 bg-surface-subtle border border-border rounded-lg gap-0.5">
         <button
           type="button"
           onClick={() => setRepaymentTab('needs_action')}
-          className={`py-1.5 px-1 sm:px-3 rounded-lg text-[10px] min-[360px]:text-xs font-medium transition-all flex items-center justify-center gap-1 ${
+          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 ${
             repaymentTab === 'needs_action'
               ? 'bg-card text-foreground shadow-sm font-semibold'
               : 'text-muted-foreground hover:text-foreground'
@@ -218,7 +218,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('pending')}
-          className={`py-1.5 px-1 sm:px-3 rounded-lg text-[10px] min-[360px]:text-xs font-medium transition-all flex items-center justify-center gap-1 ${
+          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 ${
             repaymentTab === 'pending'
               ? 'bg-card text-foreground shadow-sm font-semibold'
               : 'text-muted-foreground hover:text-foreground'
@@ -234,7 +234,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('history')}
-          className={`py-1.5 px-1 sm:px-3 rounded-lg text-[10px] min-[360px]:text-xs font-medium transition-all text-center truncate ${
+          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate ${
             repaymentTab === 'history'
               ? 'bg-card text-foreground shadow-sm font-semibold'
               : 'text-muted-foreground hover:text-foreground'
@@ -245,7 +245,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('all')}
-          className={`py-1.5 px-1 sm:px-3 rounded-lg text-[10px] min-[360px]:text-xs font-medium transition-all text-center truncate ${
+          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate ${
             repaymentTab === 'all'
               ? 'bg-card text-foreground shadow-sm font-semibold'
               : 'text-muted-foreground hover:text-foreground'

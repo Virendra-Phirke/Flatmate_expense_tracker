@@ -179,7 +179,7 @@ export function AnalyticsPage() {
       {/* ── Multi-Dimensional Filter Controls ───────────────── */}
       <section
         aria-label="Expense filter controls"
-        className="space-y-3 rounded-xl border border-border bg-card p-3 sm:p-4 shadow-xs"
+        className="space-y-3 rounded-lg border border-border bg-card p-3 sm:p-4 shadow-xs"
       >
         {/* Date Filter Bar */}
         <div>
@@ -262,7 +262,7 @@ export function AnalyticsPage() {
       {/* ── Visual Perspective Views ── */}
       <section
         aria-label="Spending charts and transaction views"
-        className="rounded-xl border border-border bg-card p-3.5 sm:p-5 shadow-xs"
+        className="rounded-lg border border-border bg-card p-3.5 sm:p-5 shadow-xs"
       >
         <Tabs
           value={visualMode}
@@ -285,7 +285,7 @@ export function AnalyticsPage() {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl border border-border/80 bg-card text-foreground text-xs font-semibold shadow-xs active:scale-[0.99] touch-manipulation min-h-[42px]"
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg border border-border bg-card text-foreground text-xs font-semibold shadow-xs active:scale-[0.99] touch-manipulation min-h-[42px]"
                   >
                     <div className="flex items-center gap-2">
                       <ActiveIcon className="h-4 w-4 text-primary shrink-0" />
@@ -320,7 +320,7 @@ export function AnalyticsPage() {
             {/* ── Desktop TabsList (>= 640px) ── */}
             <TabsList
               aria-label="Analytics Visual Perspectives"
-              className="hidden sm:flex bg-secondary/80 border border-border p-1 rounded-xl overflow-x-auto no-scrollbar items-center justify-center gap-1"
+              className="hidden sm:flex bg-secondary/80 border border-border p-1 rounded-lg overflow-x-auto no-scrollbar items-center justify-center gap-1"
             >
               {visualOptions.map((opt) => {
                 const Icon = opt.icon;
@@ -328,7 +328,7 @@ export function AnalyticsPage() {
                   <TabsTrigger
                     key={opt.id}
                     value={opt.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg data-[state=active]:shadow-xs whitespace-nowrap min-h-[36px] touch-manipulation transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md data-[state=active]:shadow-xs whitespace-nowrap min-h-[36px] touch-manipulation transition-[color,background-color,box-shadow] duration-100 ease-out"
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     <span>{opt.label}</span>

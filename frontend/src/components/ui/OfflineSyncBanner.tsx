@@ -38,13 +38,13 @@ export function OfflineSyncBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="w-full transition-all duration-300 ease-in-out"
+      className="w-full transition-opacity duration-150"
     >
       {!status.isOnline ? (
         // Offline Banner
-        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-200 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs text-amber-900 dark:text-amber-200 shadow-xs">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300">
               <CloudOff className="h-3.5 w-3.5" />
             </span>
             <div className="min-w-0">
@@ -62,7 +62,7 @@ export function OfflineSyncBanner() {
         </div>
       ) : status.isSyncing ? (
         // Syncing Banner
-        <div className="flex items-center justify-between gap-2.5 rounded-xl border border-primary/40 bg-primary/10 px-3.5 py-2 text-xs text-foreground shadow-xs">
+        <div className="flex items-center justify-between gap-2.5 rounded-lg border border-primary/40 bg-primary/10 px-3.5 py-2 text-xs text-foreground shadow-xs">
           <div className="flex items-center gap-2">
             <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
             <span className="font-medium text-foreground">
@@ -72,7 +72,7 @@ export function OfflineSyncBanner() {
         </div>
       ) : showRecentlySynced ? (
         // Synced Success Flash
-        <div className="flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-900 dark:text-emerald-200 shadow-xs animate-in fade-in slide-in-from-top-1">
+        <div className="flex items-center justify-between gap-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-900 dark:text-emerald-200 shadow-xs animate-in fade-in slide-in-from-top-1">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-semibold text-emerald-950 dark:text-emerald-100">
@@ -82,7 +82,7 @@ export function OfflineSyncBanner() {
         </div>
       ) : status.pendingCount > 0 ? (
         // Back Online with pending items
-        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs text-foreground shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border bg-card px-3.5 py-2 text-xs text-foreground shadow-xs">
           <div className="flex items-center gap-2">
             <Cloud className="h-3.5 w-3.5 text-primary shrink-0" />
             <span>{status.pendingCount} changes queued locally.</span>

@@ -30,7 +30,7 @@ export function CategoryDonutChart({ categories, totalSpendingPaise }: CategoryD
   if (!categories || categories.length === 0 || totalSpendingPaise === 0) {
     return (
       <Card className="p-6 sm:p-8 text-center border-border bg-card">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground mb-3">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-secondary text-secondary-foreground mb-3">
           <ChartPie className="h-6 w-6" />
         </div>
         <p className="text-sm font-semibold text-foreground">No category spending data</p>
@@ -196,7 +196,7 @@ export function CategoryDonutChart({ categories, totalSpendingPaise }: CategoryD
                     setHoveredIdx(hoveredIdx === idx ? null : idx);
                   }
                 }}
-                className={`p-2.5 sm:p-2.5 rounded-xl border transition-all cursor-pointer active:scale-[0.99] outline-none focus:ring-1 focus:ring-primary touch-manipulation min-h-[46px] flex flex-col justify-center ${
+                className={`p-2.5 sm:p-2.5 rounded-lg border transition-[color,background-color,border-color] duration-100 ease-out cursor-pointer active:scale-[0.99] outline-none focus:ring-1 focus:ring-primary touch-manipulation min-h-[46px] flex flex-col justify-center ${
                   isHovered
                     ? 'border-primary/50 bg-primary/10 shadow-xs'
                     : 'border-border/60 bg-card/40 hover:bg-card/80'

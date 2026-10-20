@@ -79,7 +79,7 @@ export function ChangePasswordModal({
       <DialogContent className="max-w-md bg-card border-border text-foreground">
         <DialogHeader>
           <div className="flex items-center space-x-3 mb-2">
-            <div className="h-10 w-10 rounded-xl bg-brand-soft border border-primary/20 flex items-center justify-center text-primary">
+            <div className="h-10 w-10 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-primary">
               <Lock className="h-5 w-5" />
             </div>
             <div>
@@ -96,14 +96,14 @@ export function ChangePasswordModal({
         </DialogHeader>
 
         {error && (
-          <div className="rounded-xl border border-negative/30 bg-negative-soft p-3 text-xs text-negative flex items-start space-x-2.5">
+          <div className="rounded-lg border border-negative/30 bg-negative-soft p-3 text-xs text-negative flex items-start space-x-2.5">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="rounded-xl border border-positive/30 bg-positive-soft p-3 text-xs text-positive flex items-center space-x-2.5">
+          <div className="rounded-lg border border-positive/30 bg-positive-soft p-3 text-xs text-positive flex items-center space-x-2.5">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>Password updated successfully!</span>
           </div>

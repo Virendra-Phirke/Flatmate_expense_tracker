@@ -30,9 +30,9 @@ export function LoginPage() {
   return (
     <main className="min-h-screen min-h-[100dvh] w-full flex items-center justify-center px-3 xs:px-4 py-8 bg-background text-foreground">
       <div className="w-full max-w-sm">
-        <Card className="border-border bg-card shadow-sm rounded-2xl">
+        <Card className="border-border bg-card shadow-sm rounded-lg">
           <CardHeader className="text-center pb-3 xs:pb-4 pt-5 xs:pt-6">
-            <div className="mx-auto mb-3 h-11 w-11 xs:h-12 xs:w-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
+            <div className="mx-auto mb-3 h-11 w-11 xs:h-12 xs:w-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
               <Home className="h-5 w-5 xs:h-6 xs:w-6" aria-hidden="true" />
             </div>
             <CardTitle className="text-xl xs:text-2xl font-serif font-bold tracking-tight text-foreground">

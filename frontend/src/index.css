@@ -36,7 +36,7 @@
     --pending-soft: 40 90% 93%;
     --info: 198 70% 40%;
     --info-soft: 198 60% 94%;
-    --radius: 0.75rem;
+    --radius: 0.5rem;
   }
 
   .dark,

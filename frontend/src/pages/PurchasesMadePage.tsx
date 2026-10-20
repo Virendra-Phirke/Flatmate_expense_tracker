@@ -238,7 +238,7 @@ export function PurchasesMadePage({
           </header>
 
           {/* Standalone DateFilter bar */}
-          <section aria-label="Date filter" className="rounded-xl border border-border bg-card p-3 shadow-xs">
+          <section aria-label="Date filter" className="rounded-lg border border-border bg-card p-3 shadow-xs">
             <DateFilter
               value={activeDateFilter}
               onChange={handleDateFilterChange}
@@ -396,7 +396,7 @@ export function PurchasesMadePage({
                   <div className="text-xs uppercase tracking-wide font-semibold text-muted-foreground mb-2">
                     Itemized Breakdown
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  <div className={`grid gap-2 ${purchase.items.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'}`}>
                     {purchase.items.map((item) => (
                       <div
                         key={item.id}
@@ -548,7 +548,7 @@ export function PurchasesMadePage({
                     <div
                       key={idx}
                       className={cn(
-                        'p-3 rounded-xl border bg-card shadow-xs space-y-2.5 transition-all',
+                        'p-3 rounded-lg border bg-card shadow-xs space-y-2.5 transition-[border-color,background-color] duration-100 ease-out',
                         catDef ? catDef.colorClass : 'border-border'
                       )}
                     >

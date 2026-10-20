@@ -120,14 +120,14 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
         <div
           role="tablist"
           aria-label="Spending Trend Mode"
-          className="inline-flex rounded-xl bg-secondary/80 p-1 border border-border text-xs w-full xs:w-auto justify-center"
+          className="inline-flex rounded-lg bg-secondary/80 p-1 border border-border text-xs w-full xs:w-auto justify-center"
         >
           <button
             type="button"
             role="tab"
             aria-selected={viewMode === 'daily'}
             onClick={() => setViewMode('daily')}
-            className={`flex-1 xs:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all touch-manipulation min-h-[36px] ${
+            className={`flex-1 xs:flex-none px-3.5 py-1.5 rounded-md text-xs font-semibold transition-[color,background-color,border-color] duration-100 ease-out touch-manipulation min-h-[36px] ${
               viewMode === 'daily'
                 ? 'bg-card text-foreground shadow-xs border border-border font-bold'
                 : 'text-muted-foreground hover:text-foreground'
@@ -140,7 +140,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
             role="tab"
             aria-selected={viewMode === 'cumulative'}
             onClick={() => setViewMode('cumulative')}
-            className={`flex-1 xs:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all touch-manipulation min-h-[36px] ${
+            className={`flex-1 xs:flex-none px-3.5 py-1.5 rounded-md text-xs font-semibold transition-[color,background-color,border-color] duration-100 ease-out touch-manipulation min-h-[36px] ${
               viewMode === 'cumulative'
                 ? 'bg-card text-foreground shadow-xs border border-border font-bold'
                 : 'text-muted-foreground hover:text-foreground'
@@ -154,7 +154,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
       {/* SVG Chart Container */}
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-xl border border-border bg-card p-3 sm:p-4 shadow-xs select-none touch-pan-y"
+        className="relative w-full overflow-hidden rounded-lg border border-border bg-card p-3 sm:p-4 shadow-xs select-none touch-pan-y"
       >
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -284,7 +284,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
         {/* Floating Tooltip Box (smart positioning on mobile vs desktop) */}
         {activePoint && (
           <div
-            className={`absolute top-2 z-10 p-2 sm:p-2.5 rounded-xl border border-border bg-card shadow-lg text-xs space-y-1 animate-in fade-in zoom-in-95 pointer-events-none min-w-[140px] sm:min-w-[170px] ${
+            className={`absolute top-2 z-10 p-2 sm:p-2.5 rounded-lg border border-border bg-card shadow-lg text-xs space-y-1 animate-in fade-in zoom-in-95 pointer-events-none min-w-[140px] sm:min-w-[170px] ${
               activePoint.x > innerWidth / 2 ? 'left-3 sm:left-4' : 'right-3 sm:right-4'
             }`}
           >

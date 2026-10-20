@@ -364,7 +364,7 @@ export function DateFilter({
             onClick={() => setIsOpen((prev) => !prev)}
             aria-expanded={isOpen}
             className={cn(
-              'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm border focus:outline-none focus:ring-2 focus:ring-primary/40 select-none min-h-[40px]',
+              'inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-[color,background-color,border-color,box-shadow] duration-100 ease-out shadow-sm border focus:outline-none focus:ring-2 focus:ring-primary/40 select-none min-h-[40px]',
               isFilterActive
                 ? 'bg-primary/10 border-primary text-primary font-semibold hover:bg-primary/15'
                 : 'bg-card border-border text-foreground hover:bg-accent hover:text-accent-foreground'
@@ -374,15 +374,18 @@ export function DateFilter({
             <span className="truncate max-w-[200px] sm:max-w-none">{formatFilterLabel(value)}</span>
 
             {isFilterActive ? (
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={clearFilter}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearFilter();
+                }}
                 title="Clear filter"
+                aria-label="Clear date filter"
                 className="ml-1 -mr-1 p-0.5 rounded-full hover:bg-primary/20 text-primary transition-colors flex items-center justify-center"
               >
                 <X className="h-3 w-3" />
-              </span>
+              </button>
             ) : (
               <ChevronRight
                 className={cn(
@@ -393,7 +396,7 @@ export function DateFilter({
           </button>
 
           {/* Quick preset pill buttons for rapid 1-click filtering */}
-          <div className="hidden sm:inline-flex items-center gap-1.5 p-1 rounded-xl bg-secondary/60 border border-border/70 text-xs">
+          <div className="hidden sm:inline-flex items-center gap-1.5 p-1 rounded-lg bg-secondary/60 border border-border/70 text-xs">
             <button
               type="button"
               onClick={() => onChange({ mode: 'all' })}
@@ -473,12 +476,12 @@ export function DateFilter({
       {isOpen && (
         <div
           className={cn(
-            'absolute left-0 mt-2 z-50 w-full sm:w-[350px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card p-4 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150',
+            'absolute left-0 mt-2 z-50 w-full sm:w-[350px] max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-card p-4 shadow-2xl animate-in fade-in-50 zoom-in-95 duration-150',
             'top-full'
           )}
         >
           {/* Header Segment: Day, Range, Month, All */}
-          <div className="grid grid-cols-4 rounded-xl bg-secondary p-1 border border-border/80 mb-4 text-xs font-semibold">
+          <div className="grid grid-cols-4 rounded-lg bg-secondary p-1 border border-border/80 mb-4 text-xs font-semibold">
             <button
               type="button"
               onClick={() => {
@@ -747,7 +750,7 @@ export function DateFilter({
                       type="button"
                       onClick={() => handleMonthSelect(idx)}
                       className={cn(
-                        'py-2.5 rounded-xl text-xs font-semibold transition-all select-none',
+                        'py-2.5 rounded-lg text-xs font-semibold transition-[color,background-color,border-color] duration-100 ease-out select-none',
                         isSelected
                           ? 'bg-primary text-primary-foreground font-bold shadow-sm'
                           : isCurrent

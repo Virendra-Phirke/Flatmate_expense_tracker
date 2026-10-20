@@ -12,7 +12,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
   return (
     <section
       aria-label="Executive spending breakdown"
-      className="rounded-xl border border-border bg-card shadow-xs overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border grid grid-cols-1 lg:grid-cols-12"
+      className="rounded-lg border border-border bg-card shadow-xs overflow-hidden divide-y lg:divide-y-0 lg:divide-x divide-border grid grid-cols-1 lg:grid-cols-12"
     >
       {/* ── Left Hero: Total Outflow (Editorial Ledger Emphasis) ── */}
       <article className="lg:col-span-5 p-5 sm:p-6 flex flex-col justify-between bg-card">

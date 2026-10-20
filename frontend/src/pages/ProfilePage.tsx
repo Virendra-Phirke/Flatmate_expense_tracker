@@ -102,7 +102,7 @@ export function ProfilePage() {
           <Card className="border-border bg-card">
             <CardHeader className="p-5 pb-3">
               <div className="flex items-center space-x-3">
-                <div className="h-12 w-12 rounded-xl bg-brand-soft border border-primary/20 flex items-center justify-center text-lg font-bold text-primary">
+                <div className="h-12 w-12 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-lg font-bold text-primary">
                   {user?.fullName?.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -197,7 +197,7 @@ export function ProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-3 xs:p-4 sm:p-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2.5">
                 {THEME_PALETTES.map((p) => {
                   const isSelected = palette === p.id;
                   return (
@@ -205,7 +205,7 @@ export function ProfilePage() {
                       key={p.id}
                       type="button"
                       onClick={() => setPalette(p.id)}
-                      className={`relative flex flex-col p-3 rounded-xl border text-left transition-all ${
+                      className={`relative flex flex-col p-3 rounded-lg border text-left transition-[color,background-color,border-color,box-shadow] duration-100 ease-out ${
                         isSelected
                           ? 'border-primary ring-2 ring-primary/30 bg-accent/30'
                           : 'border-border bg-card hover:border-primary/40 hover:bg-muted/40'
@@ -253,7 +253,7 @@ export function ProfilePage() {
             <CardContent className="p-5 space-y-5">
               {upiMsg && (
                 <div
-                  className={`rounded-xl border p-3.5 text-xs flex items-start space-x-2.5 ${
+                  className={`rounded-lg border p-3.5 text-xs flex items-start space-x-2.5 ${
                     upiMsg.error
                       ? 'border-negative/30 bg-negative-soft text-negative'
                       : 'border-positive/30 bg-positive-soft text-positive'
@@ -326,8 +326,8 @@ export function ProfilePage() {
 
               {/* QR Preview Card */}
               {qrData?.qrDataUrl && (
-                <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center gap-4 min-[360px]:gap-5 bg-surface-subtle/50 p-3 min-[360px]:p-4 rounded-xl">
-                  <div className="bg-white p-2 rounded-xl shadow-sm border border-border shrink-0">
+                <div className="pt-4 border-t border-border flex flex-col sm:flex-row items-center gap-4 min-[360px]:gap-5 bg-surface-subtle/50 p-3 min-[360px]:p-4 rounded-lg">
+                  <div className="bg-white p-2 rounded-lg shadow-sm border border-border shrink-0">
                     <img
                       src={qrData.qrDataUrl}
                       alt="My UPI QR Code"

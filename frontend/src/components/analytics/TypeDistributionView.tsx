@@ -41,6 +41,11 @@ export function TypeDistributionView({ distribution, kpi }: TypeDistributionView
     },
   ];
 
+  // Identify featured type: either selected or the largest share by amount
+  const sortedTypes = [...types].sort((a, b) => b.amountPaise - a.amountPaise);
+  const primaryType = types.find((t) => t.id === activeTypeId) || sortedTypes[0];
+  const secondaryTypes = types.filter((t) => t.id !== primaryType.id);
+
   return (
     <div
       role="region"
@@ -48,11 +53,11 @@ export function TypeDistributionView({ distribution, kpi }: TypeDistributionView
       className="space-y-4 sm:space-y-5"
     >
       {/* Proportional Stacked Meter */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
+      <section className="rounded-lg border border-border bg-card p-4 sm:p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-primary" />
-            <span className="text-xs font-semibold text-foreground">Spending Mix</span>
+            <Layers className="h-4 w-4 text-primary" aria-hidden="true" />
+            <h3 className="text-xs font-semibold text-foreground">Spending Mix</h3>
           </div>
           <span className="text-xs font-mono font-bold text-foreground">
             {formatPaise(totalSpendingPaise)}
@@ -60,21 +65,21 @@ export function TypeDistributionView({ distribution, kpi }: TypeDistributionView
         </div>
 
         {/* Multi-segment Progress Bar with interactive selection */}
-        <div className="w-full h-3 sm:h-3.5 rounded-lg bg-secondary overflow-hidden flex p-0.5 gap-1 select-none">
+        <div className="w-full h-3 sm:h-3.5 rounded-md bg-secondary overflow-hidden flex p-0.5 gap-1 select-none">
           {types.map((t) => {
             if (t.percentage <= 0) return null;
-            const isSelected = activeTypeId === t.id;
+            const isSelected = primaryType.id === t.id;
             return (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setActiveTypeId(activeTypeId === t.id ? null : t.id)}
+                onClick={() => setActiveTypeId(t.id)}
                 style={{
                   width: `${Math.max(4, t.percentage)}%`,
                   backgroundColor: t.color,
                 }}
-                className={`h-full rounded transition-opacity duration-150 outline-none focus:ring-2 focus:ring-foreground touch-manipulation ${
-                  activeTypeId && !isSelected ? 'opacity-30' : 'opacity-100'
+                className={`h-full rounded-sm transition-opacity duration-150 outline-none focus:ring-2 focus:ring-foreground touch-manipulation ${
+                  isSelected ? 'opacity-100 ring-1 ring-background' : 'opacity-40 hover:opacity-80'
                 }`}
                 title={`${t.title}: ${t.percentage.toFixed(1)}%`}
                 aria-label={`${t.title}: ${t.percentage.toFixed(1)}%`}
@@ -86,17 +91,19 @@ export function TypeDistributionView({ distribution, kpi }: TypeDistributionView
         {/* Legend pills */}
         <div className="flex flex-wrap items-center justify-between gap-1.5 xs:gap-2 pt-1 text-xs">
           {types.map((t) => {
-            const isSelected = activeTypeId === t.id;
+            const isSelected = primaryType.id === t.id;
             return (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setActiveTypeId(activeTypeId === t.id ? null : t.id)}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors touch-manipulation min-h-[36px] ${
-                  isSelected ? 'bg-secondary border border-border font-semibold shadow-xs' : 'opacity-85 hover:opacity-100'
+                onClick={() => setActiveTypeId(t.id)}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md transition-[color,background-color] duration-100 touch-manipulation min-h-[36px] ${
+                  isSelected
+                    ? 'bg-secondary border border-border font-semibold shadow-xs'
+                    : 'opacity-70 hover:opacity-100 hover:bg-secondary/40'
                 }`}
               >
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.color }} aria-hidden="true" />
                 <span className="text-muted-foreground text-xs">{t.title}</span>
                 <span className="font-mono font-semibold text-foreground text-xs">
                   {t.percentage.toFixed(1)}%
@@ -105,52 +112,85 @@ export function TypeDistributionView({ distribution, kpi }: TypeDistributionView
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* 3 Semantic Breakdown Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-        {types.map((t) => {
-          const isSelected = activeTypeId === t.id;
+      {/* Asymmetrical Ledger Breakdown: 7-col Primary Spotlight / 5-col Stacked Companions */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 sm:gap-4 items-stretch">
+        {/* Primary Stream Spotlight (7 columns on desktop) */}
+        <article className="lg:col-span-7 flex flex-col justify-between p-5 sm:p-6 border border-border rounded-lg bg-card shadow-xs">
+          <div>
+            <header className="flex items-start justify-between gap-2 border-b border-border/80 pb-3">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+                  Primary Outflow Stream
+                </span>
+                <h4 className="text-base sm:text-lg font-serif font-bold text-foreground mt-0.5">
+                  {primaryType.title}
+                </h4>
+              </div>
+              <Badge variant="outline" className="font-mono text-xs font-semibold border-border bg-secondary text-secondary-foreground">
+                {primaryType.percentage.toFixed(1)}% share
+              </Badge>
+            </header>
 
-          return (
-            <article
+            <div className="my-4">
+              <p className="text-2xl sm:text-3xl font-mono font-bold tracking-tight text-foreground">
+                <NumberTicker value={primaryType.amountPaise} />
+              </p>
+              <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                {primaryType.description}
+              </p>
+            </div>
+          </div>
+
+          <footer className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+            <span>Ledger multiplier:</span>
+            <span className="font-mono font-bold text-foreground">
+              {totalSpendingPaise > 0 ? (primaryType.amountPaise / totalSpendingPaise).toFixed(2) : '0.00'}x total volume
+            </span>
+          </footer>
+        </article>
+
+        {/* Secondary Streams Stack (5 columns on desktop) */}
+        <div className="lg:col-span-5 flex flex-col gap-3 sm:gap-3.5">
+          {secondaryTypes.map((t) => (
+            <button
               key={t.id}
-              onClick={() => setActiveTypeId(activeTypeId === t.id ? null : t.id)}
-              className={`p-4 sm:p-5 border rounded-xl bg-card transition-colors cursor-pointer active:scale-[0.99] shadow-xs ${
-                isSelected
-                  ? 'ring-2 ring-primary border-primary'
-                  : 'border-border hover:border-foreground/30'
-              }`}
+              type="button"
+              onClick={() => setActiveTypeId(t.id)}
+              className="flex-1 flex flex-col justify-between p-4 border border-border rounded-lg bg-card text-left transition-[border-color,background-color] duration-100 hover:border-foreground/30 hover:bg-secondary/30 active:scale-[0.99] shadow-xs"
             >
-              <header className="flex items-start justify-between gap-2">
-                <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
-                  {t.title}
-                </h3>
-                <Badge variant="outline" className="font-mono text-xs font-semibold border-border bg-secondary text-secondary-foreground">
+              <header className="flex items-center justify-between gap-2 w-full">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} aria-hidden="true" />
+                  <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+                    {t.title}
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-semibold text-muted-foreground">
                   {t.percentage.toFixed(1)}%
-                </Badge>
+                </span>
               </header>
 
-              <div className="mt-3">
-                <p className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-mono">
-                  <NumberTicker value={t.amountPaise} />
+              <div className="my-2">
+                <p className="text-lg sm:text-xl font-bold tracking-tight text-foreground font-mono">
+                  {formatPaise(t.amountPaise)}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                   {t.description}
                 </p>
               </div>
 
-              <footer className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                <span>Share of ledger:</span>
-                <span className="font-mono font-medium text-foreground">
+              <footer className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground w-full">
+                <span>Select for detail</span>
+                <span className="font-mono text-foreground font-medium">
                   {totalSpendingPaise > 0 ? (t.amountPaise / totalSpendingPaise).toFixed(2) : '0.00'}x
                 </span>
               </footer>
-            </article>
-          );
-        })}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
-

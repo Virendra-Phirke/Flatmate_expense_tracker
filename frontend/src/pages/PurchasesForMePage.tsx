@@ -45,7 +45,7 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
 
         {/* Summary + CTA row */}
         {totalOwed > 0 && (
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-negative-soft px-3 xs:px-4 py-2.5 xs:py-3">
+          <div className="flex items-center justify-between gap-3 rounded-lg bg-negative-soft px-3 xs:px-4 py-2.5 xs:py-3">
             <div>
               <p className="text-[10px] xs:text-xs font-medium text-muted-foreground">Total outstanding</p>
               <p className="amount-display text-base xs:text-lg font-bold text-negative">{formatPaise(totalOwed)}</p>

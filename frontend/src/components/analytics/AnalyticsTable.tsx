@@ -155,7 +155,7 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-border bg-card/80 text-xs font-medium text-foreground hover:bg-card hover:border-primary/50 transition-all touch-manipulation min-h-[36px] active:scale-95 shadow-xs"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium text-foreground hover:bg-secondary/40 hover:border-primary/50 transition-[color,background-color,border-color] duration-100 ease-out touch-manipulation min-h-[36px] active:scale-95 shadow-xs"
                 aria-label="Sort and filter options"
               >
                 <Filter className="h-3.5 w-3.5 text-primary" />
@@ -231,14 +231,14 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
       {/* ── MOBILE CARD VIEW (Phones < 640px) ───────────────── */}
       <div className="block sm:hidden space-y-2">
         {filtered.length === 0 ? (
-          <div className="p-4 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border">
+          <div className="p-4 text-center text-xs text-muted-foreground bg-card rounded-lg border border-border">
             No matching transactions found
           </div>
         ) : (
           filtered.map((t) => (
             <div
               key={t.id}
-              className="p-3 rounded-xl border border-border bg-card shadow-xs space-y-2 touch-manipulation active:scale-[0.99] transition-transform"
+              className="p-3 rounded-lg border border-border bg-card shadow-xs space-y-2 touch-manipulation active:scale-[0.99] transition-transform"
             >
               <div className="flex items-center justify-between text-xs">
                 <span className="font-mono text-[10px] text-muted-foreground flex items-center gap-1">
@@ -277,7 +277,7 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
       </div>
 
       {/* ── DESKTOP TABLE VIEW (Tablets & Desktops >= 640px) ── */}
-      <div className="hidden sm:block overflow-hidden rounded-xl border border-border bg-card shadow-xs">
+      <div className="hidden sm:block overflow-hidden rounded-lg border border-border bg-card shadow-xs">
         <Table>
           <TableHeader>
             <TableRow>

@@ -78,11 +78,11 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <div className="rounded-xl bg-negative-soft px-3.5 py-2.5">
+            <div className="rounded-lg bg-negative-soft px-3.5 py-2.5">
               <p className="text-xs font-medium text-muted-foreground">You owe</p>
               <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-negative">{formatPaise(summary.owedByMe)}</p>
             </div>
-            <div className="rounded-xl bg-positive-soft px-3.5 py-2.5">
+            <div className="rounded-lg bg-positive-soft px-3.5 py-2.5">
               <p className="text-xs font-medium text-muted-foreground">Owed to you</p>
               <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-positive">{formatPaise(summary.owedToMe)}</p>
             </div>
@@ -95,7 +95,7 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
         <h2 id="other-totals-heading" className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
           Spending Totals
         </h2>
-        <div className="rounded-xl border border-border bg-card divide-y xs:divide-y-0 xs:divide-x divide-border grid grid-cols-1 xs:grid-cols-2 shadow-xs overflow-hidden">
+        <div className="rounded-lg border border-border bg-card divide-y xs:divide-y-0 xs:divide-x divide-border grid grid-cols-1 xs:grid-cols-2 shadow-xs overflow-hidden">
           <article className="p-4 sm:p-5 flex flex-col justify-between">
             <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
               Common Share
