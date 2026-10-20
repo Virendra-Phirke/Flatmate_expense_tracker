@@ -135,13 +135,13 @@ export function CategoryDonutChart({ categories, totalSpendingPaise }: CategoryD
 
           {/* Center Callout */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-4">
-            <span className="text-[10px] sm:text-[11px] uppercase font-semibold tracking-wider text-muted-foreground truncate max-w-[130px] sm:max-w-[150px]">
+            <span className="text-xs uppercase font-semibold tracking-wider text-muted-foreground truncate max-w-[130px] sm:max-w-[150px]">
               {activeCategory ? activeCategory.categoryName : 'Total Spent'}
             </span>
             <span className="text-base xs:text-lg sm:text-2xl font-bold tracking-tight text-foreground font-mono mt-0.5">
               <NumberTicker value={activeCategory ? activeCategory.totalPaise : totalSpendingPaise} />
             </span>
-            <span className="text-[10px] sm:text-[11px] font-mono text-primary font-medium mt-0.5">
+            <span className="text-xs font-mono text-primary font-medium mt-0.5">
               {activeCategory
                 ? `${activeCategory.percentage.toFixed(1)}% of total`
                 : `${categories.length} categories`}
@@ -155,13 +155,13 @@ export function CategoryDonutChart({ categories, totalSpendingPaise }: CategoryD
             <button
               type="button"
               onClick={() => setHoveredIdx(null)}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-foreground bg-primary/10 border border-primary/30 px-2.5 py-1 rounded-full transition-colors active:scale-95 touch-manipulation"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-foreground bg-primary/10 border border-primary/30 px-2.5 py-1 rounded-full transition-colors active:scale-95 touch-manipulation"
             >
               <span>{activeCategory.categoryName}</span>
               <X className="h-3 w-3" />
             </button>
           ) : (
-            <p className="text-[10px] xs:text-[11px] text-muted-foreground text-center">
+            <p className="text-xs text-muted-foreground text-center">
               Tap or hover any slice to inspect
             </p>
           )}
@@ -214,7 +214,7 @@ export function CategoryDonutChart({ categories, totalSpendingPaise }: CategoryD
                     <span className="font-semibold text-foreground truncate max-w-[120px] xs:max-w-[160px] sm:max-w-[200px]">
                       {slice.categoryName}
                     </span>
-                    <Badge variant="outline" className="text-[9px] font-mono px-1 py-0 h-4 border-border text-muted-foreground">
+                    <Badge variant="outline" className="text-xs font-mono px-1.5 py-0 h-4.5 border-border text-muted-foreground font-medium">
                       {slice.count}
                     </Badge>
                   </div>

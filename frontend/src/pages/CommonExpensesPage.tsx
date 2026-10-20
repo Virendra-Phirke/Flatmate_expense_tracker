@@ -36,12 +36,22 @@ import {
   formatFilterLabel,
   getDateFilterRange,
 } from '@/components/ui/DateFilter';
+import { ResponsivePagination } from '@/components/ui/pagination';
 
 export function CommonExpensesPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState<DateFilterValue>({ mode: 'all' });
+
+  // Pagination state (10 items per page optimal for mobile Android viewport)
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Reset page when filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [dateFilter]);
 
   // Form State
   const [description, setDescription] = useState('');
@@ -155,6 +165,12 @@ export function CommonExpensesPage() {
     return expenses.filter((e) => matchesDateFilter(e.expense_date, dateFilter));
   }, [expenses, dateFilter]);
 
+  const totalPages = Math.ceil(filteredExpenses.length / PAGE_SIZE) || 1;
+  const paginatedExpenses = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredExpenses.slice(start, start + PAGE_SIZE);
+  }, [filteredExpenses, currentPage, PAGE_SIZE]);
+
   const totalCommon = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_paise || 0), 0);
   const isFilterActive = dateFilter.mode !== 'all';
   const isAdmin = user?.role === 'admin';
@@ -176,7 +192,7 @@ export function CommonExpensesPage() {
         </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="text-[10px] uppercase font-semibold text-muted-foreground">
+              <div className="text-xs uppercase font-semibold tracking-wider text-muted-foreground">
                 {isFilterActive ? 'Filtered Common' : 'Total Common'}
               </div>
               <div className="text-lg font-bold font-mono text-foreground">
@@ -208,7 +224,7 @@ export function CommonExpensesPage() {
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs sm:hidden">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               {isFilterActive ? 'Filtered:' : 'Total common:'}{' '}
               <strong className="font-mono text-xs text-foreground font-bold">{formatPaise(totalCommon)}</strong>
             </span>
@@ -272,7 +288,7 @@ export function CommonExpensesPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredExpenses.map((exp) => {
+          {paginatedExpenses.map((exp) => {
             const myShare = exp.shares?.find((s: any) => s.user_id === user?.id)?.amount_paise;
 
             return (
@@ -284,7 +300,7 @@ export function CommonExpensesPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-foreground text-sm min-[360px]:text-base">{exp.description}</h3>
-                      <Badge variant="outline" className="border-border text-muted-foreground text-[10px]">
+                      <Badge variant="outline" className="border-border text-muted-foreground text-xs font-mono">
                         {exp.split_method === 'equal' ? 'Equal Split' : 'Custom Split'}
                       </Badge>
                     </div>
@@ -321,7 +337,7 @@ export function CommonExpensesPage() {
                           }
                         }}
                         title="Delete expense"
-                        className="min-h-10 min-w-10 flex items-center justify-center text-muted-foreground hover:text-negative transition-colors rounded-lg"
+                        className="min-h-10 min-w-10 flex items-center justify-center text-muted-foreground hover:text-negative transition-colors rounded-lg active:scale-95"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -332,7 +348,7 @@ export function CommonExpensesPage() {
                 {/* Shares breakdown if available */}
                 {exp.shares && exp.shares.length > 0 && (
                   <div className="p-4 bg-surface-subtle/50">
-                    <div className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                    <div className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-2">
                       Participant Allocations
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
@@ -348,7 +364,7 @@ export function CommonExpensesPage() {
                           <div className="font-medium text-foreground truncate flex items-center justify-between">
                             <span>{sh.full_name}</span>
                             {sh.user_id === user?.id && (
-                              <span className="text-[9px] text-primary uppercase font-bold">You</span>
+                              <span className="text-xs text-primary uppercase font-bold">You</span>
                             )}
                           </div>
                           <div className="font-mono font-bold text-foreground mt-0.5">
@@ -362,6 +378,15 @@ export function CommonExpensesPage() {
               </Card>
             );
           })}
+
+          {/* Responsive Mobile-First Pagination */}
+          <ResponsivePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredExpenses.length}
+            pageSize={PAGE_SIZE}
+          />
         </div>
       )}
 
@@ -424,8 +449,8 @@ export function CommonExpensesPage() {
 
               {/* Quick Category Chips */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0 flex items-center gap-1">
-                  <Sparkles className="h-2.5 w-2.5 text-primary" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider shrink-0 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3 text-primary" />
                   Category:
                 </span>
                 {['utilities', 'household', 'groceries', 'food'].map((id) => {
@@ -436,7 +461,7 @@ export function CommonExpensesPage() {
                       key={cat.id}
                       type="button"
                       onClick={() => setCategoryName(cat.name)}
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium shrink-0 transition-colors ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-colors ${
                         categoryName.toLowerCase() === cat.name.toLowerCase()
                           ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                           : 'bg-secondary/80 hover:bg-secondary text-secondary-foreground hover:border-primary/40 border border-transparent'
@@ -557,7 +582,7 @@ export function CommonExpensesPage() {
                   })}
                 </div>
                 {splitMethod === 'custom' && (
-                  <div className="pt-1.5 border-t border-border flex items-center justify-between text-[11px] font-mono">
+                  <div className="pt-1.5 border-t border-border flex items-center justify-between text-xs font-mono">
                     <span className="text-muted-foreground">Custom split sum:</span>
                     {(() => {
                       const customSumPaise = members.reduce(

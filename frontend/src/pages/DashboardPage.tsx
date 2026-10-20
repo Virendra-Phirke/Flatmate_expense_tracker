@@ -182,17 +182,17 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
             className="p-4 sm:p-5 flex flex-col justify-between text-left transition-colors hover:bg-secondary/40 active:bg-secondary/60 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="flex items-baseline justify-between gap-1 w-full">
-              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
                 Personal
               </span>
-              <span className="text-[11px] text-muted-foreground">Not shared</span>
+              <span className="text-xs text-muted-foreground">Not shared</span>
             </div>
             <div className="my-2.5">
               <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
                 {formatPaise(summary.personalSpending || 0)}
               </p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Individual expenses paid strictly for yourself.</p>
+            <p className="text-xs text-muted-foreground">Individual expenses paid strictly for yourself.</p>
           </button>
 
           {/* Common share */}
@@ -202,17 +202,17 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
             className="p-4 sm:p-5 flex flex-col justify-between text-left transition-colors hover:bg-secondary/40 active:bg-secondary/60 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="flex items-baseline justify-between gap-1 w-full">
-              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
                 Common Share
               </span>
-              <span className="text-[11px] text-muted-foreground font-mono">Paid {formatPaise(summary.commonPaid || 0)}</span>
+              <span className="text-xs text-muted-foreground font-mono">Paid {formatPaise(summary.commonPaid || 0)}</span>
             </div>
             <div className="my-2.5">
               <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
                 {formatPaise(summary.commonShare || 0)}
               </p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Your portion of split rent, utilities, and flat groceries.</p>
+            <p className="text-xs text-muted-foreground">Your portion of split rent, utilities, and flat groceries.</p>
           </button>
 
           {/* Bought for others */}
@@ -222,11 +222,11 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
             className="p-4 sm:p-5 flex flex-col justify-between text-left transition-colors hover:bg-secondary/40 active:bg-secondary/60 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <div className="flex items-baseline justify-between gap-1 w-full">
-              <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+              <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
                 Flatmate Advances
               </span>
-              <span className="text-[11px] text-primary font-medium inline-flex items-center gap-0.5">
-                View <ChevronRight className="h-3 w-3" />
+              <span className="text-xs text-primary font-medium inline-flex items-center gap-0.5">
+                View <ChevronRight className="h-3.5 w-3.5" />
               </span>
             </div>
             <div className="my-2.5">
@@ -234,7 +234,7 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
                 {formatPaise(summary.advancedForOthers || 0)}
               </p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Purchases fronted for flatmates to be settled and repaid.</p>
+            <p className="text-xs text-muted-foreground">Purchases fronted for flatmates to be settled and repaid.</p>
           </button>
         </div>
       </section>
@@ -344,7 +344,7 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
               <Clock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               Recent activity
             </CardTitle>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Latest changes in your household</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Latest changes in your household</p>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -355,17 +355,17 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
           ) : activity.length === 0 ? (
             <div className="px-4 py-8 text-center">
               <p className="text-xs font-semibold">No activity yet</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">New expenses and repayments will appear here.</p>
+              <p className="mt-1 text-xs text-muted-foreground">New expenses and repayments will appear here.</p>
             </div>
           ) : (
             <div className="divide-y divide-border">
               {activity.map((item) => (
                 <div key={item.id} className="flex items-start gap-2.5 xs:gap-3 p-3 xs:p-4">
-                  <div className="flex h-7 w-7 xs:h-8 xs:w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] xs:text-xs font-bold text-secondary-foreground">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-bold text-secondary-foreground">
                     {item.actor_name?.charAt(0)?.toUpperCase() || 'A'}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] xs:text-xs leading-snug">
+                    <p className="text-xs leading-snug">
                       <span className="font-semibold">{item.actor_name || 'A household member'}</span>{' '}
                       {item.action === 'create'
                         ? 'recorded a new'
@@ -376,12 +376,12 @@ export function DashboardPage({ onNavigate, onOpenVoice }: DashboardPageProps) {
                             : item.action}{' '}
                       <span className="font-medium text-primary">{item.entity_type}</span>
                       {item.metadata?.amount_paise != null && (
-                        <span className="ml-1 font-mono text-[10px] xs:text-[11px] tabular-nums">
+                        <span className="ml-1 font-mono text-xs tabular-nums font-semibold">
                           ({formatPaise(item.metadata.amount_paise)})
                         </span>
                       )}
                     </p>
-                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    <p className="mt-1 text-xs text-muted-foreground font-mono">
                       {new Date(item.created_at).toLocaleString()}
                     </p>
                   </div>

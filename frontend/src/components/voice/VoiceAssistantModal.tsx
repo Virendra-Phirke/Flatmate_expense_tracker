@@ -309,7 +309,7 @@ export function VoiceAssistantModal({
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                   Voice Expense Assistant
-                  <Badge variant="outline" className="border-border text-muted-foreground text-[10px] font-mono">
+                  <Badge variant="outline" className="border-border text-muted-foreground text-xs font-mono font-medium">
                     AI Assisted
                   </Badge>
                 </DialogTitle>
@@ -384,7 +384,7 @@ export function VoiceAssistantModal({
                         setTranscript('');
                         setInterimText('');
                       }}
-                      className="text-[11px] text-muted-foreground hover:text-foreground"
+                      className="text-xs text-muted-foreground hover:text-foreground"
                     >
                       Clear
                     </button>
@@ -409,7 +409,7 @@ export function VoiceAssistantModal({
 
               {/* Sample Voice Prompts */}
               <div className="rounded-lg border border-border bg-surface-subtle/50 p-3 space-y-1.5">
-                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Quick examples to try:
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -430,7 +430,7 @@ export function VoiceAssistantModal({
                 </div>
               </div>
 
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Notice: Speech is transcribed in-browser and converted into structured expense fields. You must review and confirm details before any transaction is saved.
               </p>
 
@@ -574,7 +574,7 @@ export function VoiceAssistantModal({
                   )}
 
                 {parsedExpense.summary && (
-                  <div className="text-[11px] text-muted-foreground bg-surface-subtle p-2.5 rounded-lg border border-border">
+                  <div className="text-xs text-muted-foreground bg-surface-subtle p-2.5 rounded-lg border border-border">
                     {parsedExpense.summary}
                   </div>
                 )}

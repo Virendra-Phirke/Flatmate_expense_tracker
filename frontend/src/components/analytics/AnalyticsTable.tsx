@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AnalyticsTopTransaction } from '@/types';
 import { formatPaise } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ResponsivePagination } from '@/components/ui/pagination';
 import {
   Table,
   TableHeader,
@@ -28,11 +29,19 @@ interface AnalyticsTableProps {
   transactions: AnalyticsTopTransaction[];
 }
 
+const PAGE_SIZE = 10;
+
 export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'date' | 'amount'>('amount');
   const [sortAsc, setSortAsc] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'personal' | 'common' | 'on_behalf'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to first page whenever search or filter or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterType, sortField, sortAsc]);
 
   const filtered = useMemo(() => {
     let list = transactions || [];
@@ -61,6 +70,12 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
     });
   }, [transactions, search, sortField, sortAsc, filterType]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedTransactions = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, currentPage]);
+
   if (!transactions || transactions.length === 0) {
     return (
       <Card className="p-6 sm:p-8 text-center border-border bg-card/60">
@@ -74,25 +89,25 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
     switch (type) {
       case 'personal':
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
+          <Badge variant="outline" className="text-xs font-mono font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30">
             Personal
           </Badge>
         );
       case 'common':
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30">
+          <Badge variant="outline" className="text-xs font-mono font-medium bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/30">
             Household
           </Badge>
         );
       case 'on_behalf':
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30">
+          <Badge variant="outline" className="text-xs font-mono font-medium bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30">
             For Flatmate
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline" className="text-[10px] font-semibold bg-secondary text-secondary-foreground border-border">
+          <Badge variant="outline" className="text-xs font-mono font-medium bg-secondary text-secondary-foreground border-border">
             {type}
           </Badge>
         );
@@ -143,7 +158,7 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
             <button
               type="button"
               onClick={() => setFilterType('all')}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground bg-secondary/80 px-2 py-1 rounded-lg border border-border"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground bg-secondary/80 px-2.5 py-1 rounded-lg border border-border"
             >
               <span>{filterType}</span>
               <X className="h-3 w-3" />
@@ -235,14 +250,14 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
             No matching transactions found
           </div>
         ) : (
-          filtered.map((t) => (
+          paginatedTransactions.map((t) => (
             <div
               key={t.id}
               className="p-3 rounded-lg border border-border bg-card shadow-xs space-y-2 touch-manipulation active:scale-[0.99] transition-transform"
             >
               <div className="flex items-center justify-between text-xs">
-                <span className="font-mono text-[10px] text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-2.5 w-2.5" />
+                <span className="font-mono text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3" />
                   {t.expenseDate}
                 </span>
                 {getTypeBadge(t.expenseType)}
@@ -253,14 +268,14 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
                   <p className="font-semibold text-xs text-foreground truncate">
                     {t.description}
                   </p>
-                  <div className="flex flex-wrap items-center gap-2 mt-1 text-[10px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-1 bg-secondary px-1.5 py-0.5 rounded text-secondary-foreground font-medium">
-                      <Tag className="h-2.5 w-2.5 text-muted-foreground" />
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 bg-secondary px-2 py-0.5 rounded text-secondary-foreground font-medium text-xs">
+                      <Tag className="h-3 w-3 text-muted-foreground" />
                       {t.categoryName}
                     </span>
                     {t.otherUserName && (
-                      <span className="inline-flex items-center gap-1 font-medium text-foreground bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20">
-                        <User className="h-2.5 w-2.5 text-primary" />
+                      <span className="inline-flex items-center gap-1 font-medium text-foreground bg-primary/10 px-2 py-0.5 rounded border border-primary/20 text-xs">
+                        <User className="h-3 w-3 text-primary" />
                         {t.otherUserName}
                       </span>
                     )}
@@ -281,7 +296,7 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">Date</TableHead>
+              <TableHead className="w-[110px]">Date</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
@@ -297,9 +312,9 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((t) => (
+              paginatedTransactions.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell className="font-mono text-[11px] text-muted-foreground whitespace-nowrap">
+                  <TableCell className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                     {t.expenseDate}
                   </TableCell>
                   <TableCell className="font-semibold text-foreground max-w-[220px] truncate">
@@ -309,15 +324,15 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
                     {getTypeBadge(t.expenseType)}
                   </TableCell>
                   <TableCell className="text-muted-foreground whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Tag className="h-3 w-3 text-muted-foreground/70" />
+                    <span className="inline-flex items-center gap-1.5 text-xs">
+                      <Tag className="h-3.5 w-3.5 text-muted-foreground/70" />
                       {t.categoryName}
                     </span>
                   </TableCell>
-                  <TableCell className="text-muted-foreground whitespace-nowrap text-[11px]">
+                  <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
                     {t.otherUserName ? (
                       <span className="inline-flex items-center gap-1 font-medium text-foreground bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
-                        <User className="h-3 w-3 text-primary" />
+                        <User className="h-3.5 w-3.5 text-primary" />
                         {t.otherUserName}
                       </span>
                     ) : (
@@ -333,6 +348,17 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination Controls */}
+      {filtered.length > 0 && (
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+        />
+      )}
     </div>
   );
 }

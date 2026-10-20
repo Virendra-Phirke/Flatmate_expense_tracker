@@ -199,7 +199,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
                   y={y + 3}
                   textAnchor="end"
                   fill="hsl(var(--muted-foreground))"
-                  className="font-mono text-[9px] sm:text-[10px]"
+                  className="font-mono text-xs"
                 >
                   {formatPaise(val)}
                 </text>
@@ -273,7 +273,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
                   y={padding.top + innerHeight + 18}
                   textAnchor="middle"
                   fill="hsl(var(--muted-foreground))"
-                  className="font-mono text-[9px] sm:text-[10px]"
+                  className="font-mono text-xs"
                 >
                   {formattedDate}
                 </text>
@@ -289,15 +289,15 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
             }`}
           >
             <div className="flex items-center justify-between border-b border-border/80 pb-1">
-              <span className="font-mono text-[10px] sm:text-[11px] text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-2.5 w-2.5" />
+              <span className="font-mono text-xs text-muted-foreground flex items-center gap-1.5">
+                <Calendar className="h-3 w-3" />
                 {activePoint.data.date}
               </span>
-              <span className="font-semibold text-primary font-mono text-[11px] sm:text-xs">
+              <span className="font-semibold text-primary font-mono text-xs">
                 {formatPaise(activePoint.data.value)}
               </span>
             </div>
-            <div className="text-[10px] sm:text-[11px] space-y-0.5 pt-0.5">
+            <div className="text-xs space-y-0.5 pt-0.5">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Personal:</span>
                 <span className="font-mono font-medium">{formatPaise(activePoint.data.personalPaise)}</span>
@@ -315,7 +315,7 @@ export function SpendingTrendChart({ dailyTrend }: SpendingTrendChartProps) {
         )}
       </div>
 
-      <p className="text-[10px] xs:text-[11px] text-muted-foreground text-center">
+      <p className="text-xs text-muted-foreground text-center">
         Drag or hover along the curve to inspect spending on specific dates
       </p>
     </div>

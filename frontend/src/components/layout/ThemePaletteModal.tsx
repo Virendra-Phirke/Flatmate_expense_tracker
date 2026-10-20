@@ -74,7 +74,7 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
               >
                 {/* Active check pill */}
                 {isSelected && (
-                  <span className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px]">
+                  <span className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs shadow-xs">
                     <Check className="h-3 w-3 stroke-[3]" />
                   </span>
                 )}
@@ -96,7 +96,7 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
                     style={{ backgroundColor: p.bgHex }}
                     title={`Background: ${p.bgHex}`}
                   />
-                  <span className="ml-auto text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+                  <span className="ml-auto text-xs font-mono uppercase tracking-wider text-muted-foreground font-semibold">
                     {p.primaryHex}
                   </span>
                 </div>
@@ -107,24 +107,24 @@ export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps
                     {p.name}
                   </span>
                 </div>
-                <div className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                <div className="text-xs font-medium text-muted-foreground mt-0.5">
                   {p.tagline}
                 </div>
 
                 {/* Vibe Badge */}
                 <div className="mt-2 flex items-center gap-1.5">
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 font-normal">
+                  <Badge variant="secondary" className="text-xs px-2 py-0.5 font-medium">
                     {p.vibe}
                   </Badge>
                 </div>
 
                 {/* Description */}
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                   {p.description}
                 </p>
 
                 {/* Live Action footer */}
-                <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-[11px]">
+                <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between text-xs">
                   <span className={isSelected ? 'font-bold text-primary' : 'text-muted-foreground'}>
                     {isSelected ? '✓ Active on app' : 'Click to preview'}
                   </span>

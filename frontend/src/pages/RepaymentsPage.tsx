@@ -26,6 +26,7 @@ import {
   ExternalLink,
   Plus,
 } from '@/components/ui/icons';
+import { ResponsivePagination } from '@/components/ui/pagination';
 
 interface RepaymentsPageProps {
   initialRecipientId?: string;
@@ -150,6 +151,15 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
 
   const [repaymentTab, setRepaymentTab] = useState<'needs_action' | 'pending' | 'history' | 'all'>('needs_action');
 
+  // Pagination state (10 items per page optimal for mobile Android viewport)
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Reset page when tab changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [repaymentTab]);
+
   // Segregate incoming vs outgoing settlements
   const incomingPending = settlements.filter(
     (s) => s.recipient_id === user?.id && s.status === 'verification_pending'
@@ -169,6 +179,12 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       : repaymentTab === 'history'
       ? historySettlements
       : settlements;
+
+  const totalPages = Math.ceil(filteredSettlements.length / PAGE_SIZE) || 1;
+  const paginatedSettlements = React.useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredSettlements.slice(start, start + PAGE_SIZE);
+  }, [filteredSettlements, currentPage, PAGE_SIZE]);
 
   return (
     <main className="space-y-6">
@@ -202,15 +218,15 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('needs_action')}
-          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 ${
+          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 min-h-[38px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'needs_action'
-              ? 'bg-card text-foreground shadow-sm font-semibold'
+              ? 'bg-card text-foreground shadow-xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <span className="truncate">Needs action</span>
           {incomingPending.length > 0 && (
-            <span className="h-4 min-w-4 px-1 rounded-full bg-pending text-white font-mono text-[9px] flex items-center justify-center shrink-0">
+            <span className="h-4.5 min-w-[18px] px-1 rounded-full bg-pending text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">
               {incomingPending.length}
             </span>
           )}
@@ -218,15 +234,15 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('pending')}
-          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 ${
+          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 min-h-[38px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'pending'
-              ? 'bg-card text-foreground shadow-sm font-semibold'
+              ? 'bg-card text-foreground shadow-xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <span className="truncate">Pending</span>
           {outgoingPending.length > 0 && (
-            <span className="h-4 min-w-4 px-1 rounded-full bg-surface-subtle text-muted-foreground font-mono text-[9px] border border-border flex items-center justify-center shrink-0">
+            <span className="h-4.5 min-w-[18px] px-1 rounded-full bg-surface-subtle text-muted-foreground font-mono text-xs font-bold border border-border flex items-center justify-center shrink-0">
               {outgoingPending.length}
             </span>
           )}
@@ -234,9 +250,9 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('history')}
-          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate ${
+          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate min-h-[38px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'history'
-              ? 'bg-card text-foreground shadow-sm font-semibold'
+              ? 'bg-card text-foreground shadow-xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -245,9 +261,9 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('all')}
-          className={`py-1.5 px-1 sm:px-3 rounded-md text-[10px] min-[360px]:text-xs font-medium transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate ${
+          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate min-h-[38px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'all'
-              ? 'bg-card text-foreground shadow-sm font-semibold'
+              ? 'bg-card text-foreground shadow-xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -281,112 +297,125 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                 : 'No settlements found for this filter.'}
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {filteredSettlements.map((s) => {
-                const isPayer = s.payer_id === user?.id;
-                const isRecipient = s.recipient_id === user?.id;
-                const isActionRequired = isRecipient && s.status === 'verification_pending';
+            <>
+              <div className="divide-y divide-border">
+                {paginatedSettlements.map((s) => {
+                  const isPayer = s.payer_id === user?.id;
+                  const isRecipient = s.recipient_id === user?.id;
+                  const isActionRequired = isRecipient && s.status === 'verification_pending';
 
-                return (
-                  <div
-                    key={s.id}
-                    className={`p-3 min-[360px]:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-                      isActionRequired ? 'bg-pending-soft/30' : 'hover:bg-muted/30'
-                    }`}
-                  >
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">
-                        {isPayer ? (
-                          <>
-                            You paid <strong className="text-foreground">{s.recipient_name}</strong>
-                          </>
-                        ) : (
-                          <>
-                            <strong className="text-foreground">{s.payer_name}</strong> paid you
-                          </>
-                        )}
+                  return (
+                    <div
+                      key={s.id}
+                      className={`p-3 min-[360px]:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                        isActionRequired ? 'bg-pending-soft/30' : 'hover:bg-muted/30'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground">
+                          {isPayer ? (
+                            <>
+                              You paid <strong className="text-foreground">{s.recipient_name}</strong>
+                            </>
+                          ) : (
+                            <>
+                              <strong className="text-foreground">{s.payer_name}</strong> paid you
+                            </>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
+                          <span className="font-mono text-muted-foreground">
+                            {new Date(s.claimed_at || s.created_at).toLocaleDateString()}
+                          </span>
+                          <span>&bull;</span>
+                          <span className="uppercase text-foreground font-medium">{s.method}</span>
+                          {s.transaction_reference && (
+                            <>
+                              <span>&bull;</span>
+                              <span className="truncate max-w-[160px]">Ref: {s.transaction_reference}</span>
+                            </>
+                          )}
+                          {s.note && (
+                            <>
+                              <span>&bull;</span>
+                              <span className="truncate max-w-[160px]">{s.note}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
-                        <span className="font-mono text-muted-foreground">
-                          {new Date(s.claimed_at || s.created_at).toLocaleDateString()}
-                        </span>
-                        <span>&bull;</span>
-                        <span className="uppercase text-foreground font-medium">{s.method}</span>
-                        {s.transaction_reference && (
-                          <>
-                            <span>&bull;</span>
-                            <span className="truncate max-w-[160px]">Ref: {s.transaction_reference}</span>
-                          </>
-                        )}
-                        {s.note && (
-                          <>
-                            <span>&bull;</span>
-                            <span className="truncate max-w-[160px]">{s.note}</span>
-                          </>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-2.5">
+                        <div className="flex items-center justify-between sm:justify-end gap-2.5">
+                          <div className="font-mono font-bold text-sm text-foreground">
+                            {formatPaise(s.amount_paise)}
+                          </div>
+                          <div>
+                            {s.status === 'confirmed' && (
+                              <Badge className="bg-positive-soft text-positive border-positive/30 text-xs font-mono">
+                                Confirmed
+                              </Badge>
+                            )}
+                            {s.status === 'verification_pending' && !isActionRequired && (
+                              <Badge className="bg-pending-soft text-pending border-pending/30 text-xs font-mono">
+                                Pending
+                              </Badge>
+                            )}
+                            {s.status === 'rejected' && (
+                              <Badge className="bg-negative-soft text-negative border-negative/30 text-xs font-mono">
+                                Rejected
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {isActionRequired && (
+                          <div className="flex items-center gap-2 pt-1 sm:pt-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (confirm(`Reject payment claim from ${s.payer_name}?`)) {
+                                  rejectMutation.mutate(s.id);
+                                }
+                              }}
+                              disabled={rejectMutation.isPending}
+                              className="flex-1 sm:flex-none text-xs min-h-10 border-border text-foreground hover:bg-muted active:scale-95"
+                            >
+                              <XCircle className="h-3.5 w-3.5 mr-1 text-negative" />
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`Confirm receipt of ${formatPaise(s.amount_paise)} from ${s.payer_name}?`)) {
+                                  confirmMutation.mutate(s.id);
+                                }
+                              }}
+                              disabled={confirmMutation.isPending}
+                              className="flex-1 sm:flex-none text-xs min-h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold active:scale-95"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                              Confirm
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-2.5">
-                      <div className="flex items-center justify-between sm:justify-end gap-2.5">
-                        <div className="font-mono font-bold text-sm text-foreground">
-                          {formatPaise(s.amount_paise)}
-                        </div>
-                        <div>
-                          {s.status === 'confirmed' && (
-                            <Badge className="bg-positive-soft text-positive border-positive/30 text-xs">
-                              Confirmed
-                            </Badge>
-                          )}
-                          {s.status === 'verification_pending' && !isActionRequired && (
-                            <Badge className="bg-pending-soft text-pending border-pending/30 text-xs">
-                              Pending confirmation
-                            </Badge>
-                          )}
-                          {s.status === 'rejected' && (
-                            <Badge className="bg-negative-soft text-negative border-negative/30 text-xs">
-                              Rejected
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-
-                      {isActionRequired && (
-                        <div className="flex items-center gap-2 pt-1 sm:pt-0">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              if (confirm(`Reject payment claim from ${s.payer_name}?`)) {
-                                rejectMutation.mutate(s.id);
-                              }
-                            }}
-                            disabled={rejectMutation.isPending}
-                            className="flex-1 sm:flex-none text-xs min-h-10 border-border text-foreground hover:bg-muted"
-                          >
-                            <XCircle className="h-3.5 w-3.5 mr-1 text-negative" />
-                            Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              if (confirm(`Confirm receipt of ${formatPaise(s.amount_paise)} from ${s.payer_name}?`)) {
-                                confirmMutation.mutate(s.id);
-                              }
-                            }}
-                            disabled={confirmMutation.isPending}
-                            className="flex-1 sm:flex-none text-xs min-h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                            Confirm
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              {/* Responsive Mobile-First Pagination */}
+              <div className="p-3 border-t border-border">
+                <ResponsivePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  totalItems={filteredSettlements.length}
+                  pageSize={PAGE_SIZE}
+                />
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

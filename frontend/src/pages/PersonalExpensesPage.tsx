@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Expense, Category } from '@/types';
@@ -43,6 +43,8 @@ import {
   getDateFilterRange,
 } from '@/components/ui/DateFilter';
 
+import { ResponsivePagination } from '@/components/ui/pagination';
+
 interface PersonalExpensesPageProps {
   hideTitle?: boolean;
   dateFilter?: DateFilterValue;
@@ -66,6 +68,15 @@ export function PersonalExpensesPage({
   const [expenseDate, setExpenseDate] = useState(getLocalDateString());
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Pagination state (10 items per page optimal for mobile Android viewport)
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeDateFilter]);
 
   // Queries
   const { data: expenses = [], isLoading } = useQuery<Expense[]>({
@@ -125,6 +136,12 @@ export function PersonalExpensesPage({
     return expenses.filter((e) => matchesDateFilter(e.expense_date, activeDateFilter));
   }, [expenses, activeDateFilter]);
 
+  const totalPages = Math.ceil(filteredExpenses.length / PAGE_SIZE) || 1;
+  const paginatedExpenses = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredExpenses.slice(start, start + PAGE_SIZE);
+  }, [filteredExpenses, currentPage, PAGE_SIZE]);
+
   const totalSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_paise || 0), 0);
   const isFilterActive = activeDateFilter.mode !== 'all';
 
@@ -175,7 +192,7 @@ export function PersonalExpensesPage({
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs sm:hidden">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {isFilterActive ? 'Filtered:' : 'Total spent:'}{' '}
                 <strong className="font-mono text-xs text-foreground font-bold">{formatPaise(totalSpent)}</strong>
               </span>
@@ -210,7 +227,7 @@ export function PersonalExpensesPage({
           {/* Row 2: Metric strip */}
           <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {isFilterActive ? 'Filtered:' : 'Total personal:'}
               </span>
               <strong className="font-mono text-xs sm:text-sm text-foreground">{formatPaise(totalSpent)}</strong>
@@ -290,7 +307,7 @@ export function PersonalExpensesPage({
         <>
           {/* Mobile Card List */}
           <div className="md:hidden space-y-2.5">
-            {filteredExpenses.map((exp) => (
+            {paginatedExpenses.map((exp) => (
               <div
                 key={exp.id}
                 className="rounded-lg border border-border bg-card p-3 min-[360px]:p-4 space-y-2"
@@ -329,7 +346,7 @@ export function PersonalExpensesPage({
                         deleteMutation.mutate(exp.id);
                       }
                     }}
-                    className="min-h-11 px-2 text-sm text-negative hover:underline flex items-center gap-1"
+                    className="min-h-10 px-2 text-xs font-semibold text-negative hover:underline flex items-center gap-1 active:scale-95 transition-transform"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     Delete
@@ -352,7 +369,7 @@ export function PersonalExpensesPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredExpenses.map((exp) => (
+                {paginatedExpenses.map((exp) => (
                   <TableRow key={exp.id}>
                     <TableCell className="text-sm font-mono text-muted-foreground">
                       {exp.expense_date}
@@ -380,7 +397,7 @@ export function PersonalExpensesPage({
                           }
                         }}
                         title="Delete expense"
-                        className="min-h-11 min-w-11 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-negative transition-colors"
+                        className="min-h-10 min-w-10 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-negative transition-colors active:scale-95"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -390,6 +407,15 @@ export function PersonalExpensesPage({
               </TableBody>
             </Table>
           </div>
+
+          {/* Responsive Mobile-First Pagination */}
+          <ResponsivePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={filteredExpenses.length}
+            pageSize={PAGE_SIZE}
+          />
         </>
       )}
 
@@ -420,8 +446,8 @@ export function PersonalExpensesPage({
           >
             {/* Quick Category Suggestion Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0 flex items-center gap-1">
-                <Sparkles className="h-2.5 w-2.5 text-primary" />
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <Sparkles className="h-3 w-3 text-primary" />
                 Category:
               </span>
               {DEFAULT_CATEGORIES.slice(0, 6).map((cat) => (
@@ -429,7 +455,7 @@ export function PersonalExpensesPage({
                   key={cat.id}
                   type="button"
                   onClick={() => setCategoryName(cat.name)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium shrink-0 transition-colors ${
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-colors ${
                     categoryName.toLowerCase() === cat.name.toLowerCase()
                       ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                       : 'bg-secondary/80 hover:bg-secondary text-secondary-foreground hover:border-primary/40 border border-transparent'

@@ -97,7 +97,7 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
         </h2>
         <div className="rounded-lg border border-border bg-card divide-y xs:divide-y-0 xs:divide-x divide-border grid grid-cols-1 xs:grid-cols-2 shadow-xs overflow-hidden">
           <article className="p-4 sm:p-5 flex flex-col justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
               Common Share
             </span>
             <div className="my-2.5">
@@ -105,10 +105,10 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
                 {formatPaise(summary.commonShare || 0)}
               </p>
             </div>
-            <p className="text-[11px] text-muted-foreground font-mono">Paid: {formatPaise(summary.commonPaid || 0)}</p>
+            <p className="text-xs text-muted-foreground font-mono">Paid: {formatPaise(summary.commonPaid || 0)}</p>
           </article>
           <article className="p-4 sm:p-5 flex flex-col justify-between">
-            <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
               Personal Costs
             </span>
             <div className="my-2.5">
@@ -116,7 +116,7 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
                 {formatPaise(summary.personalSpending || 0)}
               </p>
             </div>
-            <p className="text-[11px] text-muted-foreground">Not shared with flatmates</p>
+            <p className="text-xs text-muted-foreground">Not shared with flatmates</p>
           </article>
         </div>
       </section>

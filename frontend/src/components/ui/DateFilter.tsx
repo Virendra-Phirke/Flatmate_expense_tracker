@@ -453,9 +453,9 @@ export function DateFilter({
           <div className="flex items-center gap-2">
             <Badge
               variant="outline"
-              className="bg-primary/5 text-primary border-primary/30 text-[11px] font-mono py-1 px-2.5 flex items-center gap-1.5"
+              className="bg-primary/5 text-primary border-primary/30 text-xs font-mono py-1 px-2.5 flex items-center gap-1.5 font-medium"
             >
-              <Filter className="h-2.5 w-2.5" />
+              <Filter className="h-3 w-3" />
               <span>
                 {filteredCount !== undefined ? `${filteredCount} matched` : 'Filtered'}
                 {totalRecords !== undefined ? ` of ${totalRecords}` : ''}
@@ -587,7 +587,7 @@ export function DateFilter({
 
               {/* Range Mode Helper Hint */}
               {activeTab === 'range' && (
-                <div className="mb-2 text-[11px] text-muted-foreground bg-secondary/50 p-1.5 rounded-lg text-center font-medium">
+                <div className="mb-2 text-xs text-muted-foreground bg-secondary/50 p-2 rounded-lg text-center font-medium">
                   {!value.startDate
                     ? 'Click start date'
                     : !value.endDate
@@ -599,7 +599,7 @@ export function DateFilter({
               {/* Weekday headers */}
               <div className="grid grid-cols-7 gap-1 text-center mb-1">
                 {WEEKDAY_NAMES.map((w, idx) => (
-                  <div key={idx} className="text-[11px] font-semibold text-muted-foreground py-1">
+                  <div key={idx} className="text-xs font-semibold text-muted-foreground py-1">
                     {w}
                   </div>
                 ))}
@@ -660,14 +660,14 @@ export function DateFilter({
                     <button
                       type="button"
                       onClick={selectToday}
-                      className="px-2 py-1 rounded-md text-[11px] font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                      className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
                     >
                       Today
                     </button>
                     <button
                       type="button"
                       onClick={selectYesterday}
-                      className="px-2 py-1 rounded-md text-[11px] font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                      className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
                     >
                       Yesterday
                     </button>
@@ -677,28 +677,28 @@ export function DateFilter({
                     <button
                       type="button"
                       onClick={selectLast7Days}
-                      className="px-2 py-1 rounded-md text-[11px] font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                      className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
                     >
                       Last 7 Days
                     </button>
                     <button
                       type="button"
                       onClick={selectLast30Days}
-                      className="px-2 py-1 rounded-md text-[11px] font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                      className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
                     >
                       Last 30 Days
                     </button>
                     <button
                       type="button"
                       onClick={selectThisMonth}
-                      className="px-2 py-1 rounded-md text-[11px] font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                      className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
                     >
                       This Month
                     </button>
                     <button
                       type="button"
                       onClick={selectLastMonth}
-                      className="px-2 py-1 rounded-md text-[11px] font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
+                      className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground transition-colors"
                     >
                       Last Month
                     </button>

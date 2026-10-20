@@ -238,12 +238,12 @@ export function CategoryCombobox({
             dropPlacement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
           )}
         >
-          <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase flex items-center justify-between border-b border-border/50 pb-1 mb-1">
+          <div className="px-2 py-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase flex items-center justify-between border-b border-border/50 pb-1 mb-1">
             <span>Categories</span>
             {search ? (
-              <span className="font-normal text-[9px] text-primary">{filteredCategories.length} matched</span>
+              <span className="font-normal text-xs text-primary">{filteredCategories.length} matched</span>
             ) : (
-              <span className="font-normal text-[9px]">Select or type</span>
+              <span className="font-normal text-xs">Select or type</span>
             )}
           </div>
 
@@ -509,8 +509,8 @@ export function ItemCombobox({
           {/* Recent Items (shown when input is empty and recents exist) */}
           {!value.trim() && recents.length > 0 && (
             <div className="mb-2 pb-1.5 border-b border-border/50">
-              <div className="px-2 py-0.5 text-[9px] font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-1">
-                <Clock className="h-2.5 w-2.5 text-primary" />
+              <div className="px-2 py-0.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase flex items-center gap-1">
+                <Clock className="h-3 w-3 text-primary" />
                 Recent
               </div>
               <div className="flex flex-wrap gap-1 px-1.5 pt-1">
@@ -519,7 +519,7 @@ export function ItemCombobox({
                     key={rIdx}
                     type="button"
                     onClick={() => handleSelect(rec)}
-                    className="inline-flex items-center gap-1 rounded-md bg-secondary/80 hover:bg-secondary px-2 py-0.5 text-[11px] text-foreground transition-colors hover:text-primary"
+                    className="inline-flex items-center gap-1 rounded-md bg-secondary/80 hover:bg-secondary px-2.5 py-1 text-xs text-foreground transition-colors hover:text-primary"
                   >
                     <span>{rec}</span>
                   </button>
@@ -528,13 +528,13 @@ export function ItemCombobox({
             </div>
           )}
 
-          <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase flex items-center justify-between">
+          <div className="px-2 py-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase flex items-center justify-between">
             <span>
               {matchedCategory
                 ? `Suggested in ${matchedCategory.emoji} ${matchedCategory.name}`
                 : 'Popular Items'}
             </span>
-            <span className="text-[9px] text-muted-foreground font-normal">
+            <span className="text-xs text-muted-foreground font-normal">
               {filteredSuggestions.length} items
             </span>
           </div>
@@ -573,8 +573,8 @@ export function ItemCombobox({
       {/* Clickable Quick-Suggestion Chips with Emojis */}
       {showChips && quickChips.length > 0 && !disabled && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mr-0.5 flex items-center gap-1">
-            <Sparkles className="h-2.5 w-2.5 text-primary" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-0.5 flex items-center gap-1">
+            <Sparkles className="h-3 w-3 text-primary" />
             Quick:
           </span>
           {quickChips.map((chip, idx) => (
@@ -583,7 +583,7 @@ export function ItemCombobox({
               type="button"
               onClick={() => handleSelect(chip.label)}
               className={cn(
-                'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all cursor-pointer',
+                'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-all cursor-pointer',
                 value.toLowerCase() === chip.label.toLowerCase()
                   ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                   : 'bg-secondary/70 hover:bg-secondary text-secondary-foreground hover:border-primary/40 border border-transparent'
@@ -626,7 +626,7 @@ export function CategoryItemSelector({
     <div className={cn('space-y-2', className)}>
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
         <div className="sm:col-span-5">
-          <label className="block text-[11px] font-semibold text-foreground mb-1">
+          <label className="block text-xs font-semibold text-foreground mb-1">
             Category
           </label>
           <CategoryCombobox
@@ -636,7 +636,7 @@ export function CategoryItemSelector({
           />
         </div>
         <div className="sm:col-span-7">
-          <label className="block text-[11px] font-semibold text-foreground mb-1">
+          <label className="block text-xs font-semibold text-foreground mb-1">
             Item Name
           </label>
           <ItemCombobox

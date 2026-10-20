@@ -17,7 +17,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
       {/* ── Left Hero: Total Outflow (Editorial Ledger Emphasis) ── */}
       <article className="lg:col-span-5 p-5 sm:p-6 flex flex-col justify-between bg-card">
         <header className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+          <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
             Total Outflow
           </span>
           <span className="font-mono text-xs px-2 py-0.5 rounded border border-border bg-secondary text-secondary-foreground font-medium">
@@ -38,7 +38,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
           </p>
         </div>
 
-        <footer className="pt-3 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
+        <footer className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
           <span>Active filter scope</span>
           <span className="font-mono font-medium text-foreground">100% of ledger</span>
         </footer>
@@ -49,7 +49,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
         {/* Household Share */}
         <article className="p-4 sm:p-5 flex flex-col justify-between">
           <header className="flex items-baseline justify-between gap-1">
-            <h3 className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
               Household
             </h3>
             <span className="font-mono text-xs font-semibold text-foreground">
@@ -63,7 +63,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
             </div>
           </div>
 
-          <p className="text-[11px] text-muted-foreground leading-normal">
+          <p className="text-xs text-muted-foreground leading-normal">
             Your portion of shared flat expenses like Wi-Fi, maid, and utilities.
           </p>
         </article>
@@ -71,7 +71,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
         {/* Personal Spend */}
         <article className="p-4 sm:p-5 flex flex-col justify-between">
           <header className="flex items-baseline justify-between gap-1">
-            <h3 className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
               Personal
             </h3>
             <span className="font-mono text-xs font-semibold text-foreground">
@@ -85,7 +85,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
             </div>
           </div>
 
-          <p className="text-[11px] text-muted-foreground leading-normal">
+          <p className="text-xs text-muted-foreground leading-normal">
             Individual purchases paid strictly for yourself, excluded from flat splits.
           </p>
         </article>
@@ -93,7 +93,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
         {/* Fronted for Flatmates */}
         <article className="p-4 sm:p-5 flex flex-col justify-between">
           <header className="flex items-baseline justify-between gap-1">
-            <h3 className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            <h3 className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
               For Flatmates
             </h3>
             <span className="font-mono text-xs font-semibold text-foreground">
@@ -107,7 +107,7 @@ export function AnalyticsKpiCards({ kpi, typeDistribution }: AnalyticsKpiCardsPr
             </div>
           </div>
 
-          <p className="text-[11px] text-muted-foreground leading-normal">
+          <p className="text-xs text-muted-foreground leading-normal">
             Purchases you paid up front on behalf of specific flatmates to be repaid.
           </p>
         </article>

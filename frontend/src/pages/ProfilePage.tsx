@@ -122,7 +122,7 @@ export function ProfilePage() {
               </div>
               <div className="text-xs flex items-center justify-between border-b border-border pb-2">
                 <span className="text-muted-foreground">Role:</span>
-                <Badge variant="outline" className="text-[10px] border-border text-foreground uppercase font-mono">
+                <Badge variant="outline" className="text-xs border-border text-foreground uppercase font-mono font-medium">
                   {user?.role}
                 </Badge>
               </div>
@@ -148,7 +148,7 @@ export function ProfilePage() {
                 <span>Security & CIA Compliance</span>
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-1 text-muted-foreground text-[11px] leading-relaxed space-y-2">
+            <CardContent className="p-4 pt-1 text-muted-foreground text-xs leading-relaxed space-y-2">
               <div>
                 <strong className="text-foreground">Confidentiality:</strong> Encrypted sessions with httpOnly SameSite cookies.
               </div>
@@ -212,8 +212,8 @@ export function ProfilePage() {
                       }`}
                     >
                       {isSelected && (
-                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[9px]">
-                          <Check className="h-2.5 w-2.5 stroke-[3]" />
+                        <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs shadow-xs">
+                          <Check className="h-3 w-3 stroke-[3]" />
                         </span>
                       )}
                       <div className="flex items-center gap-1.5 mb-2">
@@ -231,7 +231,7 @@ export function ProfilePage() {
                         />
                       </div>
                       <span className="text-xs font-bold text-foreground truncate">{p.name}</span>
-                      <span className="text-[10px] text-muted-foreground truncate">{p.vibe}</span>
+                      <span className="text-xs text-muted-foreground truncate">{p.vibe}</span>
                     </button>
                   );
                 })}
@@ -287,7 +287,7 @@ export function ProfilePage() {
                     onChange={(e) => setUpiId(e.target.value)}
                     className="bg-surface-subtle border-border font-mono text-sm"
                   />
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Format: username@bank (Google Pay, PhonePe, Paytm, BHIM)
                   </p>
                 </div>
@@ -344,7 +344,7 @@ export function ProfilePage() {
                     <div>
                       Display Name: <strong className="text-foreground">{displayName}</strong>
                     </div>
-                    <p className="text-[11px] text-muted-foreground pt-1">
+                    <p className="text-xs text-muted-foreground pt-1">
                       Whenever someone selects to repay you, their app will display this dynamic QR code with exact amount prefilled.
                     </p>
                   </div>

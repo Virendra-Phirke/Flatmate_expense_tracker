@@ -55,7 +55,7 @@ export function OfflineSyncBanner() {
             </div>
           </div>
           {status.pendingCount > 0 && (
-            <div className="flex items-center gap-1.5 shrink-0 ml-auto font-mono text-[11px] font-semibold bg-amber-500/20 text-amber-900 dark:text-amber-100 px-2.5 py-1 rounded-md border border-amber-500/40">
+            <div className="flex items-center gap-1.5 shrink-0 ml-auto font-mono text-xs font-semibold bg-amber-500/20 text-amber-900 dark:text-amber-100 px-2.5 py-1 rounded-md border border-amber-500/40">
               {status.pendingCount} pending {status.pendingCount === 1 ? 'change' : 'changes'}
             </div>
           )}
@@ -90,9 +90,9 @@ export function OfflineSyncBanner() {
           <button
             type="button"
             onClick={handleManualSync}
-            className="flex items-center gap-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground px-2.5 py-1 font-medium transition-colors ml-auto text-[11px] border border-border"
+            className="flex items-center gap-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground px-2.5 py-1 font-medium transition-colors ml-auto text-xs border border-border"
           >
-            <RefreshCw className="h-3 w-3" />
+            <RefreshCw className="h-3.5 w-3.5" />
             Sync Now
           </button>
         </div>

@@ -121,7 +121,7 @@ export function TypeDistributionView({ distribution, kpi }: TypeDistributionView
           <div>
             <header className="flex items-start justify-between gap-2 border-b border-border/80 pb-3">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+                <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
                   Primary Outflow Stream
                 </span>
                 <h4 className="text-base sm:text-lg font-serif font-bold text-foreground mt-0.5">
@@ -181,7 +181,7 @@ export function TypeDistributionView({ distribution, kpi }: TypeDistributionView
                 </p>
               </div>
 
-              <footer className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground w-full">
+              <footer className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground w-full">
                 <span>Select for detail</span>
                 <span className="font-mono text-foreground font-medium">
                   {totalSpendingPaise > 0 ? (t.amountPaise / totalSpendingPaise).toFixed(2) : '0.00'}x

@@ -190,8 +190,8 @@ export function AnalyticsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pt-2.5 border-t border-border/60">
           {/* Expense Type Filter Buttons (Horizontally scrollable on mobile) */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 w-full sm:w-auto">
-            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 mr-0.5 flex items-center gap-1">
-              <Filter className="h-3 w-3" />
+            <span className="text-xs font-semibold text-muted-foreground shrink-0 mr-0.5 flex items-center gap-1">
+              <Filter className="h-3.5 w-3.5" />
               Type:
             </span>
             {[
@@ -217,7 +217,7 @@ export function AnalyticsPage() {
 
           {/* Category Dropdown (Shadcn Select) & Reset */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-[11px] font-semibold text-muted-foreground shrink-0 hidden xs:inline">
+            <span className="text-xs font-semibold text-muted-foreground shrink-0 hidden xs:inline">
               Category:
             </span>
             <div className="w-full sm:w-[180px]">
@@ -274,7 +274,7 @@ export function AnalyticsPage() {
               <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-foreground">
                 Visual Perspective
               </h2>
-              <p className="text-[10px] xs:text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Select visual mode to inspect your spending patterns
               </p>
             </div>
@@ -291,7 +291,7 @@ export function AnalyticsPage() {
                       <ActiveIcon className="h-4 w-4 text-primary shrink-0" />
                       <span>{activeOption.label}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                    <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
                       <span>Switch view</span>
                       <ChevronDown className="h-3.5 w-3.5" />
                     </div>
@@ -307,8 +307,8 @@ export function AnalyticsPage() {
                     >
                       <opt.icon className="h-4 w-4 shrink-0" />
                       <div className="flex-1">
-                        <p className="text-xs">{opt.label}</p>
-                        <p className="text-[10px] text-muted-foreground">{opt.description}</p>
+                        <p className="text-xs font-medium">{opt.label}</p>
+                        <p className="text-xs text-muted-foreground">{opt.description}</p>
                       </div>
                       {visualMode === opt.id && <Check className="h-4 w-4 text-primary shrink-0" />}
                     </DropdownMenuItem>

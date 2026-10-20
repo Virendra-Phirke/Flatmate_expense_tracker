@@ -133,7 +133,7 @@ export function AnalyticsActionsMenu({
         <DropdownMenuLabel className="flex items-center justify-between text-xs">
           <span>Reports & Export</span>
           {copied && (
-            <Badge variant="outline" className="text-[10px] font-mono bg-positive/10 text-positive border-positive/30 py-0">
+            <Badge variant="outline" className="text-xs font-mono bg-positive/10 text-positive border-positive/30 py-0.5 px-1.5 font-medium">
               Copied
             </Badge>
           )}
@@ -143,7 +143,7 @@ export function AnalyticsActionsMenu({
           {copied ? <Check className="h-4 w-4 text-positive" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
           <div className="flex-1">
             <p className="text-xs font-medium">Copy Summary</p>
-            <p className="text-[10px] text-muted-foreground">Text breakdown to clipboard</p>
+            <p className="text-xs text-muted-foreground">Text breakdown to clipboard</p>
           </div>
         </DropdownMenuItem>
 
@@ -151,17 +151,17 @@ export function AnalyticsActionsMenu({
           <Download className="h-4 w-4 text-muted-foreground" />
           <div className="flex-1">
             <p className="text-xs font-medium">Export CSV</p>
-            <p className="text-[10px] text-muted-foreground">Download transactions spreadsheet</p>
+            <p className="text-xs text-muted-foreground">Download transactions spreadsheet</p>
           </div>
         </DropdownMenuItem>
 
         <DropdownMenuItem onClick={handlePrint} className="flex items-center gap-2 cursor-pointer">
-          <span className="flex h-4 w-4 items-center justify-center font-mono font-bold text-[9px] text-muted-foreground border border-border rounded">
+          <span className="flex h-5 w-5 items-center justify-center font-mono font-bold text-xs text-muted-foreground border border-border rounded">
             P
           </span>
           <div className="flex-1">
             <p className="text-xs font-medium">Print Report</p>
-            <p className="text-[10px] text-muted-foreground">Printable view of this page</p>
+            <p className="text-xs text-muted-foreground">Printable view of this page</p>
           </div>
         </DropdownMenuItem>
 
@@ -175,7 +175,7 @@ export function AnalyticsActionsMenu({
           <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin text-primary' : 'text-muted-foreground'}`} />
           <div className="flex-1">
             <p className="text-xs font-medium">Refresh Data</p>
-            <p className="text-[10px] text-muted-foreground">Reload latest entries</p>
+            <p className="text-xs text-muted-foreground">Reload latest entries</p>
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>

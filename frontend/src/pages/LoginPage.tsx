@@ -124,7 +124,7 @@ export function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 pt-4 border-t border-border flex items-center justify-center text-[11px] text-muted-foreground gap-1.5">
+            <div className="mt-6 pt-4 border-t border-border flex items-center justify-center text-xs text-muted-foreground gap-1.5">
               <Shield className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Household data is private to active members</span>
             </div>
