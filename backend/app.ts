@@ -34,12 +34,9 @@ const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, curl, or same-origin)
     if (!origin) return callback(null, true);
-    // Allow localhost or any vercel.app deployment or configured FRONTEND_URL
-    if (
-      allowedOrigins.includes(origin) ||
-      origin.endsWith('.vercel.app') ||
-      origin.includes('vercel.app')
-    ) {
+    // Allow localhost or valid Vercel subdomains or configured FRONTEND_URL
+    const isVercelSubdomain = /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin);
+    if (allowedOrigins.includes(origin) || isVercelSubdomain) {
       return callback(null, true);
     }
     if (process.env.NODE_ENV !== 'production') {

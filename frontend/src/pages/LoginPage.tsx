@@ -10,9 +10,10 @@ import {
   authenticateWithBiometrics,
   StoredBiometricCredential,
 } from '@/lib/biometrics';
-import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
-import { TermsPage } from '@/pages/TermsPage';
-import { SecurityPage } from '@/pages/SecurityPage';
+
+const PrivacyPolicyPage = React.lazy(() => import('@/pages/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const TermsPage = React.lazy(() => import('@/pages/TermsPage').then((m) => ({ default: m.TermsPage })));
+const SecurityPage = React.lazy(() => import('@/pages/SecurityPage').then((m) => ({ default: m.SecurityPage })));
 
 export function LoginPage() {
   const { login, biometricLogin } = useAuth();
@@ -39,7 +40,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const bio = await authenticateWithBiometrics();
-      await biometricLogin(bio.username, bio.credentialId);
+      await biometricLogin(bio.username, bio.credentialId, bio.deviceToken);
     } catch (err: any) {
       setError(err.message || 'Fingerprint verification failed');
     } finally {
@@ -62,13 +63,25 @@ export function LoginPage() {
   };
 
   if (legalView === 'privacy') {
-    return <PrivacyPolicyPage onBack={() => setLegalView('login')} />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+        <PrivacyPolicyPage onBack={() => setLegalView('login')} />
+      </React.Suspense>
+    );
   }
   if (legalView === 'terms') {
-    return <TermsPage onBack={() => setLegalView('login')} />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+        <TermsPage onBack={() => setLegalView('login')} />
+      </React.Suspense>
+    );
   }
   if (legalView === 'security') {
-    return <SecurityPage onBack={() => setLegalView('login')} />;
+    return (
+      <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+        <SecurityPage onBack={() => setLegalView('login')} />
+      </React.Suspense>
+    );
   }
 
   return (

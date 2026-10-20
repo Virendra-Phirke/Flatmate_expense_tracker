@@ -1,5 +1,5 @@
 import { getOfflineMutations, removeOfflineMutation, enqueueOfflineMutation, QueuedMutation } from './idb';
-import { api, getCurrentTokenPayload } from './api';
+import { api, getCurrentTokenPayload, ApiError } from './api';
 import type { QueryClient } from '@tanstack/react-query';
 
 export interface OfflineSyncStatus {
@@ -101,11 +101,20 @@ export async function drainOfflineQueue(): Promise<{ synced: number; failed: num
       // If network dropped again during drain, stop and retry on next online event
       if (!navigator.onLine) break;
 
-      // If server responded with a non-recoverable 4xx client error (e.g., 400 Bad Request, 404 Not Found),
+      // If server responded with a non-recoverable 4xx client error (e.g., 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 422 Unprocessable),
       // drop the mutation from the queue to prevent infinite retry loop
+      const status = err instanceof ApiError ? err.status : (typeof err?.status === 'number' ? err.status : null);
       const msg = err?.message || '';
-      if (msg.includes('HTTP 400') || msg.includes('HTTP 404') || msg.includes('HTTP 422')) {
-        console.error(`[Offline Sync] Dropping invalid mutation ${item.id} due to non-recoverable client error.`);
+      const isClientError =
+        (status !== null && status >= 400 && status < 500) ||
+        msg.includes('HTTP 400') ||
+        msg.includes('HTTP 401') ||
+        msg.includes('HTTP 403') ||
+        msg.includes('HTTP 404') ||
+        msg.includes('HTTP 422');
+
+      if (isClientError) {
+        console.error(`[Offline Sync] Dropping invalid mutation ${item.id} (${item.path}) due to non-recoverable client error (${status || msg}).`);
         await removeOfflineMutation(item.id);
       }
     }

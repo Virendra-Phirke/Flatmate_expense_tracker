@@ -1,9 +1,12 @@
+import { api } from './api';
+
 const BIOMETRIC_STORAGE_KEY = 'flatmate_biometric_auth';
 
 export interface StoredBiometricCredential {
   credentialId: string;
   username: string;
   userId: string;
+  deviceToken?: string;
   registeredAt: string;
 }
 
@@ -48,6 +51,7 @@ export function removeRegisteredBiometric(): void {
 
 /**
  * Triggers Android/iOS biometric enrollment via navigator.credentials.create()
+ * and retrieves a cryptographically signed device token from the backend.
  */
 export async function registerBiometrics(
   username: string,
@@ -99,10 +103,16 @@ export async function registerBiometrics(
     throw new Error('Biometric registration was cancelled or failed.');
   }
 
+  // Obtain signed device enrollment token from backend for this authenticated session
+  const enrollRes = await api<{ success: boolean; deviceToken: string }>('POST', '/auth/biometric-enroll', {
+    credentialId: credential.id,
+  });
+
   const stored: StoredBiometricCredential = {
     credentialId: credential.id,
     username,
     userId,
+    deviceToken: enrollRes.deviceToken,
     registeredAt: new Date().toISOString(),
   };
 
@@ -117,6 +127,9 @@ export async function authenticateWithBiometrics(): Promise<StoredBiometricCrede
   const registered = getRegisteredBiometric();
   if (!registered) {
     throw new Error('No fingerprint registered on this device.');
+  }
+  if (!registered.deviceToken) {
+    throw new Error('Biometric credentials need to be re-authorized. Please sign in with your password to re-enable fingerprint unlock.');
   }
 
   const available = await isBiometricAvailable();

@@ -411,6 +411,100 @@ router.post('/on-behalf', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// ── PUT /api/expenses/:id  (update existing expense) ─────────────────────────
+router.put('/:id', requireAuth, async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const session = (req as any).session;
+  const uid = session.userId;
+  const hid = session.householdId;
+  const isAdmin = session.role === 'admin';
+
+  if (!UUID_REGEX.test(id)) {
+    return res.status(400).json({ error: 'Invalid expense ID' });
+  }
+
+  const { description, amount_paise, category_id, expense_date, notes } = req.body;
+
+  try {
+    const rows = await sql`
+      SELECT * FROM expenses WHERE id = ${id} AND household_id = ${hid} AND is_deleted = FALSE`;
+    if (!rows.length) return res.status(404).json({ error: 'Expense not found' });
+    const exp = rows[0];
+
+    // Authorization check
+    if (exp.expense_type === 'personal') {
+      if (exp.paid_by !== uid) return res.status(403).json({ error: 'You can only edit your own personal expenses' });
+    } else if (exp.expense_type === 'common') {
+      if (!isAdmin) return res.status(403).json({ error: 'Only admins can edit common expenses' });
+    } else {
+      if (exp.paid_by !== uid && !isAdmin) return res.status(403).json({ error: 'Unauthorized to edit this purchase' });
+    }
+
+    // Safety guard: Block changing amount if settlements reference this expense
+    const settled = await sql`
+      SELECT 1 FROM settlements s
+      JOIN   expense_shares es ON es.id = s.expense_share_id
+      WHERE  es.expense_id = ${id}
+        AND  s.status IN ('confirmed', 'pending', 'verification_pending')`;
+
+    if (amount_paise !== undefined && amount_paise !== exp.amount_paise && settled.length) {
+      return res.status(409).json({
+        error: 'Cannot modify amount: this expense has active or confirmed repayments linked to it',
+      });
+    }
+
+    if (amount_paise !== undefined) {
+      if (!Number.isInteger(amount_paise) || amount_paise <= 0 || amount_paise > 1000000000) {
+        return res.status(400).json({ error: 'amount_paise must be a valid positive integer' });
+      }
+    }
+
+    if (expense_date !== undefined && !DATE_REGEX.test(expense_date)) {
+      return res.status(400).json({ error: 'Invalid expense_date format (YYYY-MM-DD required)' });
+    }
+
+    const newDescription = description !== undefined ? description.trim().slice(0, 255) : exp.description;
+    const newAmountPaise = amount_paise !== undefined ? amount_paise : exp.amount_paise;
+    const newDate = expense_date !== undefined ? expense_date : exp.expense_date;
+    const newNotes = notes !== undefined ? (notes ? notes.trim().slice(0, 1000) : null) : exp.notes;
+    const resolvedCatId = category_id !== undefined ? await resolveCategoryId(category_id) : exp.category_id;
+
+    if (exp.expense_type === 'personal' && amount_paise !== undefined && amount_paise !== exp.amount_paise) {
+      await sql.transaction([
+        sql`
+          UPDATE expenses
+          SET description = ${newDescription}, amount_paise = ${newAmountPaise},
+              category_id = ${resolvedCatId}, expense_date = ${newDate},
+              notes = ${newNotes}, updated_at = NOW()
+          WHERE id = ${id}`,
+        sql`
+          UPDATE expense_shares
+          SET amount_paise = ${newAmountPaise}
+          WHERE expense_id = ${id} AND user_id = ${uid}`,
+      ]);
+    } else {
+      await sql`
+        UPDATE expenses
+        SET description = ${newDescription}, amount_paise = ${newAmountPaise},
+            category_id = ${resolvedCatId}, expense_date = ${newDate},
+            notes = ${newNotes}, updated_at = NOW()
+        WHERE id = ${id}`;
+    }
+
+    await audit(uid, hid, 'expense', id, 'update', {
+      description: exp.description, amount_paise: exp.amount_paise,
+    }, {
+      description: newDescription, amount_paise: newAmountPaise,
+    });
+    invalidateBalanceCache(hid);
+
+    res.json({ ok: true, id });
+  } catch (err) {
+    console.error('[expenses PUT /:id]', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── DELETE /api/expenses/:id  (soft delete) ──────────────────────────────────
 router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   const id = req.params.id as string;

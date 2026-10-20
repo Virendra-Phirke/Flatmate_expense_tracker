@@ -26,6 +26,34 @@ export function signToken(payload: UserSessionPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
+export interface BiometricDevicePayload {
+  type: 'biometric_device';
+  userId: string;
+  username: string;
+  householdId: string;
+  credentialId?: string;
+}
+
+/**
+ * Generate a signed device-bound token for enrolled biometric devices.
+ */
+export function signBiometricDeviceToken(payload: Omit<BiometricDevicePayload, 'type'>): string {
+  return jwt.sign({ ...payload, type: 'biometric_device' }, JWT_SECRET, { expiresIn: '90d' });
+}
+
+/**
+ * Verify and decode an enrolled biometric device token.
+ */
+export function verifyBiometricDeviceToken(token: string): BiometricDevicePayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as BiometricDevicePayload;
+    if (decoded && decoded.type === 'biometric_device') return decoded;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Verify and decode an authentication JWT.
  */

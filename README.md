@@ -69,7 +69,7 @@ Whether splitting monthly rent, utility bills, communal groceries, or a coffee r
 - **Dark Mode & Light Mode**: Smooth transition between light and dark modes with dedicated semantic HSL tokens.
 
 ### 3. Pairwise Debt Simplification & UPI Settlements
-- **Graph-Based Debt Minimization**: Eliminates circular debt cycles (e.g., if Person A owes B ₹100, and B owes C ₹100, Person A simply pays Person C ₹100).
+- **Bilateral Pairwise Debt Netting**: Consolidates advances, common bill splits, and confirmed repayments across pairs of flatmates so members settle only the exact net difference `(Gross Owed + Settlements Paid) - (Gross Owe + Settlements Received)` in a single bilateral transaction.
 - **Instant UPI QR Generation**: Generates standard payment links and on-screen QR codes pre-filled with the exact settlement amount and recipient VPA.
 - **Settlement Audit Trail**: Logs confirmed repayments with timestamped receipts in the household activity feed.
 

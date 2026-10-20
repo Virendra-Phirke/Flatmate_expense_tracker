@@ -99,6 +99,18 @@ var AUTH_COOKIE_NAME = "auth_token";
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
 }
+function signBiometricDeviceToken(payload) {
+  return jwt.sign({ ...payload, type: "biometric_device" }, JWT_SECRET, { expiresIn: "90d" });
+}
+function verifyBiometricDeviceToken(token) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded && decoded.type === "biometric_device") return decoded;
+    return null;
+  } catch {
+    return null;
+  }
+}
 function verifyToken(token) {
   try {
     return jwt.verify(token, JWT_SECRET);
@@ -388,10 +400,41 @@ router.post("/login", rateLimitLogin, async (req, res) => {
     });
   }
 });
+router.post("/biometric-enroll", requireAuth, async (req, res) => {
+  const session = req.session;
+  const { credentialId } = req.body;
+  try {
+    const deviceToken = signBiometricDeviceToken({
+      userId: session.userId,
+      username: session.username,
+      householdId: session.householdId,
+      credentialId: credentialId ? String(credentialId) : void 0
+    });
+    res.json({
+      success: true,
+      deviceToken,
+      message: "Biometric device token issued successfully"
+    });
+  } catch (err) {
+    console.error("[auth/biometric-enroll error]:", err?.message || err);
+    res.status(500).json({ error: "Failed to issue biometric device token" });
+  }
+});
 router.post("/biometric-login", rateLimitLogin, async (req, res) => {
-  const { username, credentialId } = req.body;
+  const { username, credentialId, deviceToken } = req.body;
   if (!username) {
     return res.status(400).json({ error: "Username is required for biometric authentication" });
+  }
+  if (!deviceToken) {
+    return res.status(401).json({
+      error: "Device not enrolled for biometric unlock. Please sign in with your password first."
+    });
+  }
+  const devicePayload = verifyBiometricDeviceToken(deviceToken);
+  if (!devicePayload) {
+    return res.status(401).json({
+      error: "Biometric authorization token is invalid or expired. Please sign in with your password."
+    });
   }
   try {
     const rows = await db_default`
@@ -403,6 +446,11 @@ router.post("/biometric-login", rateLimitLogin, async (req, res) => {
     const user = rows[0];
     if (!user || !user.is_active) {
       return res.status(401).json({ error: "User account not found or disabled" });
+    }
+    if (devicePayload.userId !== user.id || devicePayload.username.toLowerCase() !== user.username.toLowerCase()) {
+      return res.status(401).json({
+        error: "Biometric device token does not match the requested username"
+      });
     }
     let householdId = user.household_id;
     if (!householdId) {
@@ -1422,6 +1470,86 @@ router6.post("/on-behalf", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+router6.put("/:id", requireAuth, async (req, res) => {
+  const id = req.params.id;
+  const session = req.session;
+  const uid = session.userId;
+  const hid = session.householdId;
+  const isAdmin = session.role === "admin";
+  if (!UUID_REGEX.test(id)) {
+    return res.status(400).json({ error: "Invalid expense ID" });
+  }
+  const { description, amount_paise, category_id, expense_date, notes } = req.body;
+  try {
+    const rows = await db_default`
+      SELECT * FROM expenses WHERE id = ${id} AND household_id = ${hid} AND is_deleted = FALSE`;
+    if (!rows.length) return res.status(404).json({ error: "Expense not found" });
+    const exp = rows[0];
+    if (exp.expense_type === "personal") {
+      if (exp.paid_by !== uid) return res.status(403).json({ error: "You can only edit your own personal expenses" });
+    } else if (exp.expense_type === "common") {
+      if (!isAdmin) return res.status(403).json({ error: "Only admins can edit common expenses" });
+    } else {
+      if (exp.paid_by !== uid && !isAdmin) return res.status(403).json({ error: "Unauthorized to edit this purchase" });
+    }
+    const settled = await db_default`
+      SELECT 1 FROM settlements s
+      JOIN   expense_shares es ON es.id = s.expense_share_id
+      WHERE  es.expense_id = ${id}
+        AND  s.status IN ('confirmed', 'pending', 'verification_pending')`;
+    if (amount_paise !== void 0 && amount_paise !== exp.amount_paise && settled.length) {
+      return res.status(409).json({
+        error: "Cannot modify amount: this expense has active or confirmed repayments linked to it"
+      });
+    }
+    if (amount_paise !== void 0) {
+      if (!Number.isInteger(amount_paise) || amount_paise <= 0 || amount_paise > 1e9) {
+        return res.status(400).json({ error: "amount_paise must be a valid positive integer" });
+      }
+    }
+    if (expense_date !== void 0 && !DATE_REGEX2.test(expense_date)) {
+      return res.status(400).json({ error: "Invalid expense_date format (YYYY-MM-DD required)" });
+    }
+    const newDescription = description !== void 0 ? description.trim().slice(0, 255) : exp.description;
+    const newAmountPaise = amount_paise !== void 0 ? amount_paise : exp.amount_paise;
+    const newDate = expense_date !== void 0 ? expense_date : exp.expense_date;
+    const newNotes = notes !== void 0 ? notes ? notes.trim().slice(0, 1e3) : null : exp.notes;
+    const resolvedCatId = category_id !== void 0 ? await resolveCategoryId(category_id) : exp.category_id;
+    if (exp.expense_type === "personal" && amount_paise !== void 0 && amount_paise !== exp.amount_paise) {
+      await db_default.transaction([
+        db_default`
+          UPDATE expenses
+          SET description = ${newDescription}, amount_paise = ${newAmountPaise},
+              category_id = ${resolvedCatId}, expense_date = ${newDate},
+              notes = ${newNotes}, updated_at = NOW()
+          WHERE id = ${id}`,
+        db_default`
+          UPDATE expense_shares
+          SET amount_paise = ${newAmountPaise}
+          WHERE expense_id = ${id} AND user_id = ${uid}`
+      ]);
+    } else {
+      await db_default`
+        UPDATE expenses
+        SET description = ${newDescription}, amount_paise = ${newAmountPaise},
+            category_id = ${resolvedCatId}, expense_date = ${newDate},
+            notes = ${newNotes}, updated_at = NOW()
+        WHERE id = ${id}`;
+    }
+    await audit(uid, hid, "expense", id, "update", {
+      description: exp.description,
+      amount_paise: exp.amount_paise
+    }, {
+      description: newDescription,
+      amount_paise: newAmountPaise
+    });
+    invalidateBalanceCache(hid);
+    res.json({ ok: true, id });
+  } catch (err) {
+    console.error("[expenses PUT /:id]", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 router6.delete("/:id", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
@@ -2388,7 +2516,8 @@ if (process.env.FRONTEND_URL) {
 var corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("vercel.app")) {
+    const isVercelSubdomain = /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin);
+    if (allowedOrigins.includes(origin) || isVercelSubdomain) {
       return callback(null, true);
     }
     if (process.env.NODE_ENV !== "production") {
@@ -2472,8 +2601,12 @@ function handler(req, res) {
     if (!res.headersSent) {
       res.statusCode = 500;
       res.setHeader("Content-Type", "application/json");
-      const origin = req?.headers?.origin || "https://flatmate-expense-tracker-lemon.vercel.app";
-      res.setHeader("Access-Control-Allow-Origin", origin);
+      const origin = req?.headers?.origin;
+      const isAllowedOrigin = Boolean(
+        origin && (origin === "http://localhost:5173" || origin === "http://localhost:3000" || process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL.replace(/\/$/, "") || /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin))
+      );
+      const safeOrigin = isAllowedOrigin ? origin : "https://flatmate-expense-tracker-lemon.vercel.app";
+      res.setHeader("Access-Control-Allow-Origin", safeOrigin);
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.end(JSON.stringify({
         error: "Backend Serverless Execution Error",

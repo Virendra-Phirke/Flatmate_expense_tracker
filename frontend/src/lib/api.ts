@@ -2,6 +2,19 @@
  * Typed API Client for Flatmate Expense Manager Backend
  */
 
+export class ApiError extends Error {
+  status: number;
+  data?: any;
+
+  constructor(message: string, status: number, data?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
+}
+
 const TOKEN_KEY = 'flatmate_auth_token';
 
 export function getAuthToken(): string | null {
@@ -234,7 +247,8 @@ export async function api<T = any>(
       return { ok: true, offlineQueued: true, id: tempId, ...(processedBody || {}) } as T;
     }
 
-    throw new Error(data.error || (res.status === 404 ? `API endpoint not found (404: ${path})` : `HTTP ${res.status}`));
+    const errorMessage = data?.error || (res.status === 404 ? `API endpoint not found (404: ${path})` : `HTTP ${res.status}`);
+    throw new ApiError(errorMessage, res.status, data);
   }
 
   // Save successful GET response into IndexedDB cache for instant 0ms offline startup

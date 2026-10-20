@@ -9,6 +9,8 @@ import {
   clearAuthCookie,
   extractToken,
   verifyToken,
+  signBiometricDeviceToken,
+  verifyBiometricDeviceToken,
   UserSessionPayload,
 } from '../utils/jwt';
 
@@ -95,11 +97,50 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
   }
 });
 
+// ── POST /api/auth/biometric-enroll ──────────────────────────────────────────
+// Securely registers a device for biometric unlock. Requires active authenticated session.
+router.post('/biometric-enroll', requireAuth, async (req: Request, res: Response) => {
+  const session = (req as any).session;
+  const { credentialId } = req.body;
+
+  try {
+    const deviceToken = signBiometricDeviceToken({
+      userId: session.userId,
+      username: session.username,
+      householdId: session.householdId,
+      credentialId: credentialId ? String(credentialId) : undefined,
+    });
+
+    res.json({
+      success: true,
+      deviceToken,
+      message: 'Biometric device token issued successfully',
+    });
+  } catch (err: any) {
+    console.error('[auth/biometric-enroll error]:', err?.message || err);
+    res.status(500).json({ error: 'Failed to issue biometric device token' });
+  }
+});
+
 // ── POST /api/auth/biometric-login ───────────────────────────────────────────
+// Authenticates user via biometric unlock. Requires enrolled deviceToken.
 router.post('/biometric-login', rateLimitLogin, async (req: Request, res: Response) => {
-  const { username, credentialId } = req.body;
+  const { username, credentialId, deviceToken } = req.body;
   if (!username) {
     return res.status(400).json({ error: 'Username is required for biometric authentication' });
+  }
+  if (!deviceToken) {
+    return res.status(401).json({
+      error: 'Device not enrolled for biometric unlock. Please sign in with your password first.',
+    });
+  }
+
+  // Cryptographically verify device-bound enrollment token
+  const devicePayload = verifyBiometricDeviceToken(deviceToken);
+  if (!devicePayload) {
+    return res.status(401).json({
+      error: 'Biometric authorization token is invalid or expired. Please sign in with your password.',
+    });
   }
 
   try {
@@ -114,6 +155,13 @@ router.post('/biometric-login', rateLimitLogin, async (req: Request, res: Respon
 
     if (!user || !user.is_active) {
       return res.status(401).json({ error: 'User account not found or disabled' });
+    }
+
+    // Verify token matches the intended user
+    if (devicePayload.userId !== user.id || devicePayload.username.toLowerCase() !== user.username.toLowerCase()) {
+      return res.status(401).json({
+        error: 'Biometric device token does not match the requested username',
+      });
     }
 
     let householdId = user.household_id;

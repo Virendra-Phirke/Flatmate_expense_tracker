@@ -7,7 +7,7 @@ interface AuthContextType {
   user: CurrentUser | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  biometricLogin: (username: string, credentialId?: string) => Promise<void>;
+  biometricLogin: (username: string, credentialId?: string, deviceToken?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setPasswordChanged: () => void;
@@ -70,10 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const biometricLogin = async (username: string, credentialId?: string) => {
+  const biometricLogin = async (username: string, credentialId?: string, deviceToken?: string) => {
     const res = await api<{ success: boolean; user: any; token?: string }>('POST', '/auth/biometric-login', {
       username,
       credentialId,
+      deviceToken,
     });
     if (res.token) {
       setAuthToken(res.token);
