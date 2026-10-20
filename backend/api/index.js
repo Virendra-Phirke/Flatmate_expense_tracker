@@ -61,7 +61,11 @@ var db_default = sql;
 // utils/jwt.ts
 import jwt from "jsonwebtoken";
 var isProd = process.env.NODE_ENV === "production";
-var JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || "flatmate_expense_jwt_secret_fallback";
+var rawSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+if (isProd && !rawSecret) {
+  throw new Error("FATAL SECURITY CONFIGURATION: JWT_SECRET or SESSION_SECRET environment variable is required in production.");
+}
+var JWT_SECRET = rawSecret || "flatmate_expense_jwt_dev_secret_only";
 var AUTH_COOKIE_NAME = "auth_token";
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
@@ -200,35 +204,20 @@ async function requireAuth(req, res, next) {
         return res.status(403).json({ error: "Account has been deactivated" });
       }
     } catch (err) {
-      console.error("[auth guard check]", err);
+      console.error("[auth guard check error]:", err);
+      return res.status(500).json({ error: "Database error validating session activity status" });
     }
   }
   next();
 }
-function requireAdmin(req, res, next) {
-  let session = req.session;
-  if (!session || !session.userId) {
-    const token = extractToken(req);
-    if (token) {
-      const payload = verifyToken(token);
-      if (payload) {
-        session = populateSession(req, payload);
-      }
+async function requireAdmin(req, res, next) {
+  await requireAuth(req, res, () => {
+    const session = req.session;
+    if (session?.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
-  }
-  if (!session || !session.userId) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-  if (session.mustChangePassword && req.method !== "GET") {
-    return res.status(403).json({
-      error: "Password change required before performing admin actions",
-      mustChangePassword: true
-    });
-  }
-  if (session.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-  next();
+    next();
+  });
 }
 
 // routes/auth.ts
@@ -250,16 +239,17 @@ async function verifyPassword(hash, password) {
 
 // middleware/rateLimiter.ts
 import { RateLimiterMemory } from "rate-limiter-flexible";
-var loginLimiter = new RateLimiterMemory({ points: 60, duration: 60 });
-var passwordLimiter = new RateLimiterMemory({ points: 1e3, duration: 900 });
-var claimLimiter = new RateLimiterMemory({ points: 60, duration: 60 });
-var upiLimiter = new RateLimiterMemory({ points: 60, duration: 60 });
+var loginLimiter = new RateLimiterMemory({ points: 10, duration: 60 });
+var passwordLimiter = new RateLimiterMemory({ points: 10, duration: 900 });
+var claimLimiter = new RateLimiterMemory({ points: 30, duration: 60 });
+var upiLimiter = new RateLimiterMemory({ points: 30, duration: 60 });
+var aiLimiter = new RateLimiterMemory({ points: 15, duration: 60 });
 async function rateLimitLogin(req, res, next) {
   try {
     await loginLimiter.consume(req.ip || "unknown");
     next();
   } catch {
-    res.status(429).json({ error: "Too many login attempts. Try again in a minute." });
+    res.status(429).json({ error: "Too many login attempts. Please wait a minute and try again." });
   }
 }
 async function rateLimitPassword(req, res, next) {
@@ -269,7 +259,7 @@ async function rateLimitPassword(req, res, next) {
     await passwordLimiter.consume(key);
     next();
   } catch {
-    res.status(429).json({ error: "Too many password change attempts. Try again later." });
+    res.status(429).json({ error: "Too many password change attempts. Please wait 15 minutes before trying again." });
   }
 }
 async function rateLimitClaim(req, res, next) {
@@ -290,6 +280,16 @@ async function rateLimitUpi(req, res, next) {
     next();
   } catch {
     res.status(429).json({ error: "Too many UPI profile updates. Try again later." });
+  }
+}
+async function rateLimitAI(req, res, next) {
+  const session = req.session;
+  const key = session?.userId || req.ip || "unknown";
+  try {
+    await aiLimiter.consume(key);
+    next();
+  } catch {
+    res.status(429).json({ error: "Too many AI requests. Please slow down and try again in a moment." });
   }
 }
 
@@ -574,6 +574,8 @@ router4.get("/", requireAuth, async (req, res) => {
   const offsetNum = (pageNum - 1) * limitNum;
   const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
   const validTo = to && DATE_REGEX.test(String(to)) ? String(to) : null;
+  const minDate = validFrom || "1970-01-01";
+  const maxDate = validTo || "2099-12-31";
   const session = req.session;
   const hid = session.householdId;
   const uid = session.userId;
@@ -589,6 +591,8 @@ router4.get("/", requireAuth, async (req, res) => {
           AND  e.expense_type = 'personal'
           AND  e.paid_by      = ${uid}
           AND  e.is_deleted   = FALSE
+          AND  e.expense_date >= ${minDate}
+          AND  e.expense_date <= ${maxDate}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
     } else if (type === "common") {
@@ -600,6 +604,8 @@ router4.get("/", requireAuth, async (req, res) => {
         WHERE  e.household_id = ${hid}
           AND  e.expense_type = 'common'
           AND  e.is_deleted   = FALSE
+          AND  e.expense_date >= ${minDate}
+          AND  e.expense_date <= ${maxDate}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
     } else {
@@ -610,6 +616,8 @@ router4.get("/", requireAuth, async (req, res) => {
         LEFT   JOIN categories c ON c.id = e.category_id
         WHERE  e.household_id = ${hid}
           AND  e.is_deleted   = FALSE
+          AND  e.expense_date >= ${minDate}
+          AND  e.expense_date <= ${maxDate}
           AND  (
             e.paid_by = ${uid}
             OR e.expense_type = 'common'
@@ -701,15 +709,17 @@ router4.post("/personal", requireAuth, async (req, res) => {
   const eid = uuidv43();
   try {
     const resolvedCatId = await resolveCategoryId(category_id);
-    await db_default`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, category_id, paid_by, expense_date, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'personal', ${description.trim().slice(0, 255)}, ${amount_paise},
-         ${resolvedCatId}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1e3) : null})`;
-    await db_default`
-      INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
-      VALUES (${uuidv43()}, ${eid}, ${uid}, ${amount_paise}, 'personal')`;
+    await db_default.transaction([
+      db_default`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, category_id, paid_by, expense_date, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'personal', ${description.trim().slice(0, 255)}, ${amount_paise},
+           ${resolvedCatId}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1e3) : null})`,
+      db_default`
+        INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
+        VALUES (${uuidv43()}, ${eid}, ${uid}, ${amount_paise}, 'personal')`
+    ]);
     await audit(uid, hid, "expense", eid, "create", null, { type: "personal", amount_paise });
     res.status(201).json({ id: eid });
   } catch (err) {
@@ -759,18 +769,21 @@ router4.post("/common", requireAdmin, async (req, res) => {
   const eid = uuidv43();
   try {
     const resolvedCatId = await resolveCategoryId(category_id);
-    await db_default`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, category_id,
-         paid_by, expense_date, split_method, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'common', ${description.trim().slice(0, 255)}, ${amount_paise}, ${resolvedCatId},
-         ${paid_by}, ${expense_date}, ${split_method}, ${notes ? notes.trim().slice(0, 1e3) : null})`;
-    for (const sh of shares) {
-      await db_default`
-        INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
-        VALUES (${uuidv43()}, ${eid}, ${sh.user_id}, ${sh.amount_paise}, 'common')`;
-    }
+    const transactionQueries = [
+      db_default`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, category_id,
+           paid_by, expense_date, split_method, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'common', ${description.trim().slice(0, 255)}, ${amount_paise}, ${resolvedCatId},
+           ${paid_by}, ${expense_date}, ${split_method}, ${notes ? notes.trim().slice(0, 1e3) : null})`,
+      ...shares.map(
+        (sh) => db_default`
+          INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
+          VALUES (${uuidv43()}, ${eid}, ${sh.user_id}, ${sh.amount_paise}, 'common')`
+      )
+    ];
+    await db_default.transaction(transactionQueries);
     await audit(uid, hid, "expense", eid, "create", null, { type: "common", amount_paise, split_method });
     res.status(201).json({ id: eid });
   } catch (err) {
@@ -808,21 +821,27 @@ router4.post("/on-behalf", requireAuth, async (req, res) => {
   }
   const eid = uuidv43();
   try {
-    await db_default`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1e3) : null})`;
+    const itemQueries = [];
     for (const item of items) {
       const iid = uuidv43();
       const resolvedCatId = await resolveCategoryId(item.category_id || item.category);
-      await db_default`
-        INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
-        VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`;
-      await db_default`
-        INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
-        VALUES (${uuidv43()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`;
+      itemQueries.push(
+        db_default`
+          INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
+          VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`,
+        db_default`
+          INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
+          VALUES (${uuidv43()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
+      );
     }
+    await db_default.transaction([
+      db_default`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1e3) : null})`,
+      ...itemQueries
+    ]);
     await audit(uid, hid, "expense", eid, "create", null, {
       type: "on_behalf",
       amount_paise: totalPaise,
@@ -877,6 +896,7 @@ import { Router as Router5 } from "express";
 import { randomUUID as uuidv44 } from "crypto";
 var router5 = Router5();
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var DATE_REGEX2 = /^\d{4}-\d{2}-\d{2}$/;
 async function resolveCategoryId2(categoryInput) {
   if (!categoryInput) return null;
   const val = String(categoryInput).trim();
@@ -924,21 +944,27 @@ async function handleCreatePurchase(req, res) {
   }
   const eid = uuidv44();
   try {
-    await db_default`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1e3) : null})`;
+    const itemQueries = [];
     for (const item of items) {
       const iid = uuidv44();
       const resolvedCatId = await resolveCategoryId2(item.category_id || item.category);
-      await db_default`
-        INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
-        VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`;
-      await db_default`
-        INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
-        VALUES (${uuidv44()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`;
+      itemQueries.push(
+        db_default`
+          INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
+          VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`,
+        db_default`
+          INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
+          VALUES (${uuidv44()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
+      );
     }
+    await db_default.transaction([
+      db_default`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1e3) : null})`,
+      ...itemQueries
+    ]);
     await audit(uid, hid, "expense", eid, "create", null, {
       type: "on_behalf",
       amount_paise: totalPaise,
@@ -953,6 +979,11 @@ async function handleCreatePurchase(req, res) {
 router5.post("/", requireAuth, handleCreatePurchase);
 router5.post("/on-behalf", requireAuth, handleCreatePurchase);
 router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+  const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
+  const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
+  const minDate = validFrom || "1970-01-01";
+  const maxDate = validTo || "2099-12-31";
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -965,6 +996,8 @@ router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
         AND  e.expense_type = 'on_behalf'
         AND  e.paid_by      = ${uid}
         AND  e.is_deleted   = FALSE
+        AND  e.expense_date >= ${minDate}
+        AND  e.expense_date <= ${maxDate}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
     if (!expenses.length) return res.json([]);
     const expIds = expenses.map((e) => e.id);
@@ -1006,6 +1039,11 @@ router5.get(["/made-by-me", "/made"], requireAuth, async (req, res) => {
   }
 });
 router5.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+  const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
+  const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
+  const minDate = validFrom || "1970-01-01";
+  const maxDate = validTo || "2099-12-31";
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -1020,6 +1058,8 @@ router5.get(["/made-for-me", "/for-me"], requireAuth, async (req, res) => {
         AND  es.user_id     = ${uid}
         AND  e.paid_by     != ${uid}
         AND  e.is_deleted   = FALSE
+        AND  e.expense_date >= ${minDate}
+        AND  e.expense_date <= ${maxDate}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
     if (!expenses.length) return res.json([]);
     const expIds = expenses.map((e) => e.id);
@@ -1077,6 +1117,7 @@ router6.get(["/", "/summary"], requireAuth, async (req, res) => {
   const hid = session.householdId;
   try {
     const [
+      roommates,
       [personalRow],
       [commonShareRow],
       [commonPaidRow],
@@ -1086,6 +1127,14 @@ router6.get(["/", "/summary"], requireAuth, async (req, res) => {
       myDebtRows,
       paidToCreditor
     ] = await Promise.all([
+      // 0. Active roommates in this household
+      db_default`
+        SELECT u.id, u.full_name
+        FROM   users u
+        JOIN   household_members hm ON hm.user_id = u.id
+        WHERE  hm.household_id = ${hid}
+          AND  hm.is_active = TRUE
+          AND  u.id != ${uid}`,
       // 1. Personal spending
       db_default`
         SELECT COALESCE(SUM(amount_paise), 0) AS total
@@ -1164,34 +1213,48 @@ router6.get(["/", "/summary"], requireAuth, async (req, res) => {
           AND  status       = 'confirmed'
         GROUP  BY recipient_id`
     ]);
+    const peerNames = /* @__PURE__ */ new Map();
+    for (const m of roommates || []) peerNames.set(m.id, m.full_name);
+    for (const r of theyOweRows || []) peerNames.set(r.debtor_id, r.debtor_name);
+    for (const r of myDebtRows || []) peerNames.set(r.creditor_id, r.creditor_name);
+    const theyOweMap = Object.fromEntries(
+      (theyOweRows || []).map((r) => [r.debtor_id, parseInt(r.gross_owed || 0, 10)])
+    );
+    const myDebtMap = Object.fromEntries(
+      (myDebtRows || []).map((r) => [r.creditor_id, parseInt(r.gross_owe || 0, 10)])
+    );
     const receivedMap = Object.fromEntries(
       (receivedByPayer || []).map((r) => [r.payer_id, parseInt(r.confirmed_paid || 0, 10)])
     );
-    const pairwise = (theyOweRows || []).map((r) => {
-      const gross = parseInt(r.gross_owed || 0, 10);
-      const paid = receivedMap[r.debtor_id] || 0;
-      return {
-        debtorId: r.debtor_id,
-        debtorName: r.debtor_name,
-        grossOwed: gross,
-        confirmedPaid: paid,
-        outstanding: Math.max(0, gross - paid)
-      };
-    }).filter((r) => r.outstanding > 0);
     const paidMap = Object.fromEntries(
       (paidToCreditor || []).map((r) => [r.recipient_id, parseInt(r.confirmed_paid || 0, 10)])
     );
-    const myDebts = (myDebtRows || []).map((r) => {
-      const gross = parseInt(r.gross_owe || 0, 10);
-      const paid = paidMap[r.creditor_id] || 0;
-      return {
-        creditorId: r.creditor_id,
-        creditorName: r.creditor_name,
-        grossOwe: gross,
-        confirmedPaid: paid,
-        outstanding: Math.max(0, gross - paid)
-      };
-    }).filter((r) => r.outstanding > 0);
+    const pairwise = [];
+    const myDebts = [];
+    for (const [peerId, peerName] of peerNames.entries()) {
+      const theyOweGross = theyOweMap[peerId] || 0;
+      const myDebtGross = myDebtMap[peerId] || 0;
+      const settlementsReceived = receivedMap[peerId] || 0;
+      const settlementsPaid = paidMap[peerId] || 0;
+      const netOwedToMe = theyOweGross + settlementsPaid - (myDebtGross + settlementsReceived);
+      if (netOwedToMe > 0) {
+        pairwise.push({
+          debtorId: peerId,
+          debtorName: peerName,
+          grossOwed: theyOweGross,
+          confirmedPaid: settlementsReceived,
+          outstanding: netOwedToMe
+        });
+      } else if (netOwedToMe < 0) {
+        myDebts.push({
+          creditorId: peerId,
+          creditorName: peerName,
+          grossOwe: myDebtGross,
+          confirmedPaid: settlementsPaid,
+          outstanding: Math.abs(netOwedToMe)
+        });
+      }
+    }
     const totalOwedToMe = pairwise.reduce((acc, p) => acc + Number(p.outstanding || 0), 0);
     const totalOwedByMe = myDebts.reduce((acc, d) => acc + Number(d.outstanding || 0), 0);
     res.json({
@@ -1560,7 +1623,7 @@ router10.get("/status", requireAuth, (_req, res) => {
     model: PREFERRED_MODELS[0] || "gemini-3.5-flash"
   });
 });
-router10.post("/parse-expense", requireAuth, async (req, res) => {
+router10.post("/parse-expense", requireAuth, rateLimitAI, async (req, res) => {
   const { transcript, clientDate } = req.body;
   if (!transcript || typeof transcript !== "string" || !transcript.trim()) {
     return res.status(400).json({ error: "Voice transcript or text input is required." });
@@ -1844,7 +1907,10 @@ var corsOptions = {
     if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app") || origin.includes("vercel.app")) {
       return callback(null, true);
     }
-    return callback(null, true);
+    if (process.env.NODE_ENV !== "production") {
+      return callback(null, true);
+    }
+    return callback(new Error("Origin blocked by CORS policy"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

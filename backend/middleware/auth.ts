@@ -109,7 +109,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         return res.status(403).json({ error: 'Account has been deactivated' });
       }
     } catch (err) {
-      console.error('[auth guard check]', err);
+      console.error('[auth guard check error]:', err);
+      return res.status(500).json({ error: 'Database error validating session activity status' });
     }
   }
 
@@ -119,31 +120,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 /**
  * Require the authenticated user to be an admin in their household.
  */
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  let session = (req as any).session;
-  if (!session || !session.userId) {
-    const token = extractToken(req);
-    if (token) {
-      const payload = verifyToken(token);
-      if (payload) {
-        session = populateSession(req, payload);
-      }
+export async function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  await requireAuth(req, res, () => {
+    const session = (req as any).session;
+    if (session?.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
     }
-  }
-
-  if (!session || !session.userId) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-  if (session.mustChangePassword && req.method !== 'GET') {
-    return res.status(403).json({
-      error: 'Password change required before performing admin actions',
-      mustChangePassword: true,
-    });
-  }
-  if (session.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
+    next();
+  });
 }
 
 export default { authContextMiddleware, requireAuth, requireAdmin };

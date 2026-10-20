@@ -21,6 +21,19 @@ export function setAuthToken(token: string | null): void {
   }
 }
 
+export function getCurrentTokenPayload(): { userId?: string; householdId?: string; role?: string } | null {
+  const token = getAuthToken();
+  if (!token) return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const json = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 export function getApiBase(): string {
   // Clear any previously saved custom URL from localStorage
   if (typeof window !== 'undefined' && localStorage.getItem('flatmate_backend_url')) {
@@ -42,10 +55,18 @@ export function getApiBase(): string {
   return '';
 }
 
+import { getCachedData, setCachedData, enqueueOfflineMutation } from './idb';
+import { refreshPendingCount } from './offlineQueue';
+
+export interface ApiOptions {
+  bypassOfflineQueue?: boolean;
+}
+
 export async function api<T = any>(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   path: string,
-  body?: any
+  body?: any,
+  options?: ApiOptions
 ): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -71,12 +92,57 @@ export async function api<T = any>(
   const normalizedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
   const targetUrl = `${apiBase}/api${normalizedPath}`;
 
+  // If completely offline and reading data (GET), serve directly from IndexedDB cache
+  const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+  if (isOffline && method === 'GET') {
+    const cached = await getCachedData<T>(normalizedPath);
+    if (cached !== null) {
+      return cached;
+    }
+  }
+
+  // If completely offline and mutating data, queue mutation for auto-sync
+  if (isOffline && method !== 'GET' && !options?.bypassOfflineQueue) {
+    const payload = getCurrentTokenPayload();
+    const tempId = await enqueueOfflineMutation({
+      method,
+      path: normalizedPath,
+      body,
+      userId: payload?.userId,
+      householdId: payload?.householdId,
+    });
+    void refreshPendingCount();
+    return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
+  }
+
   let res: Response;
   try {
     res = await fetch(targetUrl, opts);
   } catch (netErr: any) {
+    // If GET request failed due to network error, try serving from IndexedDB cache
+    if (method === 'GET') {
+      const cached = await getCachedData<T>(normalizedPath);
+      if (cached !== null) {
+        return cached;
+      }
+    }
+
+    // If mutation failed due to network drop, queue it for auto-sync
+    if (method !== 'GET' && !options?.bypassOfflineQueue) {
+      const payload = getCurrentTokenPayload();
+      const tempId = await enqueueOfflineMutation({
+        method,
+        path: normalizedPath,
+        body,
+        userId: payload?.userId,
+        householdId: payload?.householdId,
+      });
+      void refreshPendingCount();
+      return { ok: true, offlineQueued: true, id: tempId, ...(body || {}) } as T;
+    }
+
     throw new Error(
-      `Cannot connect to backend server. Make sure the backend is deployed and running.`
+      `Cannot connect to backend server. Make sure the backend is running.`
     );
   }
 
@@ -93,6 +159,11 @@ export async function api<T = any>(
       setAuthToken(null);
     }
     throw new Error(data.error || (res.status === 404 ? `API endpoint not found (404: ${path})` : `HTTP ${res.status}`));
+  }
+
+  // Save successful GET response into IndexedDB cache for instant 0ms offline startup
+  if (method === 'GET' && data) {
+    void setCachedData(normalizedPath, data);
   }
 
   return data as T;

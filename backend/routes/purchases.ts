@@ -6,6 +6,7 @@ import { audit } from '../utils/audit';
 
 const router = Router();
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Resolve or automatically create a category by UUID or Name
@@ -72,24 +73,29 @@ async function handleCreatePurchase(req: Request, res: Response) {
   const eid = uuidv4();
 
   try {
-    await sql`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1000) : null})`;
-
+    const itemQueries: any[] = [];
     for (const item of items) {
       const iid = uuidv4();
       const resolvedCatId = await resolveCategoryId(item.category_id || item.category);
 
-      await sql`
-        INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
-        VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`;
-
-      await sql`
-        INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
-        VALUES (${uuidv4()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`;
+      itemQueries.push(
+        sql`
+          INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
+          VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`,
+        sql`
+          INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
+          VALUES (${uuidv4()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
+      );
     }
+
+    await sql.transaction([
+      sql`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1000) : null})`,
+      ...itemQueries,
+    ]);
 
     await audit(uid, hid, 'expense', eid, 'create', null, {
       type: 'on_behalf', amount_paise: totalPaise, item_count: items.length,
@@ -108,6 +114,12 @@ router.post('/on-behalf', requireAuth, handleCreatePurchase);
 
 // ── GET /api/purchases/made-by-me & /api/purchases/made ───────────────────────
 router.get(['/made-by-me', '/made'], requireAuth, async (req: Request, res: Response) => {
+  const { from, to } = req.query;
+  const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
+  const validTo   = to   && DATE_REGEX.test(String(to))   ? String(to)   : null;
+  const minDate   = validFrom || '1970-01-01';
+  const maxDate   = validTo   || '2099-12-31';
+
   const session = (req as any).session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -121,6 +133,8 @@ router.get(['/made-by-me', '/made'], requireAuth, async (req: Request, res: Resp
         AND  e.expense_type = 'on_behalf'
         AND  e.paid_by      = ${uid}
         AND  e.is_deleted   = FALSE
+        AND  e.expense_date >= ${minDate}
+        AND  e.expense_date <= ${maxDate}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
 
     if (!expenses.length) return res.json([]);
@@ -172,6 +186,12 @@ router.get(['/made-by-me', '/made'], requireAuth, async (req: Request, res: Resp
 
 // ── GET /api/purchases/made-for-me & /api/purchases/for-me ─────────────────────
 router.get(['/made-for-me', '/for-me'], requireAuth, async (req: Request, res: Response) => {
+  const { from, to } = req.query;
+  const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
+  const validTo   = to   && DATE_REGEX.test(String(to))   ? String(to)   : null;
+  const minDate   = validFrom || '1970-01-01';
+  const maxDate   = validTo   || '2099-12-31';
+
   const session = (req as any).session;
   const uid = session.userId;
   const hid = session.householdId;
@@ -187,6 +207,8 @@ router.get(['/made-for-me', '/for-me'], requireAuth, async (req: Request, res: R
         AND  es.user_id     = ${uid}
         AND  e.paid_by     != ${uid}
         AND  e.is_deleted   = FALSE
+        AND  e.expense_date >= ${minDate}
+        AND  e.expense_date <= ${maxDate}
       ORDER  BY e.expense_date DESC, e.created_at DESC`;
 
     if (!expenses.length) return res.json([]);

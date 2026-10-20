@@ -109,4 +109,6 @@ export const Copy = createFlaticon('copy');
 export const Palette = createFlaticon('palette');
 export const Sun = createFlaticon('sun');
 export const Moon = createFlaticon('moon');
+export const Cloud = createFlaticon('cloud');
+export const CloudOff = createFlaticon('cloud-disabled');
 

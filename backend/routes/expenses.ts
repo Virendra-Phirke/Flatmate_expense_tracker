@@ -47,6 +47,9 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
   const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
   const validTo   = to   && DATE_REGEX.test(String(to))   ? String(to)   : null;
 
+  const minDate = validFrom || '1970-01-01';
+  const maxDate = validTo   || '2099-12-31';
+
   const session = (req as any).session;
   const hid = session.householdId;
   const uid = session.userId;
@@ -64,6 +67,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
           AND  e.expense_type = 'personal'
           AND  e.paid_by      = ${uid}
           AND  e.is_deleted   = FALSE
+          AND  e.expense_date >= ${minDate}
+          AND  e.expense_date <= ${maxDate}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
 
@@ -76,6 +81,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         WHERE  e.household_id = ${hid}
           AND  e.expense_type = 'common'
           AND  e.is_deleted   = FALSE
+          AND  e.expense_date >= ${minDate}
+          AND  e.expense_date <= ${maxDate}
         ORDER  BY e.expense_date DESC, e.created_at DESC
         LIMIT  ${limitNum} OFFSET ${offsetNum}`;
 
@@ -88,6 +95,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         LEFT   JOIN categories c ON c.id = e.category_id
         WHERE  e.household_id = ${hid}
           AND  e.is_deleted   = FALSE
+          AND  e.expense_date >= ${minDate}
+          AND  e.expense_date <= ${maxDate}
           AND  (
             e.paid_by = ${uid}
             OR e.expense_type = 'common'
@@ -197,16 +206,17 @@ router.post('/personal', requireAuth, async (req: Request, res: Response) => {
   try {
     const resolvedCatId = await resolveCategoryId(category_id);
 
-    await sql`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, category_id, paid_by, expense_date, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'personal', ${description.trim().slice(0, 255)}, ${amount_paise},
-         ${resolvedCatId}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1000) : null})`;
-
-    await sql`
-      INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
-      VALUES (${uuidv4()}, ${eid}, ${uid}, ${amount_paise}, 'personal')`;
+    await sql.transaction([
+      sql`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, category_id, paid_by, expense_date, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'personal', ${description.trim().slice(0, 255)}, ${amount_paise},
+           ${resolvedCatId}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1000) : null})`,
+      sql`
+        INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
+        VALUES (${uuidv4()}, ${eid}, ${uid}, ${amount_paise}, 'personal')`,
+    ]);
 
     await audit(uid, hid, 'expense', eid, 'create', null, { type: 'personal', amount_paise });
 
@@ -272,19 +282,22 @@ router.post('/common', requireAdmin, async (req: Request, res: Response) => {
   try {
     const resolvedCatId = await resolveCategoryId(category_id);
 
-    await sql`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, category_id,
-         paid_by, expense_date, split_method, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'common', ${description.trim().slice(0, 255)}, ${amount_paise}, ${resolvedCatId},
-         ${paid_by}, ${expense_date}, ${split_method}, ${notes ? notes.trim().slice(0, 1000) : null})`;
+    const transactionQueries = [
+      sql`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, category_id,
+           paid_by, expense_date, split_method, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'common', ${description.trim().slice(0, 255)}, ${amount_paise}, ${resolvedCatId},
+           ${paid_by}, ${expense_date}, ${split_method}, ${notes ? notes.trim().slice(0, 1000) : null})`,
+      ...shares.map((sh: any) =>
+        sql`
+          INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
+          VALUES (${uuidv4()}, ${eid}, ${sh.user_id}, ${sh.amount_paise}, 'common')`
+      ),
+    ];
 
-    for (const sh of shares) {
-      await sql`
-        INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
-        VALUES (${uuidv4()}, ${eid}, ${sh.user_id}, ${sh.amount_paise}, 'common')`;
-    }
+    await sql.transaction(transactionQueries);
 
     await audit(uid, hid, 'expense', eid, 'create', null, { type: 'common', amount_paise, split_method });
 
@@ -332,24 +345,29 @@ router.post('/on-behalf', requireAuth, async (req: Request, res: Response) => {
   const eid = uuidv4();
 
   try {
-    await sql`
-      INSERT INTO expenses
-        (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
-      VALUES
-        (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1000) : null})`;
-
+    const itemQueries: any[] = [];
     for (const item of items) {
       const iid = uuidv4();
       const resolvedCatId = await resolveCategoryId(item.category_id || item.category);
 
-      await sql`
-        INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
-        VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`;
-
-      await sql`
-        INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
-        VALUES (${uuidv4()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`;
+      itemQueries.push(
+        sql`
+          INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
+          VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`,
+        sql`
+          INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
+          VALUES (${uuidv4()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
+      );
     }
+
+    await sql.transaction([
+      sql`
+        INSERT INTO expenses
+          (id, household_id, created_by, expense_type, description, amount_paise, paid_by, expense_date, notes)
+        VALUES
+          (${eid}, ${hid}, ${uid}, 'on_behalf', ${description.trim().slice(0, 255)}, ${totalPaise}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1000) : null})`,
+      ...itemQueries,
+    ]);
 
     await audit(uid, hid, 'expense', eid, 'create', null, {
       type: 'on_behalf', amount_paise: totalPaise, item_count: items.length,

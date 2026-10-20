@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
 import sql from '../db/index';
 import { requireAuth } from '../middleware/auth';
+import { rateLimitAI } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -48,7 +49,7 @@ router.get('/status', requireAuth, (_req: Request, res: Response) => {
 });
 
 // ── POST /api/ai/parse-expense ────────────────────────────────────────────────
-router.post('/parse-expense', requireAuth, async (req: Request, res: Response) => {
+router.post('/parse-expense', requireAuth, rateLimitAI, async (req: Request, res: Response) => {
   const { transcript, clientDate } = req.body;
 
   if (!transcript || typeof transcript !== 'string' || !transcript.trim()) {

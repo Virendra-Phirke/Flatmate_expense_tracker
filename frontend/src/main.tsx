@@ -6,6 +6,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import App from './App';
 import './index.css';
 
+import { initOfflineSync } from './lib/offlineQueue';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -16,6 +18,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Initialize network connection listeners and offline mutation synchronization
+initOfflineSync(queryClient);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

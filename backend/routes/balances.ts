@@ -14,6 +14,7 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
   try {
     // Execute all balance queries in parallel to eliminate sequential network round-trips
     const [
+      roommates,
       [personalRow],
       [commonShareRow],
       [commonPaidRow],
@@ -23,6 +24,15 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
       myDebtRows,
       paidToCreditor,
     ] = await Promise.all([
+      // 0. Active roommates in this household
+      sql`
+        SELECT u.id, u.full_name
+        FROM   users u
+        JOIN   household_members hm ON hm.user_id = u.id
+        WHERE  hm.household_id = ${hid}
+          AND  hm.is_active = TRUE
+          AND  u.id != ${uid}`,
+
       // 1. Personal spending
       sql`
         SELECT COALESCE(SUM(amount_paise), 0) AS total
@@ -109,41 +119,59 @@ router.get(['/', '/summary'], requireAuth, async (req: Request, res: Response) =
         GROUP  BY recipient_id`,
     ]);
 
+    const peerNames = new Map<string, string>();
+    for (const m of (roommates || [])) peerNames.set(m.id, m.full_name);
+    for (const r of (theyOweRows || [])) peerNames.set(r.debtor_id, r.debtor_name);
+    for (const r of (myDebtRows || [])) peerNames.set(r.creditor_id, r.creditor_name);
+
+    const theyOweMap: Record<string, number> = Object.fromEntries(
+      (theyOweRows || []).map((r: any) => [r.debtor_id, parseInt(r.gross_owed || 0, 10)])
+    );
+
+    const myDebtMap: Record<string, number> = Object.fromEntries(
+      (myDebtRows || []).map((r: any) => [r.creditor_id, parseInt(r.gross_owe || 0, 10)])
+    );
+
     const receivedMap: Record<string, number> = Object.fromEntries(
       (receivedByPayer || []).map((r: any) => [r.payer_id, parseInt(r.confirmed_paid || 0, 10)])
     );
-
-    const pairwise = (theyOweRows || [])
-      .map((r: any) => {
-        const gross = parseInt(r.gross_owed || 0, 10);
-        const paid  = receivedMap[r.debtor_id] || 0;
-        return {
-          debtorId:      r.debtor_id,
-          debtorName:    r.debtor_name,
-          grossOwed:     gross,
-          confirmedPaid: paid,
-          outstanding:   Math.max(0, gross - paid),
-        };
-      })
-      .filter((r: any) => r.outstanding > 0);
 
     const paidMap: Record<string, number> = Object.fromEntries(
       (paidToCreditor || []).map((r: any) => [r.recipient_id, parseInt(r.confirmed_paid || 0, 10)])
     );
 
-    const myDebts = (myDebtRows || [])
-      .map((r: any) => {
-        const gross = parseInt(r.gross_owe || 0, 10);
-        const paid  = paidMap[r.creditor_id] || 0;
-        return {
-          creditorId:    r.creditor_id,
-          creditorName:  r.creditor_name,
-          grossOwe:      gross,
-          confirmedPaid: paid,
-          outstanding:   Math.max(0, gross - paid),
-        };
-      })
-      .filter((r: any) => r.outstanding > 0);
+    const pairwise: any[] = [];
+    const myDebts: any[] = [];
+
+    // Compute canonical bilateral netted debt between current user and each peer
+    for (const [peerId, peerName] of peerNames.entries()) {
+      const theyOweGross        = theyOweMap[peerId] || 0;
+      const myDebtGross         = myDebtMap[peerId] || 0;
+      const settlementsReceived = receivedMap[peerId] || 0;
+      const settlementsPaid     = paidMap[peerId] || 0;
+
+      // Net balance between current user (uid) and peer:
+      // (Value I transferred to peer) - (Value peer transferred to me)
+      const netOwedToMe = (theyOweGross + settlementsPaid) - (myDebtGross + settlementsReceived);
+
+      if (netOwedToMe > 0) {
+        pairwise.push({
+          debtorId:      peerId,
+          debtorName:    peerName,
+          grossOwed:     theyOweGross,
+          confirmedPaid: settlementsReceived,
+          outstanding:   netOwedToMe,
+        });
+      } else if (netOwedToMe < 0) {
+        myDebts.push({
+          creditorId:    peerId,
+          creditorName:  peerName,
+          grossOwe:      myDebtGross,
+          confirmedPaid: settlementsPaid,
+          outstanding:   Math.abs(netOwedToMe),
+        });
+      }
+    }
 
     const totalOwedToMe = pairwise.reduce((acc: number, p: any) => acc + Number(p.outstanding || 0), 0);
     const totalOwedByMe = myDebts.reduce((acc: number, d: any) => acc + Number(d.outstanding || 0), 0);

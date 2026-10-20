@@ -2,7 +2,11 @@ import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 
 const isProd = process.env.NODE_ENV === 'production';
-const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'flatmate_expense_jwt_secret_fallback';
+const rawSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+if (isProd && !rawSecret) {
+  throw new Error('FATAL SECURITY CONFIGURATION: JWT_SECRET or SESSION_SECRET environment variable is required in production.');
+}
+const JWT_SECRET = rawSecret || 'flatmate_expense_jwt_dev_secret_only';
 export const AUTH_COOKIE_NAME = 'auth_token';
 
 export interface UserSessionPayload {

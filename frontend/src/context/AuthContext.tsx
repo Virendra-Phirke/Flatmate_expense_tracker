@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CurrentUser } from '@/types';
 import { api, setAuthToken } from '@/lib/api';
+import { clearCachedData } from '@/lib/idb';
 
 interface AuthContextType {
   user: CurrentUser | null;
@@ -74,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setAuthToken(null);
       setUser(null);
+      void clearCachedData(true);
     }
   };
 

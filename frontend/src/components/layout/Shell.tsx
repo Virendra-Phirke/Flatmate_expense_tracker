@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { VoiceAssistantModal } from '@/components/voice/VoiceAssistantModal';
 import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 import { ThemePaletteModal } from '@/components/layout/ThemePaletteModal';
+import { OfflineSyncBanner } from '@/components/ui/OfflineSyncBanner';
 import { useTheme } from '@/context/ThemeContext';
 import { HouseholdMember, Category } from '@/types';
 import { useQuery } from '@tanstack/react-query';
@@ -328,7 +329,8 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
 
         {/* Page body */}
         <main className="min-w-0 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
-          <div className="mx-auto w-full max-w-6xl px-3 xs:px-4 py-3 xs:py-4 sm:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-6xl px-3 xs:px-4 py-3 xs:py-4 sm:p-6 lg:p-8 space-y-4">
+            <OfflineSyncBanner />
             {children}
           </div>
         </main>
