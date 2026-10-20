@@ -417,8 +417,8 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
           </div>
         </header>
 
-        {/* Page body */}
-        <main className="min-w-0 flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-6">
+        {/* Page body with extra bottom padding for floating FAB and bottom dock */}
+        <main className="min-w-0 flex-1 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] md:pb-6">
           <div className="mx-auto w-full max-w-6xl px-3 xs:px-4 py-3 xs:py-4 sm:p-6 lg:p-8 space-y-4">
             <OfflineSyncBanner />
             {children}
@@ -427,10 +427,12 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
       </div>
 
       {/* ── Mobile Floating Action Speed-Dial (FAB) ────────────── */}
-      <MobileSpeedDialFAB
-        onNavigate={goTo}
-        onOpenVoice={() => setVoiceModalOpen(true)}
-      />
+      {!mobileMoreOpen && (
+        <MobileSpeedDialFAB
+          onNavigate={goTo}
+          onOpenVoice={() => setVoiceModalOpen(true)}
+        />
+      )}
 
       {/* ── Mobile bottom navigation dock ────────────────────────────── */}
       <nav

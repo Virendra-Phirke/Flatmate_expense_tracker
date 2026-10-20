@@ -38,8 +38,8 @@ export function MobileSpeedDialFAB({
         />
       )}
 
-      {/* Floating Speed-Dial Container */}
-      <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-40 md:hidden flex flex-col items-end gap-2.5">
+      {/* Floating Speed-Dial Container - positioned with comfortable clearance above bottom dock */}
+      <div className="fixed bottom-[calc(5.875rem+env(safe-area-inset-bottom,0px))] right-4 z-40 md:hidden flex flex-col items-end gap-2.5">
         {/* Speed-dial options list */}
         {open && (
           <div className="flex flex-col items-end gap-2 pb-1 animate-slide-up">
