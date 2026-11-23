@@ -114,6 +114,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [paletteModalOpen, setPaletteModalOpen] = useState(false);
+  const [shortcutsModalOpen, setShortcutsModalOpen] = useState(false);
 
   const { data: members = [] } = useQuery<HouseholdMember[]>({
     queryKey: ['members'],
@@ -129,15 +130,55 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const isInput =
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLSelectElement ||
+        (event.target as HTMLElement)?.isContentEditable;
+
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'm') {
         event.preventDefault();
         setVoiceModalOpen((open) => !open);
+        return;
       }
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 't') {
         event.preventDefault();
         setPaletteModalOpen((open) => !open);
+        return;
       }
-      if (event.key === 'Escape') setMobileMoreOpen(false);
+      if (event.key === 'Escape') {
+        setMobileMoreOpen(false);
+        setShortcutsModalOpen(false);
+        return;
+      }
+
+      if (!isInput) {
+        if (event.key === '?' || (event.shiftKey && event.key === '/')) {
+          event.preventDefault();
+          setShortcutsModalOpen((open) => !open);
+        } else if (event.key === '1') {
+          event.preventDefault();
+          goTo('dashboard');
+        } else if (event.key === '2') {
+          event.preventDefault();
+          goTo('analytics');
+        } else if (event.key === '3') {
+          event.preventDefault();
+          goTo('expenses');
+        } else if (event.key === '4') {
+          event.preventDefault();
+          goTo('balances');
+        } else if (event.key === '5') {
+          event.preventDefault();
+          goTo('repayments');
+        } else if (event.key.toLowerCase() === 'n') {
+          event.preventDefault();
+          goTo('personal', true);
+        } else if (event.key.toLowerCase() === 's') {
+          event.preventDefault();
+          goTo('repayments', true);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
