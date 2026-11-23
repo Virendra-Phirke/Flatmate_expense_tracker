@@ -25,6 +25,10 @@ import {
   AlertCircle,
   ExternalLink,
   Plus,
+  ArrowRight,
+  User,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from '@/components/ui/icons';
 import { ResponsivePagination } from '@/components/ui/pagination';
 

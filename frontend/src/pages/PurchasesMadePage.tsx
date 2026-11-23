@@ -27,6 +27,12 @@ import {
   Sparkles,
   Copy,
   Calendar,
+  CheckCircle2,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Utensils,
+  Receipt,
+  Home,
 } from '@/components/ui/icons';
 import { CategoryCombobox, ItemCombobox } from '@/components/ui/CategoryItemCombobox';
 import { DEFAULT_CATEGORIES, findCategoryByName } from '@/data/categorySuggestions';
@@ -53,6 +59,38 @@ interface PurchasesMadePageProps {
   onDateFilterChange?: (filter: DateFilterValue) => void;
   openAddModal?: number;
   onAddModalClose?: () => void;
+}
+
+function getPurchaseVisual(description: string = '') {
+  const d = description.toLowerCase();
+  if (d.includes('grocery') || d.includes('market') || d.includes('supermarket') || d.includes('zepto') || d.includes('blinkit') || d.includes('instamart') || d.includes('veggie')) {
+    return {
+      icon: ShoppingBag,
+      color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/25',
+    };
+  }
+  if (d.includes('food') || d.includes('snack') || d.includes('dinner') || d.includes('lunch') || d.includes('swiggy') || d.includes('zomato') || d.includes('eat') || d.includes('protein')) {
+    return {
+      icon: Utensils,
+      color: 'text-orange-400 bg-orange-400/10 border-orange-400/25',
+    };
+  }
+  if (d.includes('medicine') || d.includes('pharma') || d.includes('pill') || d.includes('apollo') || d.includes('chemist')) {
+    return {
+      icon: Sparkles,
+      color: 'text-teal-400 bg-teal-400/10 border-teal-400/25',
+    };
+  }
+  if (d.includes('home') || d.includes('flat') || d.includes('room') || d.includes('clean')) {
+    return {
+      icon: Home,
+      color: 'text-primary bg-primary/10 border-primary/25',
+    };
+  }
+  return {
+    icon: ShoppingBag,
+    color: 'text-primary bg-primary/10 border-primary/25',
+  };
 }
 
 export function PurchasesMadePage({
@@ -233,10 +271,79 @@ export function PurchasesMadePage({
   }, [filteredPurchases, currentPage, PAGE_SIZE]);
 
   const totalAdvanced = filteredPurchases.reduce((sum, p) => sum + Number(p.amount_paise || 0), 0);
+  const totalRecovered = filteredPurchases.reduce((sum, p) => sum + Number(p.confirmed_paid_paise || 0), 0);
+  const totalPending = Math.max(0, totalAdvanced - totalRecovered);
   const isFilterActive = activeDateFilter.mode !== 'all';
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-4">
+      {/* ── 3-Box Compact Metric Summary Strip ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        {/* Box 1: Total Advanced */}
+        <div className="rounded-lg border border-border bg-card p-3 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
+              Total Advanced
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-foreground block mt-0.5 truncate">
+              {formatPaise(totalAdvanced)}
+            </span>
+            <span className="text-[11px] text-muted-foreground block mt-0.5 truncate">
+              {filteredPurchases.length} advance{filteredPurchases.length === 1 ? '' : 's'} recorded
+            </span>
+          </div>
+          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+            <ShoppingBag className="h-4 w-4" />
+          </div>
+        </div>
+
+        {/* Box 2: Collected Back */}
+        <div className="rounded-lg border border-positive/20 bg-positive/5 p-3 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-positive block truncate">
+              Collected Back
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-positive block mt-0.5 truncate">
+              {formatPaise(totalRecovered)}
+            </span>
+            <span className="text-[11px] text-muted-foreground block mt-0.5 truncate">
+              Confirmed settlements
+            </span>
+          </div>
+          <div className="h-9 w-9 rounded-lg bg-positive/10 flex items-center justify-center text-positive shrink-0">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+        </div>
+
+        {/* Box 3: Pending Collection */}
+        <div className="rounded-lg border border-border bg-card p-3 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
+              Pending to Collect
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-foreground block mt-0.5 truncate">
+              {formatPaise(totalPending)}
+            </span>
+            <span
+              className={`text-[11px] font-semibold block mt-0.5 truncate ${
+                totalPending > 0 ? 'text-pending' : 'text-positive'
+              }`}
+            >
+              {totalPending > 0
+                ? `${formatPaise(totalPending)} owed by flatmates`
+                : 'All advances 100% recovered'}
+            </span>
+          </div>
+          <div
+            className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
+              totalPending > 0 ? 'bg-pending-soft text-pending' : 'bg-positive-soft text-positive'
+            }`}
+          >
+            {totalPending > 0 ? <ArrowDownLeft className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+          </div>
+        </div>
+      </div>
+
       {/* Page Header */}
       {!hideTitle && (
         <div className="space-y-4">
@@ -403,41 +510,59 @@ export function PurchasesMadePage({
             const isSettled =
               Number(purchase.confirmed_paid_paise || 0) >= Number(purchase.amount_paise || 0) &&
               Number(purchase.amount_paise || 0) > 0;
+            const outstanding = Math.max(0, Number(purchase.amount_paise || 0) - Number(purchase.confirmed_paid_paise || 0));
+            const visual = getPurchaseVisual(purchase.description);
+            const VisualIcon = visual.icon;
 
             return (
               <Card
                 key={purchase.id}
-                className="overflow-hidden border-border bg-card shadow-2xs"
+                className="overflow-hidden border-border bg-card shadow-2xs hover:border-border/90 transition-colors"
               >
-                <div className="p-2.5 sm:p-3 flex items-center justify-between gap-2.5 border-b border-border/60">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-foreground text-xs sm:text-sm truncate">
-                        {purchase.description}
-                      </h3>
-                      {isSettled ? (
-                        <Badge variant="pos" className="text-[10px] font-mono py-0 px-1.5 shrink-0">
-                          Settled
-                        </Badge>
-                      ) : (
-                        <Badge variant="warn" className="text-[10px] font-mono py-0 px-1.5 shrink-0">
-                          Due
-                        </Badge>
-                      )}
+                <div className="p-2.5 sm:p-3.5 flex items-start sm:items-center justify-between gap-3 border-b border-border/60">
+                  <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                    <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center shrink-0 border ${visual.color}`}>
+                      <VisualIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
-                      <span className="font-mono">{purchase.expense_date}</span>
-                      {purchase.notes && <span> &bull; {purchase.notes}</span>}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <h3 className="font-bold text-foreground text-xs sm:text-sm tracking-tight truncate">
+                          {purchase.description}
+                        </h3>
+                        {isSettled ? (
+                          <Badge variant="pos" className="text-[10px] font-mono py-0 px-1.5 shrink-0 flex items-center gap-1">
+                            <CheckCircle2 className="h-2.5 w-2.5" /> Settled
+                          </Badge>
+                        ) : (
+                          <Badge variant="warn" className="text-[10px] font-mono py-0 px-1.5 shrink-0">
+                            Due {formatPaise(outstanding)}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 truncate">
+                        <span className="font-mono text-muted-foreground">{purchase.expense_date}</span>
+                        <span>&bull;</span>
+                        <span>{purchase.items?.length || 0} item{(purchase.items?.length || 0) === 1 ? '' : 's'} for flatmates</span>
+                        {purchase.notes && (
+                          <>
+                            <span className="hidden xs:inline">&bull;</span>
+                            <span className="hidden xs:inline truncate italic max-w-[220px]">
+                              {purchase.notes}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     <div className="text-right">
                       <div className="text-xs sm:text-sm font-bold font-mono text-foreground">
                         {formatPaise(purchase.amount_paise)}
                       </div>
                       <div className="text-[10px] text-muted-foreground font-mono">
-                        Rec: {formatPaise(purchase.confirmed_paid_paise || 0)}
+                        Rec: <span className="font-bold text-foreground">{formatPaise(purchase.confirmed_paid_paise || 0)}</span>
                       </div>
                     </div>
                     <button
@@ -458,25 +583,33 @@ export function PurchasesMadePage({
                 {/* Itemized Line Items */}
                 <div className="p-2 sm:p-2.5 bg-muted/20">
                   <div className={`grid gap-1.5 ${purchase.items.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'}`}>
-                    {purchase.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="px-2.5 py-1.5 rounded-md border border-border/60 bg-card flex items-center justify-between text-xs"
-                      >
-                        <div className="truncate mr-2 min-w-0">
-                          <div className="font-medium text-foreground truncate text-[11px]">
-                            {item.description}
+                    {purchase.items.map((item) => {
+                      const beneficiaryInitial = (item.beneficiary_name || 'F').charAt(0).toUpperCase();
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="px-2.5 py-1.5 rounded-md border border-border/60 bg-card flex items-center justify-between text-xs"
+                        >
+                          <div className="truncate mr-2 min-w-0 flex items-center gap-1.5">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                              {beneficiaryInitial}
+                            </span>
+                            <div className="truncate min-w-0">
+                              <div className="font-medium text-foreground truncate text-[11px]">
+                                {item.description}
+                              </div>
+                              <div className="text-[10px] text-primary flex items-center gap-1 truncate font-medium">
+                                <span className="truncate">{item.beneficiary_name}</span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-[10px] text-primary flex items-center gap-1 truncate font-medium">
-                            <User className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-                            <span className="truncate">{item.beneficiary_name}</span>
+                          <div className="font-mono font-bold text-foreground text-xs shrink-0">
+                            {formatPaise(item.amount_paise)}
                           </div>
                         </div>
-                        <div className="font-mono font-bold text-foreground text-xs shrink-0">
-                          {formatPaise(item.amount_paise)}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </Card>
