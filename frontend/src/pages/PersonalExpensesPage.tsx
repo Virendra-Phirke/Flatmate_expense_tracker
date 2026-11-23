@@ -189,6 +189,45 @@ export function PersonalExpensesPage({
   const totalSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_paise || 0), 0);
   const isFilterActive = activeDateFilter.mode !== 'all';
 
+  // Category spending breakdown & pacing for visual progress bar
+  const categoryBreakdown = useMemo(() => {
+    if (!filteredExpenses.length || totalSpent <= 0) return [];
+    const catMap: Record<string, number> = {};
+    for (const exp of filteredExpenses) {
+      const cat = exp.category_name || 'General';
+      catMap[cat] = (catMap[cat] || 0) + exp.amount_paise;
+    }
+    const colorPalette = [
+      'bg-primary',
+      'bg-emerald-600',
+      'bg-amber-500',
+      'bg-orange-500',
+      'bg-rose-500',
+      'bg-teal-600',
+      'bg-stone-500',
+    ];
+    return Object.entries(catMap)
+      .map(([name, amount], idx) => ({
+        name,
+        amount,
+        pct: Math.round((amount / totalSpent) * 100) || 1,
+        color: colorPalette[idx % colorPalette.length],
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [filteredExpenses, totalSpent]);
+
+  // Average daily spend pacing across unique days in filtered set
+  const pacingStats = useMemo(() => {
+    if (!filteredExpenses.length) return null;
+    const uniqueDates = new Set(filteredExpenses.map((e) => e.expense_date)).size;
+    const daysCount = Math.max(1, uniqueDates);
+    const avgDailyPaise = Math.round(totalSpent / daysCount);
+    return {
+      daysCount,
+      avgDailyPaise,
+    };
+  }, [filteredExpenses, totalSpent]);
+
   return (
     <main className="space-y-6">
       {/* Page Header */}
@@ -301,6 +340,49 @@ export function PersonalExpensesPage({
             </div>
           </div>
         </section>
+      )}
+
+      {/* Category Spending Multi-Bar & Pacing Strip */}
+      {categoryBreakdown.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-3 shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-foreground flex items-center gap-1.5">
+              <span>Category Allocation</span>
+              <span className="text-[10px] font-mono text-muted-foreground">({categoryBreakdown.length} categories)</span>
+            </span>
+            {pacingStats && (
+              <span className="text-[11px] font-mono text-muted-foreground">
+                Avg <strong className="text-foreground">{formatPaise(pacingStats.avgDailyPaise)}</strong> / active day
+              </span>
+            )}
+          </div>
+
+          {/* Multi-segmented Progress Bar */}
+          <div className="h-2 w-full bg-muted rounded-full overflow-hidden flex">
+            {categoryBreakdown.map((cat) => (
+              <div
+                key={cat.name}
+                style={{ width: `${cat.pct}%` }}
+                className={`${cat.color} h-full transition-all`}
+                title={`${cat.name}: ${cat.pct}% (${formatPaise(cat.amount)})`}
+              />
+            ))}
+          </div>
+
+          {/* Category Chips with Percentages */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            {categoryBreakdown.slice(0, 5).map((cat) => (
+              <div
+                key={cat.name}
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/40 border border-border/60 text-[11px]"
+              >
+                <span className={`h-2 w-2 rounded-full ${cat.color} shrink-0`} />
+                <span className="font-medium text-foreground truncate max-w-[100px]">{cat.name}</span>
+                <span className="font-mono text-muted-foreground text-[10px]">{cat.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Main Content */}

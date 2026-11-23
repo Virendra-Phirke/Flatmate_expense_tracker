@@ -377,6 +377,152 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
         </Card>
       </section>
 
+      {/* ── Roommate Bilateral Debt Matrix (Optimized for PC & Auditing) ──── */}
+      <Card className="border-border bg-card shadow-xs overflow-hidden">
+        <CardHeader className="px-3.5 py-2.5 border-b border-border/60 bg-muted/20 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary shrink-0" />
+            <div>
+              <CardTitle className="text-xs sm:text-sm font-bold text-foreground">
+                Roommate Bilateral Debt Matrix
+              </CardTitle>
+              <p className="text-[11px] text-muted-foreground">
+                Audited gross vs netted positions per flatmate
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className="text-[10px] font-mono border-border text-muted-foreground">
+            {bilateralMatrix.length} member{bilateralMatrix.length === 1 ? '' : 's'}
+          </Badge>
+        </CardHeader>
+        <CardContent className="p-0">
+          {bilateralMatrix.length === 0 ? (
+            <div className="p-6 text-center text-xs text-muted-foreground">
+              No flatmate ledger balances recorded yet.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/30 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                    <th className="py-2 px-3 sm:px-4 font-semibold">Flatmate</th>
+                    <th className="py-2 px-3 text-right font-semibold">They Owe You</th>
+                    <th className="py-2 px-3 text-right font-semibold">You Owe Them</th>
+                    <th className="py-2 px-3 text-right font-semibold hidden md:table-cell">Netting Offset</th>
+                    <th className="py-2 px-3 text-right font-semibold">Net Position</th>
+                    <th className="py-2 px-3 sm:px-4 text-right font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {bilateralMatrix.map((row) => {
+                    const isReceivable = row.netPosition > 0;
+                    const isPayable = row.netPosition < 0;
+                    const isSquare = row.netPosition === 0;
+
+                    return (
+                      <tr key={row.id} className="hover:bg-muted/20 transition-colors">
+                        <td className="py-2.5 px-3 sm:px-4 font-medium text-foreground">
+                          <div className="flex items-center gap-2">
+                            <span className="h-6 w-6 rounded-full bg-muted flex items-center justify-center font-bold text-[10px] text-muted-foreground shrink-0">
+                              {row.name.charAt(0).toUpperCase()}
+                            </span>
+                            <span className="font-semibold truncate max-w-[120px] sm:max-w-[160px]">
+                              {row.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono">
+                          {row.theyOutstanding > 0 ? (
+                            <span className="text-positive font-bold">
+                              {formatPaise(row.theyOutstanding)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">₹0.00</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono">
+                          {row.youOutstanding > 0 ? (
+                            <span className="text-negative font-bold">
+                              {formatPaise(row.youOutstanding)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">₹0.00</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono hidden md:table-cell text-muted-foreground">
+                          {row.crossOffset > 0 ? (
+                            <span className="text-[11px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                              -{formatPaise(row.crossOffset)}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono font-bold">
+                          {isReceivable && (
+                            <span className="text-positive inline-flex items-center gap-0.5">
+                              <ArrowDownLeft className="h-3 w-3 inline" />
+                              +{formatPaise(row.netPosition)}
+                            </span>
+                          )}
+                          {isPayable && (
+                            <span className="text-negative inline-flex items-center gap-0.5">
+                              <ArrowUpRight className="h-3 w-3 inline" />
+                              -{formatPaise(Math.abs(row.netPosition))}
+                            </span>
+                          )}
+                          {isSquare && (
+                            <span className="text-muted-foreground font-normal">
+                              Square
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 sm:px-4 text-right">
+                          {isReceivable ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                openWhatsAppReminder({
+                                  debtorName: row.name,
+                                  amountPaise: row.netPosition,
+                                  myUpiId: myUpi?.upi_id,
+                                  myFullName: user?.fullName,
+                                  householdName: user?.householdName,
+                                })
+                              }
+                              className="h-6.5 px-2 text-[10px] font-semibold text-positive border-positive/30 hover:bg-positive-soft/50 active:scale-95"
+                            >
+                              <MessageSquare className="h-2.5 w-2.5 mr-1" />
+                              <span>Ping</span>
+                            </Button>
+                          ) : isPayable ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => onNavigateToRepayments(row.id)}
+                              className="h-6.5 px-2 text-[10px] font-semibold border-border active:scale-95"
+                            >
+                              <span>Settle</span>
+                              <ArrowRight className="h-2.5 w-2.5 ml-1" />
+                            </Button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground font-medium">
+                              <CheckCircle2 className="h-3 w-3 text-positive" />
+                              <span className="hidden sm:inline">Clean</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Monthly Settlement Statement Modal */}
       <MonthlyStatementModal
         open={statementModalOpen}

@@ -33,6 +33,7 @@ import {
   Utensils,
   Receipt,
   Home,
+  Download,
 } from '@/components/ui/icons';
 import { CategoryCombobox, ItemCombobox } from '@/components/ui/CategoryItemCombobox';
 import { DEFAULT_CATEGORIES, findCategoryByName } from '@/data/categorySuggestions';
@@ -274,6 +275,52 @@ export function PurchasesMadePage({
   const totalRecovered = filteredPurchases.reduce((sum, p) => sum + Number(p.confirmed_paid_paise || 0), 0);
   const totalPending = Math.max(0, totalAdvanced - totalRecovered);
   const isFilterActive = activeDateFilter.mode !== 'all';
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredPurchases.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredPurchases.map((p) => p.id)));
+    }
+  };
+
+  const exportSelectedCsv = () => {
+    const itemsToExport = filteredPurchases.filter((p) => selectedIds.has(p.id));
+    if (!itemsToExport.length) return;
+    const headers = ['Date', 'Description', 'Total Amount (INR)', 'Confirmed Repaid (INR)', 'Outstanding (INR)', 'Beneficiaries'];
+    const rows = itemsToExport.map((p) => {
+      const beneficiaries = (p.items || []).map((it: any) => `${it.beneficiary_name} (₹${(it.amount_paise / 100).toFixed(2)})`).join('; ');
+      const outstanding = Math.max(0, p.amount_paise - (p.confirmed_paid_paise || 0));
+      return [
+        p.expense_date,
+        `"${p.description.replace(/"/g, '""')}"`,
+        (p.amount_paise / 100).toFixed(2),
+        ((p.confirmed_paid_paise || 0) / 100).toFixed(2),
+        (outstanding / 100).toFixed(2),
+        `"${beneficiaries.replace(/"/g, '""')}"`,
+      ].join(',');
+    });
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `purchases_for_others_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <main className="space-y-4">
