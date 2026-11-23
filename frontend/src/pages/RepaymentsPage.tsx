@@ -50,6 +50,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
   const [note, setNote] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [confirmingAll, setConfirmingAll] = useState(false);
 
   // Queries
   const { data: settlements = [], isLoading: isSettlementsLoading } = useQuery<
@@ -173,6 +174,36 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
     },
   });
+
+  const handleCopyUpi = async (upiId: string) => {
+    try {
+      await navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2000);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleConfirmAll = async () => {
+    if (!incomingPending.length) return;
+    if (!window.confirm(`Confirm receipt for all ${incomingPending.length} pending claims?`)) return;
+    setConfirmingAll(true);
+    try {
+      for (const s of incomingPending) {
+        await api('POST', `/settlements/${s.id}/confirm`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['settlements'] });
+      queryClient.invalidateQueries({ queryKey: ['balances_summary'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_for_me'] });
+      queryClient.invalidateQueries({ queryKey: ['purchases_made'] });
+    } catch (err: any) {
+      console.error('Failed to confirm all settlements', err);
+    } finally {
+      setConfirmingAll(false);
+    }
+  };
 
   const [repaymentTab, setRepaymentTab] = useState<'needs_action' | 'pending' | 'history' | 'all'>('needs_action');
 
@@ -375,17 +406,31 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
 
       {/* ── Settlement Cards / List ──────────────────────────────────────────────── */}
       <Card className="border-border bg-card overflow-hidden shadow-2xs">
-        <CardHeader className="px-3 py-2 border-b border-border/60">
-          <CardTitle className="text-xs font-bold text-foreground flex items-center gap-1.5">
-            <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
-            {repaymentTab === 'needs_action'
-              ? 'Claims Requiring Your Confirmation'
-              : repaymentTab === 'pending'
-              ? 'Your Pending Claims Waiting Recipient'
-              : repaymentTab === 'history'
-              ? 'Resolved Settlement History'
-              : 'All Settlements & Claims'}
+        <CardHeader className="px-3 py-2 border-b border-border/60 flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-xs font-bold text-foreground flex items-center gap-1.5 truncate">
+            <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="truncate">
+              {repaymentTab === 'needs_action'
+                ? 'Claims Requiring Your Confirmation'
+                : repaymentTab === 'pending'
+                ? 'Your Pending Claims Waiting Recipient'
+                : repaymentTab === 'history'
+                ? 'Resolved Settlement History'
+                : 'All Settlements & Claims'}
+            </span>
           </CardTitle>
+          {repaymentTab === 'needs_action' && incomingPending.length > 1 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleConfirmAll}
+              disabled={confirmingAll}
+              className="h-7 px-2.5 text-[11px] font-semibold text-positive border-positive/30 hover:bg-positive/10 shrink-0 active:scale-95 transition-all"
+            >
+              <Check className="h-3 w-3 mr-1" />
+              <span>{confirmingAll ? 'Confirming...' : `Confirm All (${incomingPending.length})`}</span>
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {isSettlementsLoading ? (
@@ -672,21 +717,40 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                         className="w-40 h-40 object-contain rounded-lg"
                       />
                     </div>
-                    <div className="text-center">
-                      <div className="text-sm font-mono font-semibold text-primary">
-                        {upiQrData.upiId}
+                    <div className="text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="text-sm font-mono font-bold text-primary">
+                          {upiQrData.upiId}
+                        </span>
+                        {upiQrData.upiId && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyUpi(upiQrData.upiId!)}
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors active:scale-95"
+                            title="Copy UPI ID"
+                          >
+                            {copiedUpi ? (
+                              <Check className="h-3.5 w-3.5 text-positive" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        )}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
+                      {copiedUpi && (
+                        <div className="text-[10px] text-positive font-medium">UPI ID copied to clipboard!</div>
+                      )}
+                      <div className="text-xs text-muted-foreground">
                         {upiQrData.displayName}
                       </div>
                     </div>
                     {upiQrData.upiUri && (
                       <a
                         href={upiQrData.upiUri}
-                        className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+                        className="w-full min-h-[42px] py-2 px-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all text-center"
                       >
-                        Open in UPI App (GPay / PhonePe)
-                        <ExternalLink className="h-3 w-3 ml-1" />
+                        <span>Pay via UPI App (GPay / PhonePe / Paytm)</span>
+                        <ExternalLink className="h-3.5 w-3.5 ml-0.5" />
                       </a>
                     )}
                   </>

@@ -13,6 +13,9 @@ import {
   AlertCircle,
   MessageSquare,
   Share2,
+  Users,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from '@/components/ui/icons';
 
 import { BalancesSkeleton } from '@/components/ui/skeleton';
