@@ -23,13 +23,13 @@ export function ExpensesPage({
   }, [initialSubTab]);
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-3 sm:space-y-4">
       {/* Top Header & Segmented Control */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-foreground">Expenses</h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Manage your personal spending and items purchased on behalf of flatmates
+      <header className="flex items-center justify-between gap-2 border-b border-border/70 pb-1.5">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">Expenses</h1>
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+            Personal spending & items bought for flatmates
           </p>
         </div>
 
@@ -37,20 +37,20 @@ export function ExpensesPage({
         <div
           role="tablist"
           aria-label="Expense views"
-          className="grid grid-cols-2 w-full sm:w-auto sm:inline-flex rounded-lg bg-secondary p-1 border border-border shrink-0"
+          className="inline-flex rounded-lg bg-muted/60 p-0.5 border border-border shrink-0"
         >
           <button
             role="tab"
             aria-selected={subTab === 'personal'}
             type="button"
             onClick={() => setSubTab('personal')}
-            className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-colors min-h-[38px] sm:min-h-0 ${
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
               subTab === 'personal'
-                ? 'bg-card text-foreground shadow-sm'
+                ? 'bg-card text-foreground shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Receipt className="h-3.5 w-3.5" aria-hidden="true" />
+            <Receipt className="h-3 w-3" aria-hidden="true" />
             <span>Personal</span>
           </button>
           <button
@@ -58,14 +58,14 @@ export function ExpensesPage({
             aria-selected={subTab === 'purchases_made'}
             type="button"
             onClick={() => setSubTab('purchases_made')}
-            className={`flex items-center justify-center gap-1.5 sm:gap-2 rounded-lg px-2 sm:px-3.5 py-2 sm:py-1.5 text-xs font-semibold transition-colors min-h-[38px] sm:min-h-0 ${
+            className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition-all ${
               subTab === 'purchases_made'
-                ? 'bg-card text-foreground shadow-sm'
+                ? 'bg-card text-foreground shadow-2xs'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="truncate">Bought for others</span>
+            <ShoppingBag className="h-3 w-3" aria-hidden="true" />
+            <span>For others</span>
           </button>
         </div>
       </header>
