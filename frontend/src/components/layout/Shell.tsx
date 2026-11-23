@@ -855,6 +855,100 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
         open={paletteModalOpen}
         onOpenChange={setPaletteModalOpen}
       />
+
+      {/* ── Keyboard Shortcuts Modal ───────────────────────── */}
+      <Dialog open={shortcutsModalOpen} onOpenChange={setShortcutsModalOpen}>
+        <DialogContent className="max-w-md bg-card border-border text-foreground p-4 sm:p-5 shadow-2xl">
+          <DialogHeader className="pb-2 border-b border-border">
+            <div className="flex items-center gap-2">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Key className="h-3.5 w-3.5" />
+              </span>
+              <div>
+                <DialogTitle className="text-base font-bold text-foreground">
+                  Keyboard Shortcuts
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Quick navigation & actions for power users
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-3.5 pt-1 text-xs">
+            {/* Group 1: Navigation */}
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">
+                Navigation
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Home</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">1</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Analytics</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">2</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Expenses</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">3</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Balances</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">4</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Repayments</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">5</kbd>
+                </div>
+              </div>
+            </div>
+
+            {/* Group 2: Quick Actions */}
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">
+                Quick Actions
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">New Expense</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">N</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Settle Up Bill</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">S</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Voice Assistant</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">Ctrl+M</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Theme & Palettes</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">Ctrl+Shift+T</kbd>
+                </div>
+              </div>
+            </div>
+
+            {/* Group 3: Global */}
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">
+                Global
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Toggle this Help</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">?</kbd>
+                </div>
+                <div className="flex items-center justify-between p-1.5 rounded-md bg-muted/30 border border-border/60">
+                  <span className="text-foreground">Close Modal / Sheet</span>
+                  <kbd className="font-mono bg-card px-1.5 py-0.5 rounded border border-border text-[11px] font-bold">Esc</kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
