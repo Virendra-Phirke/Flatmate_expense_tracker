@@ -29,6 +29,8 @@ import {
   User,
   ArrowDownLeft,
   ArrowUpRight,
+  Copy,
+  Check,
 } from '@/components/ui/icons';
 import { ResponsivePagination } from '@/components/ui/pagination';
 
@@ -47,6 +49,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
   const [txRef, setTxRef] = useState('');
   const [note, setNote] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const [copiedUpi, setCopiedUpi] = useState(false);
 
   // Queries
   const { data: settlements = [], isLoading: isSettlementsLoading } = useQuery<
