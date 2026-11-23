@@ -130,7 +130,7 @@ export function ProfilePage() {
   }
 
   return (
-    <main className="space-y-3 sm:space-y-4 max-w-4xl">
+    <main className="space-y-3 sm:space-y-4 w-full">
       {/* Header */}
       <header className="border-b border-border/70 pb-1.5">
         <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight truncate">Profile & Security</h1>

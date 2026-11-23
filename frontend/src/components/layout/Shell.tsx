@@ -494,7 +494,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
 
         {/* Page body with extra bottom padding for floating FAB and bottom dock */}
         <main className="min-w-0 flex-1 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] md:pb-6">
-          <div className="mx-auto w-full max-w-6xl px-3 xs:px-4 py-3 xs:py-4 sm:p-5 lg:p-6 space-y-3.5">
+          <div className="w-full px-3 xs:px-4 sm:px-5 lg:px-7 py-3 xs:py-4 sm:py-4 lg:py-5 space-y-3.5">
             <OfflineSyncBanner />
             <AnimatePresence mode="wait">
               <motion.div
