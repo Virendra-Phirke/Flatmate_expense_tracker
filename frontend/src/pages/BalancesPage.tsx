@@ -67,6 +67,67 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
   const debts = summary.myDebts?.filter((item) => Number(item.outstanding || 0) > 0) ?? [];
   const credits = summary.pairwise?.filter((item) => Number(item.outstanding || 0) > 0) ?? [];
 
+  // Compute Bilateral Debt Matrix mapping for PC & comprehensive audit
+  const bilateralMatrix = React.useMemo(() => {
+    const map = new Map<string, {
+      id: string;
+      name: string;
+      theyOweGross: number;
+      theyConfirmedPaid: number;
+      theyOutstanding: number;
+      youOweGross: number;
+      youConfirmedPaid: number;
+      youOutstanding: number;
+      crossOffset: number;
+      netPosition: number; // positive = receivable, negative = payable
+    }>();
+
+    // Map credits (flatmates who owe you)
+    for (const c of summary.pairwise || []) {
+      map.set(c.debtorId, {
+        id: c.debtorId,
+        name: c.debtorName,
+        theyOweGross: c.grossOwed || 0,
+        theyConfirmedPaid: c.confirmedPaid || 0,
+        theyOutstanding: c.outstanding || 0,
+        youOweGross: 0,
+        youConfirmedPaid: 0,
+        youOutstanding: 0,
+        crossOffset: c.crossOffset || 0,
+        netPosition: c.outstanding || 0,
+      });
+    }
+
+    // Map debts (flatmates you owe)
+    for (const d of summary.myDebts || []) {
+      const existing = map.get(d.creditorId);
+      if (existing) {
+        existing.youOweGross = d.grossOwe || 0;
+        existing.youConfirmedPaid = d.confirmedPaid || 0;
+        existing.youOutstanding = d.outstanding || 0;
+        existing.crossOffset = Math.max(existing.crossOffset, d.crossOffset || 0);
+        existing.netPosition = existing.theyOutstanding - existing.youOutstanding;
+      } else {
+        map.set(d.creditorId, {
+          id: d.creditorId,
+          name: d.creditorName,
+          theyOweGross: 0,
+          theyConfirmedPaid: 0,
+          theyOutstanding: 0,
+          youOweGross: d.grossOwe || 0,
+          youConfirmedPaid: d.confirmedPaid || 0,
+          youOutstanding: d.outstanding || 0,
+          crossOffset: d.crossOffset || 0,
+          netPosition: -(d.outstanding || 0),
+        });
+      }
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => Math.abs(b.netPosition) - Math.abs(a.netPosition)
+    );
+  }, [summary]);
+
   return (
     <main className="space-y-3 sm:space-y-4">
       {/* ── Compact Header ──────────────────────────────── */}
