@@ -24,7 +24,18 @@ import {
   AlertCircle,
   Tag,
   Check,
+  CheckCircle2,
   Sparkles,
+  Flame,
+  Zap,
+  Droplet,
+  Utensils,
+  Wifi,
+  Home,
+  Receipt,
+  User,
+  ArrowDownLeft,
+  ArrowUpRight,
 } from '@/components/ui/icons';
 import { CategoryCombobox, ItemCombobox } from '@/components/ui/CategoryItemCombobox';
 import { DEFAULT_CATEGORIES } from '@/data/categorySuggestions';
@@ -41,6 +52,64 @@ import { ResponsivePagination } from '@/components/ui/pagination';
 interface CommonExpensesPageProps {
   openAddModal?: number;
   onAddModalClose?: () => void;
+}
+
+function getCommonExpenseVisual(description: string = '') {
+  const d = description.toLowerCase();
+  if (d.includes('gas') || d.includes('cylinder') || d.includes('indane') || d.includes('hp') || d.includes('bharat')) {
+    return {
+      icon: Flame,
+      color: 'text-amber-500 bg-amber-500/10 border-amber-500/25',
+      name: 'Cooking Gas',
+    };
+  }
+  if (d.includes('power') || d.includes('electric') || d.includes('bill') || d.includes('torrent') || d.includes('bescom') || d.includes('current') || d.includes('light')) {
+    return {
+      icon: Zap,
+      color: 'text-amber-400 bg-amber-400/10 border-amber-400/25',
+      name: 'Electricity',
+    };
+  }
+  if (d.includes('water') || d.includes('bisleri') || d.includes('can') || d.includes('aquafina') || d.includes('tanker')) {
+    return {
+      icon: Droplet,
+      color: 'text-teal-400 bg-teal-400/10 border-teal-400/25',
+      name: 'Drinking Water',
+    };
+  }
+  if (d.includes('clean') || d.includes('urban') || d.includes('pest') || d.includes('maid') || d.includes('sweeping') || d.includes('dusting')) {
+    return {
+      icon: Sparkles,
+      color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/25',
+      name: 'Cleaning & Housekeeping',
+    };
+  }
+  if (d.includes('cook') || d.includes('ration') || d.includes('grocery') || d.includes('kitchen') || d.includes('food')) {
+    return {
+      icon: Utensils,
+      color: 'text-orange-400 bg-orange-400/10 border-orange-400/25',
+      name: 'Food & Cook',
+    };
+  }
+  if (d.includes('wifi') || d.includes('broadband') || d.includes('internet') || d.includes('fiber') || d.includes('airtel') || d.includes('jio')) {
+    return {
+      icon: Wifi,
+      color: 'text-primary bg-primary/10 border-primary/25',
+      name: 'Wi-Fi & Broadband',
+    };
+  }
+  if (d.includes('rent') || d.includes('society') || d.includes('maintenance')) {
+    return {
+      icon: Home,
+      color: 'text-primary bg-primary/10 border-primary/25',
+      name: 'Rent & Society',
+    };
+  }
+  return {
+    icon: Receipt,
+    color: 'text-muted-foreground bg-muted/40 border-border',
+    name: 'Shared Flat Cost',
+  };
 }
 
 export function CommonExpensesPage({
@@ -199,6 +268,14 @@ export function CommonExpensesPage({
   }, [filteredExpenses, currentPage, PAGE_SIZE]);
 
   const totalCommon = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_paise || 0), 0);
+  const myTotalShare = filteredExpenses.reduce((sum, e) => {
+    const s = e.shares?.find((sh: any) => sh.user_id === user?.id);
+    return sum + Number(s?.amount_paise || 0);
+  }, 0);
+  const myTotalPaid = filteredExpenses.reduce((sum, e) => {
+    return sum + (e.paid_by === user?.id ? Number(e.amount_paise || 0) : 0);
+  }, 0);
+  const netCommonDiff = myTotalPaid - myTotalShare;
   const isFilterActive = dateFilter.mode !== 'all';
 
   return (
@@ -228,26 +305,105 @@ export function CommonExpensesPage({
         </div>
       </header>
 
-        {/* Date Filter & Actions Bar: Button in the SAME row as filter */}
-        <section aria-label="Date filter and actions" className="rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-xs space-y-2.5">
-          <div className="flex items-center justify-between gap-2.5">
-            <DateFilter
-              value={dateFilter}
-              onChange={setDateFilter}
-              totalRecords={expenses.length}
-              filteredCount={filteredExpenses.length}
-            />
-            {isAdmin && (
-              <Button
-                onClick={() => setModalOpen(true)}
-                size="sm"
-                className="h-8 px-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shrink-0 active:scale-95"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                Add Common
-              </Button>
+      {/* ── 3-Box Compact Metric Summary Strip ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        {/* Box 1: Total Common Bill */}
+        <div className="rounded-lg border border-border bg-card p-3 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
+              Total Flat Spend
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-foreground block mt-0.5 truncate">
+              {formatPaise(totalCommon)}
+            </span>
+            <span className="text-[11px] text-muted-foreground block mt-0.5 truncate">
+              {filteredExpenses.length} shared bill{filteredExpenses.length === 1 ? '' : 's'} recorded
+            </span>
+          </div>
+          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+            <Users className="h-4 w-4" />
+          </div>
+        </div>
+
+        {/* Box 2: Your Share */}
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-primary block truncate">
+              Your Share
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-primary block mt-0.5 truncate">
+              {formatPaise(myTotalShare)}
+            </span>
+            <span className="text-[11px] text-muted-foreground block mt-0.5 truncate">
+              Your portion across shared costs
+            </span>
+          </div>
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+            <User className="h-4 w-4" />
+          </div>
+        </div>
+
+        {/* Box 3: You Paid Out of Pocket */}
+        <div className="rounded-lg border border-border bg-card p-3 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
+              You Paid Directly
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-foreground block mt-0.5 truncate">
+              {formatPaise(myTotalPaid)}
+            </span>
+            <span
+              className={`text-[11px] font-semibold block mt-0.5 truncate ${
+                netCommonDiff > 0
+                  ? 'text-positive'
+                  : netCommonDiff < 0
+                  ? 'text-negative'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              {netCommonDiff > 0
+                ? `+${formatPaise(netCommonDiff)} owed back to you`
+                : netCommonDiff < 0
+                ? `${formatPaise(Math.abs(netCommonDiff))} to settle up`
+                : 'All square on common bills'}
+            </span>
+          </div>
+          <div
+            className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
+              netCommonDiff >= 0
+                ? 'bg-positive-soft text-positive'
+                : 'bg-negative-soft text-negative'
+            }`}
+          >
+            {netCommonDiff >= 0 ? (
+              <ArrowDownLeft className="h-4 w-4" />
+            ) : (
+              <ArrowUpRight className="h-4 w-4" />
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Date Filter & Actions Bar: Button in the SAME row as filter */}
+      <section aria-label="Date filter and actions" className="rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-xs space-y-2.5">
+        <div className="flex items-center justify-between gap-2.5">
+          <DateFilter
+            value={dateFilter}
+            onChange={setDateFilter}
+            totalRecords={expenses.length}
+            filteredCount={filteredExpenses.length}
+          />
+          {isAdmin && (
+            <Button
+              onClick={() => setModalOpen(true)}
+              size="sm"
+              className="h-8 px-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shrink-0 active:scale-95"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              Add Common
+            </Button>
+          )}
+        </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs sm:hidden">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -315,42 +471,82 @@ export function CommonExpensesPage({
       ) : (
         <div className="space-y-2.5">
           {paginatedExpenses.map((exp) => {
+            const isPaidByMe = exp.paid_by === user?.id;
             const myShare = exp.shares?.find((s: any) => s.user_id === user?.id)?.amount_paise;
+            const visual = getCommonExpenseVisual(exp.description);
+            const VisualIcon = visual.icon;
+            const recoveringAmount = exp.amount_paise - (myShare || 0);
 
             return (
               <Card
                 key={exp.id}
-                className="border-border bg-card overflow-hidden shadow-2xs"
+                className="border-border bg-card overflow-hidden shadow-2xs hover:border-border/90 transition-colors"
               >
-                <div className="p-2.5 sm:p-3 flex items-center justify-between gap-2.5 border-b border-border/60">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-foreground text-xs sm:text-sm truncate">{exp.description}</h3>
-                      <Badge variant="outline" className="border-border text-muted-foreground text-[10px] font-mono py-0 px-1.5 shrink-0">
-                        {exp.split_method === 'equal' ? 'Equal' : 'Custom'}
-                      </Badge>
+                <div className="p-2.5 sm:p-3.5 flex items-start sm:items-center justify-between gap-3 border-b border-border/60">
+                  <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                    {/* Category icon pill */}
+                    <div
+                      className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center shrink-0 border ${visual.color}`}
+                      title={visual.name}
+                    >
+                      <VisualIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate">
-                      <span>
-                        Paid by: <strong className="text-foreground">{exp.paid_by_name}</strong>
-                      </span>
-                      <span>&bull;</span>
-                      <span className="font-mono text-muted-foreground">{exp.expense_date}</span>
-                      {exp.notes && <span>&bull; {exp.notes}</span>}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <h3 className="font-bold text-foreground text-xs sm:text-sm tracking-tight truncate">
+                          {exp.description}
+                        </h3>
+                        <Badge
+                          variant="outline"
+                          className="border-border text-muted-foreground text-[10px] font-mono py-0 px-1.5 shrink-0"
+                        >
+                          {exp.split_method === 'equal'
+                            ? `Equal (${exp.shares?.length || 0})`
+                            : 'Custom Split'}
+                        </Badge>
+                      </div>
+
+                      <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 truncate">
+                        {isPaidByMe ? (
+                          <span className="font-semibold text-positive flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" /> You paid this bill
+                          </span>
+                        ) : (
+                          <span>
+                            Paid by <strong className="text-foreground">{exp.paid_by_name}</strong>
+                          </span>
+                        )}
+                        <span>&bull;</span>
+                        <span className="font-mono text-muted-foreground">{exp.expense_date}</span>
+                        {exp.notes && (
+                          <>
+                            <span className="hidden xs:inline">&bull;</span>
+                            <span className="hidden xs:inline truncate italic max-w-[220px]">
+                              {exp.notes}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     <div className="text-right">
                       <div className="text-xs sm:text-sm font-bold font-mono text-foreground">
                         {formatPaise(exp.amount_paise)}
                       </div>
-                      {myShare !== undefined && (
-                        <div className="text-[10px] text-muted-foreground font-mono">
-                          My share: <span className="font-bold text-foreground">{formatPaise(myShare)}</span>
+                      {isPaidByMe ? (
+                        <div className="text-[10px] font-semibold text-positive font-mono flex items-center justify-end gap-1">
+                          Receiving {formatPaise(recoveringAmount)}
                         </div>
-                      )}
+                      ) : myShare !== undefined ? (
+                        <div className="text-[10px] text-muted-foreground font-mono">
+                          Your share: <span className="font-bold text-foreground">{formatPaise(myShare)}</span>
+                        </div>
+                      ) : null}
                     </div>
+
                     {isAdmin && (
                       <button
                         type="button"
@@ -368,19 +564,64 @@ export function CommonExpensesPage({
                   </div>
                 </div>
 
-                {/* Shares breakdown if available */}
+                {/* Shares breakdown */}
                 {exp.shares && exp.shares.length > 0 && (
                   <div className="p-2 sm:p-2.5 bg-muted/20">
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
-                      {exp.shares.map((share: any) => (
-                        <div
-                          key={share.id || share.user_id}
-                          className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-md border border-border/60 bg-card text-[11px]"
-                        >
-                          <span className="font-medium text-foreground truncate">{share.user_name || share.username}</span>
-                          <span className="font-mono font-bold text-foreground text-xs shrink-0">{formatPaise(share.amount_paise)}</span>
-                        </div>
-                      ))}
+                      {exp.shares.map((share: any) => {
+                        const name = share.full_name || share.user_name || share.username || 'Flatmate';
+                        const isMe = share.user_id === user?.id;
+                        const isPayer = share.user_id === exp.paid_by;
+                        const initial = name.charAt(0).toUpperCase();
+
+                        return (
+                          <div
+                            key={share.id || share.user_id}
+                            className={`flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-md border text-xs transition-all ${
+                              isMe
+                                ? 'border-primary/50 bg-primary/10 shadow-2xs ring-1 ring-primary/20'
+                                : isPayer
+                                ? 'border-border/80 bg-card/90'
+                                : 'border-border/60 bg-card'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <span
+                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${
+                                  isMe
+                                    ? 'bg-primary text-primary-foreground'
+                                    : isPayer
+                                    ? 'bg-positive-soft text-positive border border-positive/30'
+                                    : 'bg-muted text-muted-foreground font-mono'
+                                }`}
+                              >
+                                {initial}
+                              </span>
+                              <div className="min-w-0 flex-1 flex items-center gap-1">
+                                <span
+                                  className={`truncate text-[11px] ${
+                                    isMe ? 'font-bold text-foreground' : 'font-medium text-foreground'
+                                  }`}
+                                >
+                                  {isMe ? 'You' : name}
+                                </span>
+                                {isPayer && (
+                                  <span className="text-[8px] font-mono uppercase px-1 py-0 rounded bg-muted text-muted-foreground font-semibold shrink-0">
+                                    Payer
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span
+                              className={`font-mono text-xs shrink-0 ${
+                                isMe ? 'font-bold text-primary' : 'font-semibold text-foreground'
+                              }`}
+                            >
+                              {formatPaise(share.amount_paise)}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

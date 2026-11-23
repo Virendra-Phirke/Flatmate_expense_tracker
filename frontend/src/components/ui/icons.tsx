@@ -133,4 +133,9 @@ export const Cpu = createFlaticon('microchip');
 export const Server = createFlaticon('server');
 export const FileSpreadsheet = createFlaticon('file-spreadsheet');
 export const Terminal = createFlaticon('terminal');
+export const Flame = createFlaticon('flame');
+export const Zap = createFlaticon('bolt');
+export const Droplet = createFlaticon('raindrops');
+export const Utensils = createFlaticon('utensils');
+export const Wifi = createFlaticon('wifi');
 
