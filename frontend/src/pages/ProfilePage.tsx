@@ -130,54 +130,54 @@ export function ProfilePage() {
   }
 
   return (
-    <main className="space-y-5 sm:space-y-6 max-w-4xl">
+    <main className="space-y-3 sm:space-y-4 max-w-4xl">
       {/* Header */}
-      <header className="border-b border-border/80 pb-3 sm:pb-4">
-        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Profile & Security</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+      <header className="border-b border-border/70 pb-1.5">
+        <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight truncate">Profile & Security</h1>
+        <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
           Manage your UPI receiving details and account settings
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 xs:gap-5 sm:gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
         {/* Left Column: Account Details & Security */}
-        <div className="space-y-6 lg:col-span-1">
+        <div className="space-y-3 sm:space-y-4 lg:col-span-1">
           {/* User Card */}
-          <Card className="border-border bg-card">
-            <CardHeader className="p-5 pb-3">
+          <Card className="border-border bg-card shadow-2xs">
+            <CardHeader className="p-3 sm:p-4 pb-2">
               <div className="flex items-center space-x-3">
-                <div className="h-12 w-12 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-lg font-bold text-primary">
+                <div className="h-10 w-10 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-base font-bold text-primary">
                   {user?.fullName?.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <CardTitle className="text-base font-bold text-foreground">
+                <div className="min-w-0">
+                  <CardTitle className="text-sm font-bold text-foreground truncate">
                     {user?.fullName}
                   </CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground">
+                  <CardDescription className="text-xs text-muted-foreground truncate">
                     @{user?.username}
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-5 pt-2 space-y-3">
-              <div className="text-xs flex items-center justify-between border-b border-border pb-2">
+            <CardContent className="p-3 sm:p-4 pt-1 space-y-2">
+              <div className="text-xs flex items-center justify-between border-b border-border pb-1.5">
                 <span className="text-muted-foreground">Household:</span>
-                <span className="font-semibold text-foreground">{user?.householdName}</span>
+                <span className="font-semibold text-foreground truncate max-w-[140px]">{user?.householdName}</span>
               </div>
-              <div className="text-xs flex items-center justify-between border-b border-border pb-2">
+              <div className="text-xs flex items-center justify-between border-b border-border pb-1.5">
                 <span className="text-muted-foreground">Role:</span>
-                <Badge variant="outline" className="text-xs border-border text-foreground uppercase font-mono font-medium">
+                <Badge variant="outline" className="text-[10px] border-border text-foreground uppercase font-mono py-0 px-1.5">
                   {user?.role}
                 </Badge>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-1">
                 <Button
                   variant="outline"
                   onClick={() => setPasswordModalOpen(true)}
-                  className="w-full min-h-11 border-border text-foreground hover:bg-muted text-xs sm:text-sm"
+                  className="w-full h-8 border-border text-foreground hover:bg-muted text-xs font-semibold active:scale-95"
                 >
-                  <Key className="h-3.5 w-3.5 mr-1.5" />
+                  <Key className="h-3 w-3 mr-1" />
                   Change Password
                 </Button>
               </div>
@@ -270,12 +270,12 @@ export function ProfilePage() {
         </div>
 
         {/* Right Column: Theme & UPI Settings */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-3 sm:space-y-4 lg:col-span-2">
           {/* Theme & Palette Selection Card */}
-          <Card className="border-border bg-card">
-            <CardHeader className="p-4 xs:p-5 pb-3 border-b border-border">
+          <Card className="border-border bg-card shadow-2xs">
+            <CardHeader className="p-3 sm:p-4 pb-2 border-b border-border">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                <CardTitle className="text-sm font-bold text-foreground flex items-center gap-1.5">
                   <Palette className="h-4 w-4 text-primary" />
                   App Color Scheme
                 </CardTitle>
@@ -284,27 +284,27 @@ export function ProfilePage() {
                   variant="outline"
                   size="sm"
                   onClick={toggleDark}
-                  className="h-8 gap-1.5 text-xs font-medium"
+                  className="h-7 px-2 gap-1 text-xs font-medium"
                 >
                   {isDark ? (
                     <>
-                      <Sun className="h-3.5 w-3.5 text-pending" />
-                      <span>Light mode</span>
+                      <Sun className="h-3 w-3 text-pending" />
+                      <span>Light</span>
                     </>
                   ) : (
                     <>
-                      <Moon className="h-3.5 w-3.5 text-primary" />
-                      <span>Dark mode</span>
+                      <Moon className="h-3 w-3 text-primary" />
+                      <span>Dark</span>
                     </>
                   )}
                 </Button>
               </div>
-              <CardDescription className="text-xs text-muted-foreground mt-1">
-                Choose from 6 curated palettes. Changes apply instantly across the entire interface.
+              <CardDescription className="text-[11px] text-muted-foreground mt-0.5">
+                Choose from 6 curated executive palettes.
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-3 xs:p-4 sm:p-5">
-              <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2.5">
+            <CardContent className="p-2.5 sm:p-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2">
                 {THEME_PALETTES.map((p) => {
                   const isSelected = palette === p.id;
                   return (
@@ -312,33 +312,33 @@ export function ProfilePage() {
                       key={p.id}
                       type="button"
                       onClick={() => setPalette(p.id)}
-                      className={`relative flex flex-col p-3 rounded-lg border text-left transition-[color,background-color,border-color,box-shadow] duration-100 ease-out ${
+                      className={`relative flex flex-col p-2.5 rounded-lg border text-left transition-all ${
                         isSelected
-                          ? 'border-primary ring-2 ring-primary/30 bg-accent/30'
-                          : 'border-border bg-card hover:border-primary/40 hover:bg-muted/40'
+                          ? 'border-primary ring-2 ring-primary/25 bg-primary/5 shadow-2xs'
+                          : 'border-border bg-card hover:border-primary/40 hover:bg-muted/30'
                       }`}
                     >
                       {isSelected && (
-                        <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs shadow-xs">
-                          <Check className="h-3 w-3 stroke-[3]" />
+                        <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] shadow-2xs">
+                          <Check className="h-2.5 w-2.5 stroke-[3]" />
                         </span>
                       )}
-                      <div className="flex items-center gap-1.5 mb-2">
+                      <div className="flex items-center gap-1 mb-1.5">
                         <span
-                          className="h-5 w-5 rounded-md border border-black/10 shrink-0"
+                          className="h-3.5 w-3.5 rounded-full border border-black/10 shrink-0"
                           style={{ backgroundColor: p.primaryHex }}
                         />
                         <span
-                          className="h-5 w-5 rounded-md border border-black/10 shrink-0"
+                          className="h-3.5 w-3.5 rounded-full border border-black/10 shrink-0"
                           style={{ backgroundColor: p.accentHex }}
                         />
                         <span
-                          className="h-5 w-5 rounded-md border border-black/10 shrink-0"
+                          className="h-3.5 w-3.5 rounded-full border border-black/10 shrink-0"
                           style={{ backgroundColor: p.bgHex }}
                         />
                       </div>
                       <span className="text-xs font-bold text-foreground truncate">{p.name}</span>
-                      <span className="text-xs text-muted-foreground truncate">{p.category}</span>
+                      <span className="text-[10px] text-muted-foreground truncate">{p.category}</span>
                     </button>
                   );
                 })}
@@ -346,18 +346,18 @@ export function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border bg-card">
-            <CardHeader className="p-5 pb-3 border-b border-border">
-              <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+          <Card className="border-border bg-card shadow-2xs">
+            <CardHeader className="p-3 sm:p-4 pb-2 border-b border-border">
+              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <QrCode className="h-4 w-4 text-primary" />
                 Receiving UPI Details
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                When flatmates settle debts with you, your personal UPI ID and dynamic QR code will appear
+              <CardDescription className="text-[11px] text-muted-foreground">
+                Your UPI ID and QR code used when flatmates settle with you
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="p-5 space-y-5">
+            <CardContent className="p-3 sm:p-4 space-y-3">
               {upiMsg && (
                 <div
                   className={`rounded-lg border p-3.5 text-xs flex items-start space-x-2.5 ${

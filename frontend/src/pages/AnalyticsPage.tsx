@@ -145,24 +145,24 @@ export function AnalyticsPage() {
     selectedCategory !== 'all_categories';
 
   return (
-    <main className="space-y-5 sm:space-y-6">
+    <main className="space-y-3 sm:space-y-4">
       {/* ── Semantic Editorial Header ── */}
-      <header className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 border-b border-border/80 pb-3 sm:pb-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-foreground">
+      <header className="flex items-center justify-between gap-2 border-b border-border/70 pb-1.5">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">
             Expense Analytics
           </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Household shared bills, personal costs, and flatmate advances in one ledger.
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+            Household shared bills, personal costs & advances
           </p>
         </div>
 
         {/* Actions Dropdown & Live Indicator */}
-        <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {isFetching && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground">
-              <RefreshCw className="h-3 w-3 animate-spin text-primary" />
-              Updating
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
+              <RefreshCw className="h-2.5 w-2.5 animate-spin text-primary" />
+              <span className="hidden xs:inline">Updating</span>
             </span>
           )}
           <AnalyticsActionsMenu
@@ -179,7 +179,7 @@ export function AnalyticsPage() {
       {/* ── Multi-Dimensional Filter Controls ───────────────── */}
       <section
         aria-label="Expense filter controls"
-        className="space-y-3 rounded-lg border border-border bg-card p-3 sm:p-4 shadow-xs"
+        className="space-y-2 rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-2xs"
       >
         {/* Date Filter Bar */}
         <div>

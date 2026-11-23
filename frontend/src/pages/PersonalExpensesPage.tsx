@@ -238,9 +238,9 @@ export function PersonalExpensesPage({
             <Button
               onClick={() => setModalOpen(true)}
               size="sm"
-              className="min-h-10 text-xs sm:text-sm font-semibold shrink-0"
+              className="h-8 text-xs font-semibold shrink-0 px-2.5 active:scale-95"
             >
-              <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+              <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
               Add Expense
             </Button>
           </div>
@@ -327,52 +327,49 @@ export function PersonalExpensesPage({
       ) : (
         <>
           {/* Mobile Card List */}
-          <div className="md:hidden space-y-2.5">
+          <div className="md:hidden space-y-1.5">
             {paginatedExpenses.map((exp) => (
               <div
                 key={exp.id}
-                className="rounded-lg border border-border bg-card p-3 min-[360px]:p-4 space-y-2"
+                className="rounded-lg border border-border bg-card p-2.5 space-y-1.5 shadow-2xs"
               >
-                <div className="flex items-start justify-between gap-2.5">
+                <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-foreground truncate">{exp.description}</div>
-                    <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5 mt-0.5">
+                    <div className="text-xs sm:text-sm font-bold text-foreground truncate">{exp.description}</div>
+                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
                       <span className="font-mono">{exp.expense_date}</span>
                       {exp.category_name && (
                         <>
                           <span>&bull;</span>
-                          <span className="text-primary truncate">{exp.category_name}</span>
+                          <span className="text-primary truncate font-medium">{exp.category_name}</span>
                         </>
                       )}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-sm min-[360px]:text-base font-bold font-mono text-foreground tabular-nums">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs sm:text-sm font-bold font-mono text-foreground tabular-nums">
                       {formatPaise(exp.amount_paise)}
-                    </div>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm('Delete this expense?')) {
+                          deleteMutation.mutate(exp.id);
+                        }
+                      }}
+                      className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-negative active:scale-95 transition-all rounded hover:bg-muted"
+                      title="Delete expense"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
 
                 {exp.notes && (
-                  <div className="text-xs text-muted-foreground italic bg-muted/40 p-2 rounded border border-border">
+                  <div className="text-[11px] text-muted-foreground italic bg-muted/30 px-2 py-1 rounded border border-border/50">
                     {exp.notes}
                   </div>
                 )}
-
-                <div className="flex justify-end pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (confirm('Delete this expense?')) {
-                        deleteMutation.mutate(exp.id);
-                      }
-                    }}
-                    className="min-h-10 px-2 text-xs font-semibold text-negative hover:underline flex items-center gap-1 active:scale-95 transition-transform"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete
-                  </button>
-                </div>
               </div>
             ))}
           </div>

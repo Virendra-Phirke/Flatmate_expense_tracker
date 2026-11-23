@@ -311,9 +311,9 @@ export function PurchasesMadePage({
             <Button
               onClick={() => setModalOpen(true)}
               size="sm"
-              className="min-h-10 text-xs sm:text-sm font-semibold shrink-0"
+              className="h-8 px-2.5 text-xs font-semibold shrink-0 active:scale-95"
             >
-              <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+              <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
               New purchase
             </Button>
           </div>
@@ -398,7 +398,7 @@ export function PurchasesMadePage({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {paginatedPurchases.map((purchase) => {
             const isSettled =
               Number(purchase.confirmed_paid_paise || 0) >= Number(purchase.amount_paise || 0) &&
@@ -407,37 +407,37 @@ export function PurchasesMadePage({
             return (
               <Card
                 key={purchase.id}
-                className="overflow-hidden"
+                className="overflow-hidden border-border bg-card shadow-2xs"
               >
-                <div className="p-3.5 min-[360px]:p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-foreground text-sm min-[360px]:text-base">
+                <div className="p-2.5 sm:p-3 flex items-center justify-between gap-2.5 border-b border-border/60">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-foreground text-xs sm:text-sm truncate">
                         {purchase.description}
                       </h3>
                       {isSettled ? (
-                        <Badge variant="pos" className="text-xs font-mono">
-                          Fully Settled
+                        <Badge variant="pos" className="text-[10px] font-mono py-0 px-1.5 shrink-0">
+                          Settled
                         </Badge>
                       ) : (
-                        <Badge variant="warn" className="text-xs font-mono">
-                          Pending Repayment
+                        <Badge variant="warn" className="text-[10px] font-mono py-0 px-1.5 shrink-0">
+                          Due
                         </Badge>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      Date: <span className="font-mono text-foreground">{purchase.expense_date}</span>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                      <span className="font-mono">{purchase.expense_date}</span>
                       {purchase.notes && <span> &bull; {purchase.notes}</span>}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-3 min-[360px]:gap-4">
-                    <div className="text-left sm:text-right">
-                      <div className="text-base min-[360px]:text-lg font-bold font-mono text-foreground">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <div className="text-xs sm:text-sm font-bold font-mono text-foreground">
                         {formatPaise(purchase.amount_paise)}
                       </div>
-                      <div className="text-xs text-muted-foreground font-mono">
-                        Received: {formatPaise(purchase.confirmed_paid_paise || 0)}
+                      <div className="text-[10px] text-muted-foreground font-mono">
+                        Rec: {formatPaise(purchase.confirmed_paid_paise || 0)}
                       </div>
                     </div>
                     <button
@@ -448,34 +448,31 @@ export function PurchasesMadePage({
                         }
                       }}
                       title="Delete purchase"
-                      className="min-h-10 min-w-10 inline-flex items-center justify-center text-muted-foreground hover:text-negative transition-colors rounded-lg active:scale-95"
+                      className="h-7 w-7 inline-flex items-center justify-center text-muted-foreground hover:text-negative transition-colors rounded active:scale-95"
                     >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
 
                 {/* Itemized Line Items */}
-                <div className="p-3 min-[360px]:p-4 bg-muted/30">
-                  <div className="text-xs uppercase tracking-wide font-semibold text-muted-foreground mb-2">
-                    Itemized Breakdown
-                  </div>
-                  <div className={`grid gap-2 ${purchase.items.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'}`}>
+                <div className="p-2 sm:p-2.5 bg-muted/20">
+                  <div className={`grid gap-1.5 ${purchase.items.length === 1 ? 'grid-cols-1 max-w-md' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'}`}>
                     {purchase.items.map((item) => (
                       <div
                         key={item.id}
-                        className="p-2.5 min-[360px]:p-3 rounded-lg border border-border bg-card flex items-center justify-between text-xs"
+                        className="px-2.5 py-1.5 rounded-md border border-border/60 bg-card flex items-center justify-between text-xs"
                       >
                         <div className="truncate mr-2 min-w-0">
-                          <div className="font-medium text-foreground truncate">
+                          <div className="font-medium text-foreground truncate text-[11px]">
                             {item.description}
                           </div>
-                          <div className="text-xs text-primary flex items-center gap-1 mt-0.5 truncate font-medium">
-                            <User className="h-3 w-3 shrink-0" aria-hidden="true" />
+                          <div className="text-[10px] text-primary flex items-center gap-1 truncate font-medium">
+                            <User className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
                             <span className="truncate">{item.beneficiary_name}</span>
                           </div>
                         </div>
-                        <div className="font-mono font-bold text-foreground shrink-0">
+                        <div className="font-mono font-bold text-foreground text-xs shrink-0">
                           {formatPaise(item.amount_paise)}
                         </div>
                       </div>

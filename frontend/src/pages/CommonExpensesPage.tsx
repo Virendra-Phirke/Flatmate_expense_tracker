@@ -202,31 +202,31 @@ export function CommonExpensesPage({
   const isFilterActive = dateFilter.mode !== 'all';
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-3 sm:space-y-4">
       {/* Page Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-3 sm:pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Common Expenses</h1>
-            <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
-              {isFilterActive ? `${filteredExpenses.length} of ${expenses.length} records` : `${expenses.length} records`}
+      <header className="flex items-center justify-between gap-2 border-b border-border/70 pb-1.5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight truncate">Common Expenses</h1>
+            <Badge variant="outline" className="border-border text-muted-foreground font-mono text-[10px] py-0 px-1.5">
+              {isFilterActive ? `${filteredExpenses.length} of ${expenses.length}` : `${expenses.length}`}
             </Badge>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
             Shared flat costs split among flatmates (Wi-Fi, maid, cook, utilities)
           </p>
         </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-xs uppercase font-semibold tracking-wider text-muted-foreground">
-                {isFilterActive ? 'Filtered Common' : 'Total Common'}
-              </div>
-              <div className="text-lg font-bold font-mono text-foreground">
-                {formatPaise(totalCommon)}
-              </div>
-            </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="text-right">
+            <span className="text-[10px] uppercase font-mono font-semibold text-muted-foreground block">
+              Total
+            </span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-foreground block">
+              {formatPaise(totalCommon)}
+            </span>
           </div>
-        </header>
+        </div>
+      </header>
 
         {/* Date Filter & Actions Bar: Button in the SAME row as filter */}
         <section aria-label="Date filter and actions" className="rounded-lg border border-border bg-card p-2.5 sm:p-3 shadow-xs space-y-2.5">
@@ -241,10 +241,10 @@ export function CommonExpensesPage({
               <Button
                 onClick={() => setModalOpen(true)}
                 size="sm"
-                className="min-h-10 bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm font-semibold shrink-0"
+                className="h-8 px-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold shrink-0 active:scale-95"
               >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add Common Expense
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Add Common
               </Button>
             )}
           </div>
@@ -313,24 +313,24 @@ export function CommonExpensesPage({
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {paginatedExpenses.map((exp) => {
             const myShare = exp.shares?.find((s: any) => s.user_id === user?.id)?.amount_paise;
 
             return (
               <Card
                 key={exp.id}
-                className="border-border bg-card overflow-hidden"
+                className="border-border bg-card overflow-hidden shadow-2xs"
               >
-                <div className="p-3.5 min-[360px]:p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-foreground text-sm min-[360px]:text-base">{exp.description}</h3>
-                      <Badge variant="outline" className="border-border text-muted-foreground text-xs font-mono">
-                        {exp.split_method === 'equal' ? 'Equal Split' : 'Custom Split'}
+                <div className="p-2.5 sm:p-3 flex items-center justify-between gap-2.5 border-b border-border/60">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-foreground text-xs sm:text-sm truncate">{exp.description}</h3>
+                      <Badge variant="outline" className="border-border text-muted-foreground text-[10px] font-mono py-0 px-1.5 shrink-0">
+                        {exp.split_method === 'equal' ? 'Equal' : 'Custom'}
                       </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5">
+                    <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate">
                       <span>
                         Paid by: <strong className="text-foreground">{exp.paid_by_name}</strong>
                       </span>
@@ -340,17 +340,14 @@ export function CommonExpensesPage({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-3 min-[360px]:gap-4">
-                    <div className="text-left sm:text-right">
-                      <div className="text-sm min-[360px]:text-base font-semibold font-mono text-foreground">
-                        Total: {formatPaise(exp.amount_paise)}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <div className="text-xs sm:text-sm font-bold font-mono text-foreground">
+                        {formatPaise(exp.amount_paise)}
                       </div>
                       {myShare !== undefined && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          My share:{' '}
-                          <span className="font-mono font-bold text-foreground">
-                            {formatPaise(myShare)}
-                          </span>
+                        <div className="text-[10px] text-muted-foreground font-mono">
+                          My share: <span className="font-bold text-foreground">{formatPaise(myShare)}</span>
                         </div>
                       )}
                     </div>
@@ -363,9 +360,9 @@ export function CommonExpensesPage({
                           }
                         }}
                         title="Delete expense"
-                        className="min-h-10 min-w-10 flex items-center justify-center text-muted-foreground hover:text-negative transition-colors rounded-lg active:scale-95"
+                        className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-negative transition-colors rounded active:scale-95"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
@@ -373,29 +370,15 @@ export function CommonExpensesPage({
 
                 {/* Shares breakdown if available */}
                 {exp.shares && exp.shares.length > 0 && (
-                  <div className="p-4 bg-surface-subtle/50">
-                    <div className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-2">
-                      Participant Allocations
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                      {exp.shares.map((sh) => (
+                  <div className="p-2 sm:p-2.5 bg-muted/20">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5">
+                      {exp.shares.map((share: any) => (
                         <div
-                          key={sh.id}
-                          className={`p-2.5 rounded-lg border text-xs ${
-                            sh.user_id === user?.id
-                              ? 'border-primary/40 bg-brand-soft/40'
-                              : 'border-border bg-card'
-                          }`}
+                          key={share.id || share.user_id}
+                          className="flex items-center justify-between gap-1.5 px-2 py-1 rounded-md border border-border/60 bg-card text-[11px]"
                         >
-                          <div className="font-medium text-foreground truncate flex items-center justify-between">
-                            <span>{sh.full_name}</span>
-                            {sh.user_id === user?.id && (
-                              <span className="text-xs text-primary uppercase font-bold">You</span>
-                            )}
-                          </div>
-                          <div className="font-mono font-bold text-foreground mt-0.5">
-                            {formatPaise(sh.amount_paise)}
-                          </div>
+                          <span className="font-medium text-foreground truncate">{share.user_name || share.username}</span>
+                          <span className="font-mono font-bold text-foreground text-xs shrink-0">{formatPaise(share.amount_paise)}</span>
                         </div>
                       ))}
                     </div>

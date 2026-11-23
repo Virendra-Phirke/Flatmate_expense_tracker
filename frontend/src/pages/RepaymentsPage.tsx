@@ -205,46 +205,47 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
   }, [filteredSettlements, currentPage, PAGE_SIZE]);
 
   return (
-    <main className="space-y-6">
+    <main className="space-y-3 sm:space-y-4">
       {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/80 pb-3 sm:pb-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Repayments & Claims</h1>
-            <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
-              {settlements.length} total
+      <header className="flex items-center justify-between gap-2 border-b border-border/70 pb-1.5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight truncate">Repayments & Claims</h1>
+            <Badge variant="outline" className="border-border text-muted-foreground font-mono text-[10px] py-0 px-1.5">
+              {settlements.length}
             </Badge>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Initiate UPI settlements and verify payment claims
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+            UPI settlements & payment verification claims
           </p>
         </div>
         <Button
+          size="sm"
           onClick={() => {
             setFormError(null);
             setModalOpen(true);
           }}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs sm:text-sm self-start sm:self-auto"
+          className="h-7.5 px-2.5 text-xs font-semibold shrink-0 active:scale-95"
         >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Settle / Pay Flatmate
+          <Plus className="h-3 w-3 mr-1" />
+          <span>Settle Up</span>
         </Button>
       </header>
 
-      {/* Segmented Control per Section 10.9 */}
-      <div className="grid grid-cols-4 w-full sm:max-w-md p-1 bg-surface-subtle border border-border rounded-lg gap-0.5">
+      {/* Compact Segmented Control */}
+      <div className="grid grid-cols-4 w-full sm:max-w-md p-0.5 bg-muted/50 border border-border rounded-lg gap-0.5">
         <button
           type="button"
           onClick={() => setRepaymentTab('needs_action')}
-          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 min-h-[38px] touch-manipulation active:scale-[0.98] ${
+          className={`py-1 px-1 sm:px-2 rounded-md text-xs font-semibold transition-all flex items-center justify-center gap-1 min-h-[30px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'needs_action'
-              ? 'bg-card text-foreground shadow-xs font-bold'
+              ? 'bg-card text-foreground shadow-2xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          <span className="truncate">Needs action</span>
+          <span className="truncate">Action</span>
           {incomingPending.length > 0 && (
-            <span className="h-4.5 min-w-[18px] px-1 rounded-full bg-pending text-white font-mono text-xs font-bold flex items-center justify-center shrink-0">
+            <span className="h-4 min-w-[16px] px-1 rounded-full bg-pending text-white font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
               {incomingPending.length}
             </span>
           )}
@@ -252,15 +253,15 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('pending')}
-          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out flex items-center justify-center gap-1 min-h-[38px] touch-manipulation active:scale-[0.98] ${
+          className={`py-1 px-1 sm:px-2 rounded-md text-xs font-semibold transition-all flex items-center justify-center gap-1 min-h-[30px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'pending'
-              ? 'bg-card text-foreground shadow-xs font-bold'
+              ? 'bg-card text-foreground shadow-2xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
           <span className="truncate">Pending</span>
           {outgoingPending.length > 0 && (
-            <span className="h-4.5 min-w-[18px] px-1 rounded-full bg-surface-subtle text-muted-foreground font-mono text-xs font-bold border border-border flex items-center justify-center shrink-0">
+            <span className="h-4 min-w-[16px] px-1 rounded-full bg-surface-subtle text-muted-foreground font-mono text-[10px] font-bold border border-border flex items-center justify-center shrink-0">
               {outgoingPending.length}
             </span>
           )}
@@ -268,9 +269,9 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('history')}
-          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate min-h-[38px] touch-manipulation active:scale-[0.98] ${
+          className={`py-1 px-1 sm:px-2 rounded-md text-xs font-semibold transition-all text-center truncate min-h-[30px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'history'
-              ? 'bg-card text-foreground shadow-xs font-bold'
+              ? 'bg-card text-foreground shadow-2xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -279,9 +280,9 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         <button
           type="button"
           onClick={() => setRepaymentTab('all')}
-          className={`py-2 px-1.5 sm:px-3 rounded-md text-xs font-semibold transition-[color,background-color,box-shadow] duration-100 ease-out text-center truncate min-h-[38px] touch-manipulation active:scale-[0.98] ${
+          className={`py-1 px-1 sm:px-2 rounded-md text-xs font-semibold transition-all text-center truncate min-h-[30px] touch-manipulation active:scale-[0.98] ${
             repaymentTab === 'all'
-              ? 'bg-card text-foreground shadow-xs font-bold'
+              ? 'bg-card text-foreground shadow-2xs font-bold'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -290,10 +291,10 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
       </div>
 
       {/* ── Settlement Cards / List ──────────────────────────────────────────────── */}
-      <Card className="border-border bg-card overflow-hidden">
-        <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border">
-          <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-            <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+      <Card className="border-border bg-card overflow-hidden shadow-2xs">
+        <CardHeader className="px-3 py-2 border-b border-border/60">
+          <CardTitle className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground" />
             {repaymentTab === 'needs_action'
               ? 'Claims Requiring Your Confirmation'
               : repaymentTab === 'pending'
@@ -325,12 +326,12 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                   return (
                     <div
                       key={s.id}
-                      className={`p-3 min-[360px]:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+                      className={`p-2.5 sm:p-3 flex items-center justify-between gap-2.5 transition-colors ${
                         isActionRequired ? 'bg-pending-soft/30' : 'hover:bg-muted/30'
                       }`}
                     >
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-foreground">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs sm:text-sm font-bold text-foreground truncate">
                           {isPayer ? (
                             <>
                               You paid <strong className="text-foreground">{s.recipient_name}</strong>
@@ -341,8 +342,8 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                             </>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
-                          <span className="font-mono text-muted-foreground">
+                        <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate">
+                          <span className="font-mono">
                             {new Date(s.claimed_at || s.created_at).toLocaleDateString()}
                           </span>
                           <span>&bull;</span>
@@ -350,41 +351,35 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                           {s.transaction_reference && (
                             <>
                               <span>&bull;</span>
-                              <span className="truncate max-w-[160px]">Ref: {s.transaction_reference}</span>
-                            </>
-                          )}
-                          {s.note && (
-                            <>
-                              <span>&bull;</span>
-                              <span className="truncate max-w-[160px]">{s.note}</span>
+                              <span className="truncate max-w-[120px]">Ref: {s.transaction_reference}</span>
                             </>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:justify-end gap-2.5">
-                        <div className="flex items-center justify-between sm:justify-end gap-2.5">
-                          <div className="font-mono font-bold text-sm text-foreground">
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="text-right">
+                          <div className="font-mono font-bold text-xs sm:text-sm text-foreground">
                             {formatPaise(s.amount_paise)}
                           </div>
                           <div>
                             {s.status === 'confirmed' && (
-                              <Badge className="bg-positive-soft text-positive border-positive/30 text-xs font-mono">
+                              <Badge className="bg-positive-soft text-positive border-positive/30 text-[10px] font-mono py-0 px-1.5">
                                 Confirmed
                               </Badge>
                             )}
                             {s.status === 'verification_pending' && !isActionRequired && (
-                              <Badge className="bg-pending-soft text-pending border-pending/30 text-xs font-mono">
+                              <Badge className="bg-pending-soft text-pending border-pending/30 text-[10px] font-mono py-0 px-1.5">
                                 Pending
                               </Badge>
                             )}
                             {s.status === 'rejected' && (
-                              <Badge className="bg-negative-soft text-negative border-negative/30 text-xs font-mono">
+                              <Badge className="bg-negative-soft text-negative border-negative/30 text-[10px] font-mono py-0 px-1.5">
                                 Rejected
                               </Badge>
                             )}
                             {s.status === 'cancelled' && (
-                              <Badge className="bg-muted text-muted-foreground border-border text-xs font-mono">
+                              <Badge className="bg-muted text-muted-foreground border-border text-[10px] font-mono py-0 px-1.5">
                                 Cancelled
                               </Badge>
                             )}
@@ -392,7 +387,7 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                         </div>
 
                         {isActionRequired && (
-                          <div className="flex items-center gap-2 pt-1 sm:pt-0">
+                          <div className="flex items-center gap-1.5">
                             <Button
                               size="sm"
                               variant="outline"
@@ -402,9 +397,9 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                                 }
                               }}
                               disabled={rejectMutation.isPending}
-                              className="flex-1 sm:flex-none text-xs min-h-10 border-border text-foreground hover:bg-muted active:scale-95"
+                              className="h-7 px-2 text-[11px] border-border text-foreground hover:bg-muted active:scale-95"
                             >
-                              <XCircle className="h-3.5 w-3.5 mr-1 text-negative" />
+                              <XCircle className="h-3 w-3 mr-1 text-negative" />
                               Reject
                             </Button>
                             <Button
@@ -415,16 +410,16 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                                 }
                               }}
                               disabled={confirmMutation.isPending}
-                              className="flex-1 sm:flex-none text-xs min-h-10 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold active:scale-95"
+                              className="h-7 px-2 bg-primary hover:bg-primary/90 text-primary-foreground text-[11px] font-semibold active:scale-95"
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
                               Confirm
                             </Button>
                           </div>
                         )}
 
                         {isPayer && s.status === 'verification_pending' && (
-                          <div className="flex items-center gap-2 pt-1 sm:pt-0">
+                          <div className="flex items-center gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -434,9 +429,9 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                                 }
                               }}
                               disabled={cancelMutation.isPending}
-                              className="flex-1 sm:flex-none text-xs min-h-9 border-border text-muted-foreground hover:text-negative hover:border-negative/30 hover:bg-negative-soft/40 active:scale-95"
+                              className="h-7 px-2 text-[11px] border-border text-muted-foreground hover:text-negative hover:border-negative/30 hover:bg-negative-soft/40 active:scale-95"
                             >
-                              <XCircle className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                              <XCircle className="h-3 w-3 mr-1 text-muted-foreground" />
                               Cancel Claim
                             </Button>
                           </div>

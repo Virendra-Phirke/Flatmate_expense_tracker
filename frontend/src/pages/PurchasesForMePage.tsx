@@ -35,91 +35,96 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
   const paginatedPurchases = purchases.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
-    <main className="space-y-5 sm:space-y-6">
-      {/* ── Header ──────────────────────────────────────── */}
-      <header className="flex flex-col gap-2 border-b border-border/80 pb-3 sm:pb-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-foreground tracking-tight">Bought for Me</h1>
-            <Badge variant="outline" className="font-mono text-xs">
-              {purchases.length} {purchases.length === 1 ? 'item' : 'items'}
+    <main className="space-y-3 sm:space-y-4">
+      {/* ── Compact Header ──────────────────────────────── */}
+      <header className="flex items-center justify-between gap-2 border-b border-border/70 pb-1.5">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight truncate">Bought for Me</h1>
+            <Badge variant="outline" className="font-mono text-[10px] py-0 px-1.5">
+              {purchases.length}
             </Badge>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Items your flatmates paid for on your behalf
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+            Items flatmates paid for on your behalf
           </p>
         </div>
+        {totalOwed > 0 && (
+          <Button onClick={onNavigateToRepayments} size="sm" className="h-7.5 px-2.5 text-xs font-semibold shrink-0 active:scale-95">
+            <span>Settle Up</span>
+            <ArrowRight className="h-3 w-3 ml-1" aria-hidden="true" />
+          </Button>
+        )}
       </header>
 
-      {/* Summary + CTA row */}
+      {/* Summary Alert Pill */}
       {totalOwed > 0 && (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-negative-soft px-3 xs:px-4 py-2.5 xs:py-3">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Total outstanding</p>
-            <p className="amount-display text-base xs:text-lg font-bold text-negative">{formatPaise(totalOwed)}</p>
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-negative-soft/60 border border-negative/20 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Total Due:</span>
+            <span className="font-mono text-sm font-bold text-negative">{formatPaise(totalOwed)}</span>
           </div>
-          <Button onClick={onNavigateToRepayments} className="h-9 xs:h-10 text-xs xs:text-sm font-semibold shrink-0">
-            Settle up
-            <ArrowRight className="h-3.5 w-3.5 ml-1" aria-hidden="true" />
-          </Button>
+          <span className="text-[10px] text-muted-foreground">Unrepaid balance</span>
         </div>
       )}
 
       {isLoading && purchases.length === 0 ? (
         <ResponsiveTableSkeleton rows={5} mobileCards={3} />
       ) : purchases.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-10 xs:py-12 text-center">
-            <Gift className="h-10 w-10 xs:h-12 xs:w-12 text-muted-foreground mb-3" aria-hidden="true" />
-            <h3 className="text-sm font-semibold">No purchases bought for you</h3>
-            <p className="text-xs text-muted-foreground max-w-xs mt-1">
+        <Card className="border-border bg-card">
+          <CardContent className="flex flex-col items-center py-8 text-center">
+            <Gift className="h-8 w-8 text-muted-foreground mb-2" aria-hidden="true" />
+            <h3 className="text-xs font-semibold text-foreground">No purchases bought for you</h3>
+            <p className="text-[11px] text-muted-foreground max-w-xs mt-0.5">
               When flatmates buy items or groceries for you, they'll appear here.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3 xs:space-y-4">
+        <div className="space-y-2 sm:space-y-2.5">
           {paginatedPurchases.map((purchase) => {
             const outstanding = Math.max(0, Number(purchase.my_total_paise || 0) - Number(purchase.my_confirmed_paise || 0));
             const isSettled = outstanding === 0;
 
             return (
-              <Card key={purchase.id} className="overflow-hidden">
+              <Card key={purchase.id} className="overflow-hidden border-border bg-card shadow-2xs">
                 {/* Purchase header */}
-                <div className="p-3 xs:p-4 border-b border-border">
-                  <div className="flex items-start justify-between gap-2">
+                <div className="p-2.5 sm:p-3 border-b border-border/60">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <h3 className="font-semibold text-sm text-foreground">{purchase.description}</h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-bold text-xs sm:text-sm text-foreground truncate">{purchase.description}</h3>
                         {isSettled ? (
-                          <Badge variant="pos" className="text-xs font-mono font-medium">Settled</Badge>
+                          <Badge variant="pos" className="text-[10px] font-mono py-0 px-1.5 shrink-0">Settled</Badge>
                         ) : (
-                          <Badge variant="neg" className="text-xs font-mono font-medium">Due {formatPaise(outstanding)}</Badge>
+                          <Badge variant="neg" className="text-[10px] font-mono py-0 px-1.5 shrink-0">Due {formatPaise(outstanding)}</Badge>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-1.5">
+                      <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate">
                         <span className="flex items-center gap-1">
-                          <User className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
+                          <User className="h-3 w-3 text-primary shrink-0" aria-hidden="true" />
                           <span>Paid by <strong className="text-foreground">{purchase.paid_by_name}</strong></span>
                         </span>
-                        <span aria-hidden="true">·</span>
-                        <span className="font-mono text-xs">{purchase.expense_date}</span>
+                        <span aria-hidden="true">&bull;</span>
+                        <span className="font-mono">{purchase.expense_date}</span>
                       </div>
                     </div>
 
-                    {/* Amount + repay button on the right */}
-                    <div className="shrink-0 text-right">
-                      <div className="text-xs font-semibold">{formatPaise(purchase.my_total_paise)}</div>
-                      <div className="text-xs text-muted-foreground">My share</div>
+                    {/* Amount + repay button */}
+                    <div className="shrink-0 flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="text-xs sm:text-sm font-bold font-mono text-foreground">{formatPaise(purchase.my_total_paise)}</div>
+                        <div className="text-[10px] text-muted-foreground">My share</div>
+                      </div>
                       {!isSettled && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={onNavigateToRepayments}
-                          className="mt-1.5 h-8 px-2.5 text-xs font-medium"
+                          className="h-7 px-2 text-[11px] font-semibold border-border active:scale-95"
                         >
                           Repay
-                          <ArrowRight className="h-3 w-3 ml-1" aria-hidden="true" />
+                          <ArrowRight className="h-2.5 w-2.5 ml-1" aria-hidden="true" />
                         </Button>
                       )}
                     </div>
@@ -127,18 +132,15 @@ export function PurchasesForMePage({ onNavigateToRepayments }: PurchasesForMePag
                 </div>
 
                 {/* My items breakdown */}
-                <div className="p-3 xs:p-4 bg-muted/30">
-                  <div className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-2">
-                    My items
-                  </div>
-                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-1.5 xs:gap-2">
+                <div className="p-2 sm:p-2.5 bg-muted/20">
+                  <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-1.5">
                     {purchase.my_items.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-2.5 xs:px-3 py-1.5 xs:py-2 text-xs"
+                        className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card px-2 py-1 text-xs"
                       >
-                        <span className="font-medium text-foreground truncate">{item.description}</span>
-                        <span className="font-mono font-bold text-foreground shrink-0">{formatPaise(item.my_share)}</span>
+                        <span className="font-medium text-foreground truncate text-[11px]">{item.description}</span>
+                        <span className="font-mono font-bold text-foreground text-xs shrink-0">{formatPaise(item.my_share)}</span>
                       </div>
                     ))}
                   </div>
