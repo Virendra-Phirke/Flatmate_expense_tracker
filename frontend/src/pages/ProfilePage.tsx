@@ -338,7 +338,7 @@ export function ProfilePage() {
                         />
                       </div>
                       <span className="text-xs font-bold text-foreground truncate">{p.name}</span>
-                      <span className="text-xs text-muted-foreground truncate">{p.vibe}</span>
+                      <span className="text-xs text-muted-foreground truncate">{p.category}</span>
                     </button>
                   );
                 })}

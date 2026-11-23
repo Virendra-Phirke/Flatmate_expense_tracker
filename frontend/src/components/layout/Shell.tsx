@@ -16,6 +16,8 @@ import {
   MoreHorizontal,
   ChevronRight,
   Palette,
+  Sun,
+  Moon,
   ChartPie,
   Key,
   Shield,
@@ -100,7 +102,7 @@ const pageTitles: Record<NavTab, string> = {
 
 export function Shell({ activeTab, onTabChange, children }: ShellProps) {
   const { user, logout } = useAuth();
-  const { currentPalette } = useTheme();
+  const { currentPalette, isDark, toggleDark } = useTheme();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
@@ -123,6 +125,10 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'm') {
         event.preventDefault();
         setVoiceModalOpen((open) => !open);
+      }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 't') {
+        event.preventDefault();
+        setPaletteModalOpen((open) => !open);
       }
       if (event.key === 'Escape') setMobileMoreOpen(false);
     };
@@ -187,28 +193,34 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
           </button>
         </div>
 
-        {/* Theme palette selector */}
+        {/* Theme palette & mode switcher */}
         <div className="px-3 pb-2">
-          <button
-            type="button"
-            onClick={() => setPaletteModalOpen(true)}
-            className="flex min-h-9 w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-muted group"
-            title="Switch color palette"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-brand-soft text-primary">
-                <Palette className="h-3.5 w-3.5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <div className="truncate text-xs font-semibold">{currentPalette.name}</div>
-                <div className="truncate text-xs text-muted-foreground">{currentPalette.tagline}</div>
+          <div className="flex items-center gap-1.5 rounded-lg border border-border p-1 bg-muted/20">
+            <button
+              type="button"
+              onClick={() => setPaletteModalOpen(true)}
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-card text-foreground group"
+              title="Switch theme palette (Ctrl+Shift+T)"
+            >
+              <span
+                className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/10 ring-2 ring-primary/20 shadow-2xs"
+                style={{ backgroundColor: currentPalette.primaryHex }}
+              />
+              <div className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-semibold leading-tight">{currentPalette.name}</span>
+                <span className="block truncate text-[10px] text-muted-foreground leading-tight">{currentPalette.category}</span>
               </div>
-            </div>
-            <span
-              className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/10 ml-1.5"
-              style={{ backgroundColor: currentPalette.primaryHex }}
-            />
-          </button>
+            </button>
+            <button
+              type="button"
+              onClick={toggleDark}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border bg-card text-foreground hover:bg-muted active:scale-95 transition-all shadow-2xs"
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="h-3.5 w-3.5 text-pending" /> : <Moon className="h-3.5 w-3.5 text-primary" />}
+            </button>
+          </div>
         </div>
 
         {/* Nav */}
@@ -399,10 +411,15 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
             <button
               type="button"
               onClick={() => setPaletteModalOpen(true)}
-              className="flex items-center justify-center h-8 w-8 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              title="Color palette"
+              className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-medium transition-all shadow-2xs active:scale-95"
+              title="Switch theme palette (Ctrl+Shift+T)"
             >
-              <Palette className="h-3.5 w-3.5" />
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0 ring-1 ring-black/15"
+                style={{ backgroundColor: currentPalette.primaryHex }}
+              />
+              <span className="hidden xl:inline text-xs font-medium text-foreground">{currentPalette.name}</span>
+              <Palette className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           </div>
         </header>
@@ -422,13 +439,13 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
               onClick={() => setPaletteModalOpen(true)}
               aria-label="Theme palettes"
               title="Theme color palette"
-              className="flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs text-foreground transition-colors hover:bg-muted active:scale-95 touch-manipulation"
+              className="flex h-8 items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-xs text-foreground transition-colors hover:bg-muted active:scale-95 touch-manipulation shadow-2xs"
             >
               <span
-                className="h-2.5 w-2.5 rounded-full shrink-0 border border-black/10"
+                className="h-2.5 w-2.5 rounded-full shrink-0 ring-1 ring-black/15"
                 style={{ backgroundColor: currentPalette.primaryHex }}
               />
-              <span className="text-xs font-medium hidden xs:inline">Palette</span>
+              <span className="text-xs font-medium">Theme</span>
             </button>
             <button
               type="button"
@@ -680,7 +697,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <span className="block text-xs font-medium truncate">Color Theme & Palette</span>
-                  <span className="block text-xs text-muted-foreground truncate">Current: {currentPalette.name}</span>
+                  <span className="block text-xs text-muted-foreground truncate">{currentPalette.name} • {currentPalette.category}</span>
                 </div>
                 <span
                   className="h-3.5 w-3.5 rounded-full border border-black/10 shrink-0"
