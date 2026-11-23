@@ -236,6 +236,82 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
         </Button>
       </header>
 
+      {/* ── 3-Box Compact Metric Summary Strip ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        {/* Box 1: Action Required */}
+        <div
+          onClick={() => setRepaymentTab('needs_action')}
+          className={`rounded-lg border p-3 shadow-xs flex items-center justify-between cursor-pointer transition-colors ${
+            incomingPending.length > 0
+              ? 'bg-pending-soft/50 border-pending/30 hover:border-pending/50'
+              : 'bg-card border-border hover:border-border/80'
+          }`}
+        >
+          <div className="min-w-0 flex-1 mr-2">
+            <span className={`text-[10px] font-mono uppercase tracking-wider font-semibold block truncate ${
+              incomingPending.length > 0 ? 'text-pending' : 'text-muted-foreground'
+            }`}>
+              Needs Your Approval
+            </span>
+            <span className={`text-base sm:text-lg font-mono font-bold block mt-0.5 truncate ${
+              incomingPending.length > 0 ? 'text-pending' : 'text-foreground'
+            }`}>
+              {incomingPending.length} claim{incomingPending.length === 1 ? '' : 's'}
+            </span>
+            <span className="text-[11px] text-muted-foreground block mt-0.5 truncate">
+              {incomingPending.length > 0 ? 'Verify received repayments' : 'All claims confirmed'}
+            </span>
+          </div>
+          <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
+            incomingPending.length > 0 ? 'bg-pending text-white font-mono font-bold' : 'bg-muted text-muted-foreground'
+          }`}>
+            {incomingPending.length > 0 ? incomingPending.length : <CheckCircle2 className="h-4 w-4" />}
+          </div>
+        </div>
+
+        {/* Box 2: Pending Claims Sent */}
+        <div
+          onClick={() => setRepaymentTab('pending')}
+          className="rounded-lg border border-border bg-card p-3 shadow-xs flex items-center justify-between cursor-pointer hover:border-border/80 transition-colors"
+        >
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
+              Waiting Confirmation
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-foreground block mt-0.5 truncate">
+              {outgoingPending.length} claim{outgoingPending.length === 1 ? '' : 's'}
+            </span>
+            <span className="text-[11px] text-muted-foreground block mt-0.5 truncate">
+              Awaiting recipient verification
+            </span>
+          </div>
+          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center text-muted-foreground shrink-0">
+            <Clock className="h-4 w-4" />
+          </div>
+        </div>
+
+        {/* Box 3: Confirmed Settlements */}
+        <div
+          onClick={() => setRepaymentTab('history')}
+          className="rounded-lg border border-positive/20 bg-positive/5 p-3 shadow-xs flex items-center justify-between cursor-pointer hover:border-positive/40 transition-colors"
+        >
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-positive block truncate">
+              Settled History
+            </span>
+            <span className="text-base sm:text-lg font-mono font-bold text-positive block mt-0.5 truncate">
+              {settlements.filter((s) => s.status === 'confirmed').length} settled
+            </span>
+            <span className="text-[11px] text-muted-foreground block mt-0.5 truncate">
+              Resolved balances & clearances
+            </span>
+          </div>
+          <div className="h-9 w-9 rounded-lg bg-positive/10 text-positive flex items-center justify-center shrink-0">
+            <CheckCircle2 className="h-4 w-4" />
+          </div>
+        </div>
+      </div>
+
       {/* Compact Segmented Control */}
       <div className="grid grid-cols-4 w-full sm:max-w-md p-0.5 bg-muted/50 border border-border rounded-lg gap-0.5">
         <button
@@ -326,6 +402,8 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                   const isPayer = s.payer_id === user?.id;
                   const isRecipient = s.recipient_id === user?.id;
                   const isActionRequired = isRecipient && s.status === 'verification_pending';
+                  const payerInitial = (s.payer_name || 'P').charAt(0).toUpperCase();
+                  const recipientInitial = (s.recipient_name || 'R').charAt(0).toUpperCase();
 
                   return (
                     <div
@@ -334,30 +412,61 @@ export function RepaymentsPage({ initialRecipientId }: RepaymentsPageProps) {
                         isActionRequired ? 'bg-pending-soft/30' : 'hover:bg-muted/30'
                       }`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-xs sm:text-sm font-bold text-foreground truncate">
-                          {isPayer ? (
-                            <>
-                              You paid <strong className="text-foreground">{s.recipient_name}</strong>
-                            </>
-                          ) : (
-                            <>
-                              <strong className="text-foreground">{s.payer_name}</strong> paid you
-                            </>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate">
-                          <span className="font-mono">
-                            {new Date(s.claimed_at || s.created_at).toLocaleDateString()}
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        {/* Direction flow indicators */}
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span
+                            className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                              isPayer ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                            }`}
+                            title={`Sender: ${s.payer_name}`}
+                          >
+                            {isPayer ? 'You' : payerInitial}
                           </span>
-                          <span>&bull;</span>
-                          <span className="uppercase text-foreground font-medium">{s.method}</span>
-                          {s.transaction_reference && (
-                            <>
-                              <span>&bull;</span>
-                              <span className="truncate max-w-[120px]">Ref: {s.transaction_reference}</span>
-                            </>
-                          )}
+                          <ArrowRight className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                          <span
+                            className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                              isRecipient ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'
+                            }`}
+                            title={`Recipient: ${s.recipient_name}`}
+                          >
+                            {isRecipient ? 'You' : recipientInitial}
+                          </span>
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs sm:text-sm font-bold text-foreground truncate">
+                            {isPayer ? (
+                              <>
+                                You sent to <strong className="text-foreground">{s.recipient_name}</strong>
+                              </>
+                            ) : isRecipient ? (
+                              <>
+                                <strong className="text-foreground">{s.payer_name}</strong> sent to You
+                              </>
+                            ) : (
+                              <>
+                                {s.payer_name} sent to {s.recipient_name}
+                              </>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1.5 truncate">
+                            <span className="font-mono">
+                              {new Date(s.claimed_at || s.created_at).toLocaleDateString()}
+                            </span>
+                            <span>&bull;</span>
+                            <Badge variant="outline" className="text-[9px] uppercase font-mono px-1 py-0">
+                              {s.method}
+                            </Badge>
+                            {s.transaction_reference && (
+                              <>
+                                <span className="hidden xs:inline">&bull;</span>
+                                <span className="hidden xs:inline truncate max-w-[130px] font-mono text-[10px]">
+                                  Ref: {s.transaction_reference}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
 

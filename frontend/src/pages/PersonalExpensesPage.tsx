@@ -32,7 +32,33 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
+  Utensils,
+  ShoppingBag,
+  Zap,
+  ArrowRight,
+  Home,
+  User,
 } from '@/components/ui/icons';
+
+function getPersonalCategoryVisual(category: string = '', description: string = '') {
+  const text = (category + ' ' + description).toLowerCase();
+  if (text.includes('food') || text.includes('dining') || text.includes('snack') || text.includes('chai') || text.includes('tea') || text.includes('cafe') || text.includes('lunch') || text.includes('dinner')) {
+    return { icon: Utensils, color: 'text-orange-400 bg-orange-400/10 border-orange-400/25' };
+  }
+  if (text.includes('cab') || text.includes('uber') || text.includes('ola') || text.includes('auto') || text.includes('fuel') || text.includes('travel') || text.includes('metro')) {
+    return { icon: ArrowRight, color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/25' };
+  }
+  if (text.includes('grocery') || text.includes('market') || text.includes('supermarket') || text.includes('zepto') || text.includes('blinkit') || text.includes('shop') || text.includes('clothes')) {
+    return { icon: ShoppingBag, color: 'text-teal-400 bg-teal-400/10 border-teal-400/25' };
+  }
+  if (text.includes('bill') || text.includes('power') || text.includes('recharge') || text.includes('mobile') || text.includes('electricity')) {
+    return { icon: Zap, color: 'text-amber-400 bg-amber-400/10 border-amber-400/25' };
+  }
+  if (text.includes('home') || text.includes('rent') || text.includes('room')) {
+    return { icon: Home, color: 'text-primary bg-primary/10 border-primary/25' };
+  }
+  return { icon: Receipt, color: 'text-muted-foreground bg-muted/40 border-border' };
+}
 import { CategoryCombobox, ItemCombobox } from '@/components/ui/CategoryItemCombobox';
 import { DEFAULT_CATEGORIES } from '@/data/categorySuggestions';
 import {
@@ -328,50 +354,60 @@ export function PersonalExpensesPage({
         <>
           {/* Mobile Card List */}
           <div className="md:hidden space-y-1.5">
-            {paginatedExpenses.map((exp) => (
-              <div
-                key={exp.id}
-                className="rounded-lg border border-border bg-card p-2.5 space-y-1.5 shadow-2xs"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs sm:text-sm font-bold text-foreground truncate">{exp.description}</div>
-                    <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                      <span className="font-mono">{exp.expense_date}</span>
-                      {exp.category_name && (
-                        <>
-                          <span>&bull;</span>
-                          <span className="text-primary truncate font-medium">{exp.category_name}</span>
-                        </>
-                      )}
+            {paginatedExpenses.map((exp) => {
+              const visual = getPersonalCategoryVisual(exp.category_name, exp.description);
+              const VisualIcon = visual.icon;
+
+              return (
+                <div
+                  key={exp.id}
+                  className="rounded-lg border border-border bg-card p-2.5 space-y-1.5 shadow-2xs hover:border-border/90 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 border ${visual.color}`}>
+                        <VisualIcon className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs sm:text-sm font-bold text-foreground truncate">{exp.description}</div>
+                        <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 mt-0.5 truncate">
+                          <span className="font-mono">{exp.expense_date}</span>
+                          {exp.category_name && (
+                            <>
+                              <span>&bull;</span>
+                              <span className="text-primary truncate font-medium">{exp.category_name}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs sm:text-sm font-bold font-mono text-foreground tabular-nums">
+                        {formatPaise(exp.amount_paise)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm('Delete this expense?')) {
+                            deleteMutation.mutate(exp.id);
+                          }
+                        }}
+                        className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-negative active:scale-95 transition-all rounded hover:bg-muted"
+                        title="Delete expense"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs sm:text-sm font-bold font-mono text-foreground tabular-nums">
-                      {formatPaise(exp.amount_paise)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm('Delete this expense?')) {
-                          deleteMutation.mutate(exp.id);
-                        }
-                      }}
-                      className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-negative active:scale-95 transition-all rounded hover:bg-muted"
-                      title="Delete expense"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
 
-                {exp.notes && (
-                  <div className="text-[11px] text-muted-foreground italic bg-muted/30 px-2 py-1 rounded border border-border/50">
-                    {exp.notes}
-                  </div>
-                )}
-              </div>
-            ))}
+                  {exp.notes && (
+                    <div className="text-[11px] text-muted-foreground italic bg-muted/30 px-2 py-1 rounded border border-border/50">
+                      {exp.notes}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Desktop Table */}
@@ -387,41 +423,53 @@ export function PersonalExpensesPage({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedExpenses.map((exp) => (
-                  <TableRow key={exp.id}>
-                    <TableCell className="text-sm font-mono text-muted-foreground">
-                      {exp.expense_date}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-foreground">{exp.description}</div>
-                      {exp.notes && (
-                        <div className="text-xs text-muted-foreground mt-0.5">{exp.notes}</div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-primary/30 text-primary text-xs">
-                        {exp.category_name || 'General'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-mono font-bold text-foreground">
-                      {formatPaise(exp.amount_paise)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this expense?')) {
-                            deleteMutation.mutate(exp.id);
-                          }
-                        }}
-                        title="Delete expense"
-                        className="min-h-10 min-w-10 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-negative transition-colors active:scale-95"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {paginatedExpenses.map((exp) => {
+                  const visual = getPersonalCategoryVisual(exp.category_name, exp.description);
+                  const VisualIcon = visual.icon;
+
+                  return (
+                    <TableRow key={exp.id}>
+                      <TableCell className="text-sm font-mono text-muted-foreground">
+                        {exp.expense_date}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`h-7 w-7 rounded-md flex items-center justify-center shrink-0 border ${visual.color}`}>
+                            <VisualIcon className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-medium text-foreground truncate">{exp.description}</div>
+                            {exp.notes && (
+                              <div className="text-xs text-muted-foreground mt-0.5 truncate">{exp.notes}</div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="border-primary/30 text-primary text-xs">
+                          {exp.category_name || 'General'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono font-bold text-foreground">
+                        {formatPaise(exp.amount_paise)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm('Are you sure you want to delete this expense?')) {
+                              deleteMutation.mutate(exp.id);
+                            }
+                          }}
+                          title="Delete expense"
+                          className="min-h-10 min-w-10 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-negative transition-colors active:scale-95"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
