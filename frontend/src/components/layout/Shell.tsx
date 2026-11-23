@@ -41,6 +41,13 @@ import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 import { ThemePaletteModal } from '@/components/layout/ThemePaletteModal';
 import { MobileSpeedDialFAB } from '@/components/layout/MobileSpeedDialFAB';
 import { OfflineSyncBanner } from '@/components/ui/OfflineSyncBanner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { useTheme } from '@/context/ThemeContext';
 import { HouseholdMember, Category } from '@/types';
 import { useQuery } from '@tanstack/react-query';

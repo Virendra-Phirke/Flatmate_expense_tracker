@@ -429,14 +429,27 @@ export function PurchasesMadePage({
                 totalRecords={purchases.length}
                 filteredCount={filteredPurchases.length}
               />
-              <Button
-                onClick={() => setModalOpen(true)}
-                size="sm"
-                className="min-h-10 text-xs sm:text-sm font-semibold shrink-0"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
-                New purchase
-              </Button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {filteredPurchases.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSelectAll}
+                    className="h-8 px-2 text-[11px] font-medium border-border hover:bg-muted active:scale-95"
+                    title={selectedIds.size === filteredPurchases.length ? 'Deselect all' : 'Select all for export'}
+                  >
+                    {selectedIds.size === filteredPurchases.length ? 'Deselect' : 'Select All'}
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setModalOpen(true)}
+                  size="sm"
+                  className="min-h-10 text-xs sm:text-sm font-semibold shrink-0"
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" />
+                  New purchase
+                </Button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs sm:hidden">
@@ -462,14 +475,27 @@ export function PurchasesMadePage({
               totalRecords={purchases.length}
               filteredCount={filteredPurchases.length}
             />
-            <Button
-              onClick={() => setModalOpen(true)}
-              size="sm"
-              className="h-8 px-2.5 text-xs font-semibold shrink-0 active:scale-95"
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-              New purchase
-            </Button>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {filteredPurchases.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                  className="h-8 px-2 text-[11px] font-medium border-border hover:bg-muted active:scale-95"
+                  title={selectedIds.size === filteredPurchases.length ? 'Deselect all' : 'Select all for export'}
+                >
+                  {selectedIds.size === filteredPurchases.length ? 'Deselect' : 'Select All'}
+                </Button>
+              )}
+              <Button
+                onClick={() => setModalOpen(true)}
+                size="sm"
+                className="h-8 px-2.5 text-xs font-semibold shrink-0 active:scale-95"
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
+                New purchase
+              </Button>
+            </div>
           </div>
 
           {/* Row 2: Metric strip */}
@@ -568,6 +594,14 @@ export function PurchasesMadePage({
               >
                 <div className="p-2.5 sm:p-3.5 flex items-start sm:items-center justify-between gap-3 border-b border-border/60">
                   <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                    {/* Checkbox for Multi-Select Export */}
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(purchase.id)}
+                      onChange={() => toggleSelect(purchase.id)}
+                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer shrink-0 mt-2.5 sm:mt-0"
+                      aria-label={`Select ${purchase.description}`}
+                    />
                     <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg flex items-center justify-center shrink-0 border ${visual.color}`}>
                       <VisualIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                     </div>
@@ -957,6 +991,30 @@ export function PurchasesMadePage({
           </form>
         </DialogContent>
       </Dialog>
+      {/* Multi-Select Floating Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 bg-card/95 backdrop-blur-md border border-border shadow-xl rounded-xl px-4 py-2 flex items-center gap-3 text-xs w-[92%] sm:w-auto">
+          <div className="font-semibold text-foreground">
+            {selectedIds.size} purchase{selectedIds.size === 1 ? '' : 's'} selected
+          </div>
+          <Button
+            size="sm"
+            onClick={exportSelectedCsv}
+            className="h-7 px-2.5 text-xs font-semibold gap-1.5 active:scale-95"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Export CSV</span>
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedIds(new Set())}
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground active:scale-95"
+          >
+            Deselect
+          </Button>
+        </div>
+      )}
     </main>
   );
 }
