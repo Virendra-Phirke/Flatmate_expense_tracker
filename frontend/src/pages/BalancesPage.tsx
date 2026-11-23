@@ -9,8 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   Scale,
   ArrowRight,
-  ArrowUpRight,
-  ArrowDownLeft,
   CheckCircle2,
   AlertCircle,
   MessageSquare,
@@ -55,7 +53,7 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
           <div className="flex-1 min-w-0">
             <h2 className="text-sm font-semibold">Balances could not load</h2>
             <p className="mt-1 text-xs text-muted-foreground">Try again to refresh your household totals.</p>
-            <Button size="sm" className="mt-3 h-9 text-xs" onClick={() => void refetch()}>Try again</Button>
+            <Button size="sm" className="mt-3 h-8 text-xs" onClick={() => void refetch()}>Try again</Button>
           </div>
         </div>
       </Card>
@@ -67,134 +65,175 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
   const credits = summary.pairwise?.filter((item) => Number(item.outstanding || 0) > 0) ?? [];
 
   return (
-    <main className="space-y-5 sm:space-y-6">
-      {/* ── Header ──────────────────────────────────────── */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/80 pb-3 sm:pb-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-foreground">
+    <main className="space-y-3 sm:space-y-4">
+      {/* ── Compact Header ──────────────────────────────── */}
+      <header className="flex items-center justify-between gap-2 pb-1 border-b border-border/70">
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">
             Balances & Settlement
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            Bilateral netting across household bills and individual flatmate advances.
+          <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
+            Bilateral netting across household bills & flatmate advances
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 shrink-0">
           <Button
             type="button"
             variant="outline"
+            size="sm"
             onClick={() => setStatementModalOpen(true)}
-            className="h-10 text-xs sm:text-sm font-semibold border-border hover:bg-muted"
+            className="h-7.5 px-2.5 text-xs font-semibold border-border hover:bg-muted active:scale-95"
+            title="Share Monthly Settlement Statement"
           >
-            <Share2 className="h-3.5 w-3.5 shrink-0 mr-1.5" aria-hidden="true" />
-            Share Statement
+            <Share2 className="h-3 w-3 mr-1" aria-hidden="true" />
+            <span className="hidden xs:inline">Statement</span>
           </Button>
-          <Button onClick={() => onNavigateToRepayments()} className="h-10 text-xs sm:text-sm font-semibold">
-            Initiate repayment
-            <ArrowRight className="h-3.5 w-3.5 shrink-0 ml-1.5" aria-hidden="true" />
+          <Button
+            size="sm"
+            onClick={() => onNavigateToRepayments()}
+            className="h-7.5 px-2.5 text-xs font-semibold active:scale-95"
+          >
+            <span>Settle Up</span>
+            <ArrowRight className="h-3 w-3 ml-1" aria-hidden="true" />
           </Button>
         </div>
       </header>
 
-      {/* ── Net position card ────────────────────────────── */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Net position</p>
-              <p className="mt-1 font-serif text-3xl xs:text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
+      {/* ── Compact "Small Box" Unified Net Position Card ── */}
+      <Card className="border-border bg-card p-3 sm:p-4 shadow-xs">
+        {/* Net position top summary */}
+        <div className="flex items-baseline justify-between gap-2 pb-2.5 border-b border-border/60">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground font-semibold">
+              Net Financial Position
+            </div>
+            <div className="flex items-baseline gap-2 mt-0.5">
+              <span
+                className={`font-mono text-2xl sm:text-3xl font-bold tracking-tight ${
+                  netBalance > 0
+                    ? 'text-positive'
+                    : netBalance < 0
+                    ? 'text-negative'
+                    : 'text-foreground'
+                }`}
+              >
+                {netBalance > 0 ? '+' : ''}
                 {formatPaise(Math.abs(netBalance))}
-              </p>
-              <p className="mt-1.5 text-xs font-medium">
-                {netBalance > 0 ? 'You are owed overall' : netBalance < 0 ? 'You owe overall' : 'Everything is settled'}
-              </p>
+              </span>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <div className="rounded-lg bg-negative-soft px-3.5 py-2.5">
-              <p className="text-xs font-medium text-muted-foreground">You owe</p>
-              <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-negative">{formatPaise(summary.owedByMe)}</p>
-            </div>
-            <div className="rounded-lg bg-positive-soft px-3.5 py-2.5">
-              <p className="text-xs font-medium text-muted-foreground">Owed to you</p>
-              <p className="mt-0.5 font-mono text-base xs:text-lg font-bold text-positive">{formatPaise(summary.owedToMe)}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* ── Spending totals – 2 column editorial ledger ── */}
-      <section aria-labelledby="other-totals-heading" className="space-y-2">
-        <h2 id="other-totals-heading" className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
-          Spending Totals
-        </h2>
-        <div className="rounded-lg border border-border bg-card divide-y xs:divide-y-0 xs:divide-x divide-border grid grid-cols-1 xs:grid-cols-2 shadow-xs overflow-hidden">
-          <article className="p-4 sm:p-5 flex flex-col justify-between">
-            <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+          <Badge
+            variant={netBalance > 0 ? 'pos' : netBalance < 0 ? 'neg' : 'secondary'}
+            className="text-[11px] font-semibold px-2 py-0.5"
+          >
+            {netBalance > 0
+              ? 'You are owed'
+              : netBalance < 0
+              ? 'You owe overall'
+              : 'Square (₹0)'}
+          </Badge>
+        </div>
+
+        {/* 4-Box Compact Ledger Metrics Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2.5">
+          {/* Box 1: You Owe */}
+          <div className="p-2 sm:p-2.5 rounded-lg bg-negative-soft/50 border border-negative/15">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
+              You Owe
+            </span>
+            <span className="font-mono text-sm sm:text-base font-bold text-negative block truncate mt-0.5">
+              {formatPaise(summary.owedByMe || 0)}
+            </span>
+            <span className="text-[10px] text-muted-foreground truncate block mt-0.5">
+              {debts.length ? `${debts.length} to pay` : 'All cleared'}
+            </span>
+          </div>
+
+          {/* Box 2: Owed to You */}
+          <div className="p-2 sm:p-2.5 rounded-lg bg-positive-soft/50 border border-positive/15">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
+              Owed to You
+            </span>
+            <span className="font-mono text-sm sm:text-base font-bold text-positive block truncate mt-0.5">
+              {formatPaise(summary.owedToMe || 0)}
+            </span>
+            <span className="text-[10px] text-muted-foreground truncate block mt-0.5">
+              {credits.length ? `${credits.length} pending` : 'None pending'}
+            </span>
+          </div>
+
+          {/* Box 3: Common Share */}
+          <div className="p-2 sm:p-2.5 rounded-lg bg-muted/40 border border-border/60">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
               Common Share
             </span>
-            <div className="my-2.5">
-              <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
-                {formatPaise(summary.commonShare || 0)}
-              </p>
-            </div>
-            <p className="text-xs text-muted-foreground font-mono">Paid: {formatPaise(summary.commonPaid || 0)}</p>
-          </article>
-          <article className="p-4 sm:p-5 flex flex-col justify-between">
-            <span className="text-xs font-mono uppercase tracking-wider font-semibold text-muted-foreground">
+            <span className="font-mono text-sm sm:text-base font-bold text-foreground block truncate mt-0.5">
+              {formatPaise(summary.commonShare || 0)}
+            </span>
+            <span className="text-[10px] text-muted-foreground truncate block mt-0.5 font-mono">
+              Paid: {formatPaise(summary.commonPaid || 0)}
+            </span>
+          </div>
+
+          {/* Box 4: Personal Spending */}
+          <div className="p-2 sm:p-2.5 rounded-lg bg-muted/40 border border-border/60">
+            <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-muted-foreground block truncate">
               Personal Costs
             </span>
-            <div className="my-2.5">
-              <p className="text-xl sm:text-2xl font-mono font-bold tracking-tight text-foreground">
-                {formatPaise(summary.personalSpending || 0)}
-              </p>
-            </div>
-            <p className="text-xs text-muted-foreground">Not shared with flatmates</p>
-          </article>
+            <span className="font-mono text-sm sm:text-base font-bold text-foreground block truncate mt-0.5">
+              {formatPaise(summary.personalSpending || 0)}
+            </span>
+            <span className="text-[10px] text-muted-foreground truncate block mt-0.5">
+              Sole expense
+            </span>
+          </div>
         </div>
-      </section>
+      </Card>
 
-      {/* ── Member-level outstanding – 2-col on lg ────────── */}
-      <section className="grid grid-cols-1 gap-3 xs:gap-4 lg:grid-cols-2" aria-label="Outstanding balances by member">
+      {/* ── Member-level outstanding (2 Compact Cards) ──── */}
+      <section className="grid grid-cols-1 gap-2.5 lg:grid-cols-2" aria-label="Outstanding balances by member">
         {/* You owe */}
-        <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-2 border-b border-border p-3.5 xs:p-4">
+        <Card className="border-border bg-card shadow-xs">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
             <div className="min-w-0">
-              <CardTitle className="text-sm xs:text-base font-bold text-foreground">You owe</CardTitle>
-              <p className="mt-0.5 text-xs text-muted-foreground">Flatmates to pay</p>
+              <CardTitle className="text-xs sm:text-sm font-bold text-foreground">You Owe</CardTitle>
+              <p className="text-[11px] text-muted-foreground">Flatmates you need to repay</p>
             </div>
-            <Badge variant={debts.length ? 'neg' : 'secondary'} className="shrink-0 text-xs font-mono font-semibold px-2.5 py-0.5">
-              {formatPaise(summary.owedByMe)}
+            <Badge variant={debts.length ? 'neg' : 'secondary'} className="shrink-0 text-xs font-mono font-semibold px-2 py-0.5">
+              {formatPaise(summary.owedByMe || 0)}
             </Badge>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-2 sm:p-2.5">
             {debts.length === 0 ? (
-              <div className="flex flex-col items-center px-4 py-8 text-center">
-                <CheckCircle2 className="h-6 w-6 text-positive" aria-hidden="true" />
-                <p className="mt-2 text-sm font-semibold text-foreground">No outstanding payments</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">You're square with your flatmates.</p>
+              <div className="flex items-center gap-2 px-2.5 py-2 text-xs text-muted-foreground rounded-md bg-muted/20">
+                <CheckCircle2 className="h-4 w-4 text-positive shrink-0" aria-hidden="true" />
+                <span>You're square. No outstanding payments due.</span>
               </div>
             ) : (
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/60">
                 {debts.map((debt) => (
-                  <div key={debt.creditorId} className="flex items-center gap-3 p-3 xs:p-4">
+                  <div key={debt.creditorId} className="flex items-center justify-between gap-2.5 py-2 first:pt-0 last:pb-0">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs xs:text-sm font-semibold text-foreground">{debt.creditorName}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="truncate text-xs font-bold text-foreground">{debt.creditorName}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
                         {debt.crossOffset && debt.crossOffset > 0
-                          ? `Repaid ${formatPaise(debt.confirmedPaid)} • Netted with mutual expenses`
+                          ? `Repaid ${formatPaise(debt.confirmedPaid)} • Mutual netted`
                           : `Repaid ${formatPaise(debt.confirmedPaid)} of ${formatPaise(debt.grossOwe)}`}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <span className="amount-display text-xs xs:text-sm font-bold text-negative">{formatPaise(debt.outstanding)}</span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="font-mono text-xs sm:text-sm font-bold text-negative">
+                        {formatPaise(debt.outstanding)}
+                      </span>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => onNavigateToRepayments(debt.creditorId)}
-                        className="h-8 px-3 text-xs font-semibold"
+                        className="h-7 px-2 text-[11px] font-semibold border-border"
                       >
                         Settle
-                        <ArrowRight className="h-3 w-3 ml-1" aria-hidden="true" />
+                        <ArrowRight className="h-2.5 w-2.5 ml-1" aria-hidden="true" />
                       </Button>
                     </div>
                   </div>
@@ -205,37 +244,36 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
         </Card>
 
         {/* Owed to you */}
-        <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-2 border-b border-border p-3.5 xs:p-4">
+        <Card className="border-border bg-card shadow-xs">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
             <div className="min-w-0">
-              <CardTitle className="text-sm xs:text-base font-bold text-foreground">Owed to you</CardTitle>
-              <p className="mt-0.5 text-xs text-muted-foreground">Flatmates who owe you</p>
+              <CardTitle className="text-xs sm:text-sm font-bold text-foreground">Owed to You</CardTitle>
+              <p className="text-[11px] text-muted-foreground">Flatmates who owe you money</p>
             </div>
-            <Badge variant={credits.length ? 'pos' : 'secondary'} className="shrink-0 text-xs font-mono font-semibold px-2.5 py-0.5">
-              {formatPaise(summary.owedToMe)}
+            <Badge variant={credits.length ? 'pos' : 'secondary'} className="shrink-0 text-xs font-mono font-semibold px-2 py-0.5">
+              {formatPaise(summary.owedToMe || 0)}
             </Badge>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-2 sm:p-2.5">
             {credits.length === 0 ? (
-              <div className="flex flex-col items-center px-4 py-8 text-center">
-                <CheckCircle2 className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
-                <p className="mt-2 text-sm font-semibold text-foreground">No pending repayments</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">No one owes you right now.</p>
+              <div className="flex items-center gap-2 px-2.5 py-2 text-xs text-muted-foreground rounded-md bg-muted/20">
+                <CheckCircle2 className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+                <span>No pending receivables from flatmates.</span>
               </div>
             ) : (
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/60">
                 {credits.map((credit) => (
-                  <div key={credit.debtorId} className="flex items-center gap-3 p-3 xs:p-4">
+                  <div key={credit.debtorId} className="flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs xs:text-sm font-semibold text-foreground">{credit.debtorName}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="truncate text-xs font-bold text-foreground">{credit.debtorName}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
                         {credit.crossOffset && credit.crossOffset > 0
-                          ? `Confirmed ${formatPaise(credit.confirmedPaid)} • Netted with mutual expenses`
+                          ? `Confirmed ${formatPaise(credit.confirmedPaid)} • Mutual netted`
                           : `Confirmed ${formatPaise(credit.confirmedPaid)} of ${formatPaise(credit.grossOwed)}`}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <span className="amount-display text-xs xs:text-sm font-bold text-positive mr-0.5">
+                      <span className="font-mono text-xs sm:text-sm font-bold text-positive">
                         {formatPaise(credit.outstanding)}
                       </span>
                       <Button
@@ -250,20 +288,21 @@ export function BalancesPage({ onNavigateToRepayments }: BalancesPageProps) {
                             householdName: user?.householdName,
                           })
                         }
-                        className="h-8 px-2.5 text-xs font-semibold text-positive border-positive/30 hover:bg-positive-soft/50 active:scale-95 transition-transform"
-                        title="Send reminder on WhatsApp with UPI payment link"
+                        className="h-7 px-2 text-[11px] font-semibold text-positive border-positive/30 hover:bg-positive-soft/50 active:scale-95"
+                        title="Send WhatsApp reminder with UPI link"
                       >
-                        <MessageSquare className="h-3.5 w-3.5 mr-1" />
-                        WhatsApp
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        <span className="hidden xs:inline">WhatsApp</span>
+                        <span className="xs:hidden">Ping</span>
                       </Button>
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => onNavigateToRepayments(credit.debtorId)}
-                        className="h-8 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground active:scale-95"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground active:scale-95"
                         title="View settlement details"
                       >
-                        <ArrowRight className="h-3.5 w-3.5" />
+                        <ArrowRight className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
