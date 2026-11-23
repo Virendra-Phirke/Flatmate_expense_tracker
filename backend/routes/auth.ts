@@ -13,8 +13,25 @@ import {
   verifyBiometricDeviceToken,
   UserSessionPayload,
 } from '../utils/jwt';
+import { generateCsrfToken, setCsrfCookie, CSRF_COOKIE_NAME } from '../utils/csrf';
+import {
+  createWebAuthnChallenge,
+  verifyRegistrationResponse,
+  verifyAuthenticationResponse,
+} from '../utils/webauthn';
 
 const router = Router();
+
+// ── GET /api/auth/csrf ───────────────────────────────────────────────────────
+router.get('/csrf', (req: Request, res: Response) => {
+  const session = (req as any).session;
+  if (!session?.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  const csrfToken = generateCsrfToken(session.userId);
+  setCsrfCookie(res, csrfToken);
+  res.json({ csrfToken });
+});
 
 // ── POST /api/auth/login ─────────────────────────────────────────────────────
 router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
@@ -63,6 +80,10 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
     const token = signToken(sessionPayload);
     setAuthCookie(res, token);
 
+    // Issue bound CSRF token
+    const csrfToken = generateCsrfToken(user.id);
+    setCsrfCookie(res, csrfToken);
+
     const userPayload = {
       id:                 user.id,
       fullName:           user.full_name,
@@ -84,6 +105,7 @@ router.post('/login', rateLimitLogin, async (req: Request, res: Response) => {
     return res.json({
       success: true,
       token,
+      csrfToken,
       user: userPayload,
       ...userPayload,
     });
@@ -182,6 +204,9 @@ router.post('/biometric-login', rateLimitLogin, async (req: Request, res: Respon
     const token = signToken(sessionPayload);
     setAuthCookie(res, token);
 
+    const csrfToken = generateCsrfToken(user.id);
+    setCsrfCookie(res, csrfToken);
+
     const userPayload = {
       id:                 user.id,
       fullName:           user.full_name,
@@ -202,6 +227,7 @@ router.post('/biometric-login', rateLimitLogin, async (req: Request, res: Respon
     return res.json({
       success: true,
       token,
+      csrfToken,
       user: userPayload,
       ...userPayload,
     });
@@ -216,6 +242,7 @@ router.post('/logout', (req: Request, res: Response) => {
   clearAuthCookie(res);
   res.clearCookie('connect.sid');
   res.clearCookie('auth_token');
+  res.clearCookie(CSRF_COOKIE_NAME, { path: '/' });
 
   const session = (req as any).session;
   if (session && typeof session.destroy === 'function') {
@@ -245,6 +272,9 @@ router.get(['/session', '/me'], (req: Request, res: Response) => {
     return res.json({ authenticated: false });
   }
 
+  const csrfToken = generateCsrfToken(session.userId);
+  setCsrfCookie(res, csrfToken);
+
   const user = {
     id:                 session.userId,
     fullName:           session.fullName,
@@ -257,6 +287,7 @@ router.get(['/session', '/me'], (req: Request, res: Response) => {
   res.json({
     authenticated: true,
     token: token || undefined,
+    csrfToken,
     user,
     ...user,
   });
@@ -301,14 +332,213 @@ router.post('/change-password', requireAuth, rateLimitPassword, async (req: Requ
     const newToken = signToken(updatedPayload);
     setAuthCookie(res, newToken);
 
+    const csrfToken = generateCsrfToken(session.userId);
+    setCsrfCookie(res, csrfToken);
+
     if (typeof session.save === 'function') {
       session.save(() => {});
     }
 
-    res.json({ ok: true, success: true, token: newToken });
+    res.json({ ok: true, success: true, token: newToken, csrfToken });
   } catch (err) {
     console.error('[auth/change-password]', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ── WEBAUTHN FIDO2 PLATFORM BIOMETRICS (Phase 2) ─────────────────────────────
+
+// 1. Generate registration challenge for authenticated user
+router.post('/webauthn/register-options', requireAuth, async (req: Request, res: Response) => {
+  const session = (req as any).session;
+  try {
+    const challenge = await createWebAuthnChallenge('registration', session.userId);
+    res.json({
+      challenge,
+      rp: {
+        name: 'Flatmate Expense Manager',
+        id: req.hostname === 'localhost' ? 'localhost' : req.hostname,
+      },
+      user: {
+        id: session.userId,
+        name: session.username,
+        displayName: session.fullName || session.username,
+      },
+      pubKeyCredParams: [
+        { alg: -7, type: 'public-key' },  // ES256
+        { alg: -257, type: 'public-key' }, // RS256
+      ],
+      timeout: 60000,
+      attestation: 'none',
+    });
+  } catch (err: any) {
+    console.error('[webauthn/register-options error]:', err?.message || err);
+    res.status(500).json({ error: 'Failed to generate WebAuthn registration options' });
+  }
+});
+
+// 2. Verify registration response and store public key credential
+router.post('/webauthn/register-verify', requireAuth, async (req: Request, res: Response) => {
+  const session = (req as any).session;
+  const { expectedChallenge, clientDataJSON, credentialId, publicKey, deviceName, transports } = req.body;
+
+  if (!expectedChallenge || !clientDataJSON || !credentialId || !publicKey) {
+    return res.status(400).json({ error: 'Missing required WebAuthn registration parameters' });
+  }
+
+  try {
+    const record = await verifyRegistrationResponse({
+      userId: session.userId,
+      expectedChallenge,
+      clientDataJSON,
+      credentialId,
+      publicKey,
+      deviceName,
+      transports,
+    });
+
+    res.json({
+      success: true,
+      credentialRecordId: record.id,
+      credentialId: record.credentialId,
+      message: 'Biometric passkey registered successfully',
+    });
+  } catch (err: any) {
+    console.error('[webauthn/register-verify error]:', err?.message || err);
+    res.status(400).json({ error: err?.message || 'Failed to verify WebAuthn registration' });
+  }
+});
+
+// 3. Generate authentication challenge for biometric login
+router.post('/webauthn/login-options', async (req: Request, res: Response) => {
+  try {
+    const challenge = await createWebAuthnChallenge('authentication');
+    res.json({
+      challenge,
+      timeout: 60000,
+      userVerification: 'preferred',
+    });
+  } catch (err: any) {
+    console.error('[webauthn/login-options error]:', err?.message || err);
+    res.status(500).json({ error: 'Failed to generate WebAuthn login options' });
+  }
+});
+
+// 4. Verify authentication assertion and issue authenticated session
+router.post('/webauthn/login-verify', rateLimitLogin, async (req: Request, res: Response) => {
+  const { credentialId, expectedChallenge, clientDataJSON, authenticatorData, signature } = req.body;
+
+  if (!credentialId || !expectedChallenge || !clientDataJSON || !authenticatorData || !signature) {
+    return res.status(400).json({ error: 'Missing required WebAuthn assertion fields' });
+  }
+
+  try {
+    const { userId } = await verifyAuthenticationResponse({
+      credentialId,
+      expectedChallenge,
+      clientDataJSON,
+      authenticatorData,
+      signature,
+    });
+
+    const rows = await sql`
+      SELECT u.id, u.full_name, u.username, u.is_active,
+             u.must_change_password, hm.role, hm.household_id
+      FROM   users u
+      LEFT   JOIN household_members hm ON hm.user_id = u.id
+      WHERE  u.id = ${userId}`;
+
+    const user = rows[0];
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: 'User account disabled or not found' });
+    }
+
+    let householdId = user.household_id;
+    if (!householdId) {
+      const defaultHh = await sql`SELECT id FROM households LIMIT 1`;
+      householdId = defaultHh[0]?.id || 'c281ffa5-0c9b-4bff-9863-9b5bcee7f22c';
+    }
+
+    const sessionPayload: UserSessionPayload = {
+      userId: user.id,
+      username: user.username,
+      fullName: user.full_name,
+      role: user.role || 'member',
+      householdId: householdId,
+      mustChangePassword: Boolean(user.must_change_password),
+    };
+
+    const token = signToken(sessionPayload);
+    setAuthCookie(res, token);
+
+    const csrfToken = generateCsrfToken(user.id);
+    setCsrfCookie(res, csrfToken);
+
+    const userPayload = {
+      id: user.id,
+      fullName: user.full_name,
+      username: user.username,
+      role: user.role || 'member',
+      householdId: householdId,
+      mustChangePassword: Boolean(user.must_change_password),
+    };
+
+    const session = (req as any).session;
+    if (session) {
+      Object.assign(session, sessionPayload);
+      if (typeof session.save === 'function') {
+        session.save(() => {});
+      }
+    }
+
+    return res.json({
+      success: true,
+      token,
+      csrfToken,
+      user: userPayload,
+      ...userPayload,
+    });
+  } catch (err: any) {
+    console.error('[webauthn/login-verify error]:', err?.message || err);
+    res.status(401).json({ error: err?.message || 'Biometric authentication failed' });
+  }
+});
+
+// 5. List user's registered devices
+router.get('/webauthn/devices', requireAuth, async (req: Request, res: Response) => {
+  const session = (req as any).session;
+  try {
+    const devices = await sql`
+      SELECT id, credential_id, device_name, is_revoked, last_used_at, created_at
+      FROM webauthn_credentials
+      WHERE user_id = ${session.userId}
+      ORDER BY created_at DESC
+    `;
+    res.json(devices);
+  } catch (err: any) {
+    console.error('[webauthn/devices GET error]:', err?.message || err);
+    res.status(500).json({ error: 'Failed to retrieve registered devices' });
+  }
+});
+
+// 6. Revoke a registered device
+router.delete('/webauthn/devices/:id', requireAuth, async (req: Request, res: Response) => {
+  const session = (req as any).session;
+  const { id } = req.params;
+  try {
+    const result = await sql`
+      UPDATE webauthn_credentials
+      SET is_revoked = TRUE
+      WHERE id = ${id} AND user_id = ${session.userId}
+      RETURNING id
+    `;
+    if (!result.length) {
+      return res.status(404).json({ error: 'Device credential not found' });
+    }
+    res.json({ ok: true, success: true, message: 'Device credential revoked' });
+  } catch (err: any) {
+    console.error('[webauthn/devices DELETE error]:', err?.message || err);
+    res.status(500).json({ error: 'Failed to revoke device' });
   }
 });
 

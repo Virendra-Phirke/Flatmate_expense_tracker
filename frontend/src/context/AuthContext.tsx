@@ -7,7 +7,12 @@ interface AuthContextType {
   user: CurrentUser | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
-  biometricLogin: (username: string, credentialId?: string, deviceToken?: string) => Promise<void>;
+  biometricLogin: (
+    username: string,
+    credentialId?: string,
+    deviceToken?: string,
+    verificationResult?: any
+  ) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setPasswordChanged: () => void;
@@ -70,7 +75,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const biometricLogin = async (username: string, credentialId?: string, deviceToken?: string) => {
+  const biometricLogin = async (
+    username: string,
+    credentialId?: string,
+    deviceToken?: string,
+    verificationResult?: any
+  ) => {
+    if (verificationResult && verificationResult.user) {
+      if (verificationResult.token) {
+        setAuthToken(verificationResult.token);
+      }
+      setUser({
+        id: verificationResult.user.id,
+        username: verificationResult.user.username,
+        fullName: verificationResult.user.fullName || verificationResult.user.full_name,
+        role: verificationResult.user.role,
+        householdId: verificationResult.user.householdId || verificationResult.user.household_id,
+        householdName: verificationResult.user.householdName || verificationResult.user.household_name || 'Household',
+        mustChangePassword: !!verificationResult.user.mustChangePassword,
+        authenticated: true,
+      });
+      return;
+    }
+
     const res = await api<{ success: boolean; user: any; token?: string }>('POST', '/auth/biometric-login', {
       username,
       credentialId,

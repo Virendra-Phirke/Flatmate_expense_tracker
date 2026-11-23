@@ -41,7 +41,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const bio = await authenticateWithBiometrics();
-      await biometricLogin(bio.username, bio.credentialId, bio.deviceToken);
+      await biometricLogin(bio.username, bio.credentialId, bio.deviceToken, bio.verificationResult);
     } catch (err: any) {
       setError(err.message || 'Fingerprint verification failed');
     } finally {

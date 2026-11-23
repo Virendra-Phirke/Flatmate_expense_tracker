@@ -54,12 +54,19 @@ export const householdMembers = pgTable(
 );
 
 // ── Categories ────────────────────────────────────────────────────────────────
-export const categories = pgTable('categories', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  expenseType: text('expense_type'),
-  isActive: boolean('is_active').notNull().default(true),
-});
+export const categories = pgTable(
+  'categories',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    householdId: uuid('household_id').references(() => households.id),
+    name: text('name').notNull(),
+    expenseType: text('expense_type'),
+    isActive: boolean('is_active').notNull().default(true),
+  },
+  (table) => [
+    index('idx_categories_household_active').on(table.householdId, table.isActive),
+  ]
+);
 
 // ── Expenses ──────────────────────────────────────────────────────────────────
 export const expenses = pgTable(
@@ -197,5 +204,70 @@ export const session = pgTable(
   },
   (table) => [
     index('IDX_session_expire').on(table.expire),
+  ]
+);
+
+// ── WebAuthn Credentials (Phase 2) ────────────────────────────────────────────
+export const webauthnCredentials = pgTable(
+  'webauthn_credentials',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    credentialId: text('credential_id').notNull().unique(),
+    publicKey: text('public_key').notNull(),
+    counter: bigint('counter', { mode: 'number' }).notNull().default(0),
+    deviceName: text('device_name'),
+    aaguid: text('aaguid'),
+    transports: text('transports'),
+    isRevoked: boolean('is_revoked').notNull().default(false),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_webauthn_credentials_user').on(table.userId, table.isRevoked),
+  ]
+);
+
+// ── WebAuthn Challenges (Phase 2) ─────────────────────────────────────────────
+export const webauthnChallenges = pgTable(
+  'webauthn_challenges',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id),
+    challenge: text('challenge').notNull(),
+    type: text('type').notNull(), // 'registration' | 'authentication'
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_webauthn_challenges_lookup').on(table.challenge, table.expiresAt),
+  ]
+);
+
+// ── Idempotency Keys (Phase 5) ────────────────────────────────────────────────
+export const idempotencyKeys = pgTable(
+  'idempotency_keys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    householdId: uuid('household_id')
+      .notNull()
+      .references(() => households.id),
+    route: text('route').notNull(),
+    clientKey: text('client_key').notNull(),
+    requestHash: text('request_hash').notNull(),
+    status: text('status').notNull().default('processing'),
+    statusCode: numeric('status_code'),
+    responseBody: jsonb('response_body'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    index('idx_idempotency_lookup').on(table.householdId, table.userId, table.route, table.clientKey),
+    index('idx_idempotency_expires').on(table.expiresAt),
   ]
 );

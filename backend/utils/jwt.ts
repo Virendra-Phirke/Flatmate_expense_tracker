@@ -1,12 +1,9 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
+import env from './env';
 
-const isProd = process.env.NODE_ENV === 'production';
-const rawSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-if (isProd && !rawSecret) {
-  throw new Error('FATAL SECURITY CONFIGURATION: JWT_SECRET or SESSION_SECRET environment variable is required in production.');
-}
-const JWT_SECRET = rawSecret || 'flatmate_expense_jwt_dev_secret_only';
+const isProd = env.NODE_ENV === 'production';
+const JWT_SECRET = env.JWT_SECRET;
 export const AUTH_COOKIE_NAME = 'auth_token';
 
 export interface UserSessionPayload {
@@ -17,6 +14,7 @@ export interface UserSessionPayload {
   householdId: string;
   householdName?: string;
   mustChangePassword?: boolean;
+  tokenVersion?: number;
 }
 
 /**
@@ -65,21 +63,26 @@ export function verifyToken(token: string): UserSessionPayload | null {
   }
 }
 
+export interface TokenExtraction {
+  token: string | null;
+  isCookie: boolean;
+}
+
 /**
- * Extract auth token from Authorization header (Bearer ...) or signed/plain cookies.
+ * Extract auth token and whether it originated from an HttpOnly cookie or Authorization header.
  */
-export function extractToken(req: Request): string | null {
+export function extractTokenDetails(req: Request): TokenExtraction {
   // 1. Check Authorization header: Bearer <token>
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const bearer = authHeader.slice(7).trim();
-    if (bearer) return bearer;
+    if (bearer) return { token: bearer, isCookie: false };
   }
 
   // 2. Check cookies (both parsed via cookie-parser and raw cookie header)
   const cookies = (req as any).cookies;
   if (cookies && cookies[AUTH_COOKIE_NAME]) {
-    return cookies[AUTH_COOKIE_NAME];
+    return { token: cookies[AUTH_COOKIE_NAME], isCookie: true };
   }
 
   // Fallback to raw cookie header parsing
@@ -87,11 +90,18 @@ export function extractToken(req: Request): string | null {
   if (rawCookie) {
     const match = rawCookie.match(new RegExp(`(?:^|;\\s*)${AUTH_COOKIE_NAME}=([^;]+)`));
     if (match && match[1]) {
-      return decodeURIComponent(match[1]);
+      return { token: decodeURIComponent(match[1]), isCookie: true };
     }
   }
 
-  return null;
+  return { token: null, isCookie: false };
+}
+
+/**
+ * Extract auth token from Authorization header (Bearer ...) or signed/plain cookies.
+ */
+export function extractToken(req: Request): string | null {
+  return extractTokenDetails(req).token;
 }
 
 /**
@@ -118,3 +128,4 @@ export function clearAuthCookie(res: Response): void {
     path: '/',
   });
 }
+

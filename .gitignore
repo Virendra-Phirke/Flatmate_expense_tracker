@@ -23,3 +23,9 @@ frontend/test/
 test-*.*
 check-*.*
 *.test-script.*
+
+# Internal plan and audit files
+SAFE_IMPLEMENTATION_PLAN.md
+IMPROVEMENT_AUDIT.md
+*PLAN*.md
+*AUDIT*.md

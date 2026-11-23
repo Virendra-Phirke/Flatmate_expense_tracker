@@ -1,10 +1,17 @@
-import { getOfflineMutations, removeOfflineMutation, enqueueOfflineMutation, QueuedMutation } from './idb';
+import {
+  getOfflineMutations,
+  removeOfflineMutation,
+  updateOfflineMutation,
+  enqueueOfflineMutation,
+  QueuedMutation,
+} from './idb';
 import { api, getCurrentTokenPayload, ApiError } from './api';
 import type { QueryClient } from '@tanstack/react-query';
 
 export interface OfflineSyncStatus {
   isOnline: boolean;
   pendingCount: number;
+  failedCount: number;
   isSyncing: boolean;
   lastSyncSuccess: number | null;
 }
@@ -17,6 +24,7 @@ const listeners = new Set<SyncListener>();
 let state: OfflineSyncStatus = {
   isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
   pendingCount: 0,
+  failedCount: 0,
   isSyncing: false,
   lastSyncSuccess: null,
 };
@@ -51,13 +59,24 @@ export function registerQueryClient(qc: QueryClient) {
 }
 
 /**
- * Check count of pending offline actions
+ * Get all failed or conflicting mutations that need user intervention
+ */
+export async function getFailedMutations(): Promise<QueuedMutation[]> {
+  const items = await getOfflineMutations();
+  return items.filter((m) => m.status === 'failed' || m.status === 'conflict');
+}
+
+/**
+ * Check count of pending and failed offline actions
  */
 export async function refreshPendingCount(): Promise<number> {
   const items = await getOfflineMutations();
-  state.pendingCount = items.length;
+  const pending = items.filter((m) => m.status !== 'failed' && m.status !== 'conflict');
+  const failed = items.filter((m) => m.status === 'failed' || m.status === 'conflict');
+  state.pendingCount = pending.length;
+  state.failedCount = failed.length;
   notify();
-  return items.length;
+  return pending.length;
 }
 
 /**
@@ -71,8 +90,12 @@ export async function drainOfflineQueue(): Promise<{ synced: number; failed: num
   }
 
   const items = await getOfflineMutations();
-  if (items.length === 0) {
+  const actionable = items.filter((m) => m.status !== 'failed' && m.status !== 'conflict');
+  const failedItems = items.filter((m) => m.status === 'failed' || m.status === 'conflict');
+
+  if (actionable.length === 0) {
     state.pendingCount = 0;
+    state.failedCount = failedItems.length;
     notify();
     return { synced: 0, failed: 0 };
   }
@@ -85,24 +108,25 @@ export async function drainOfflineQueue(): Promise<{ synced: number; failed: num
   const currentPayload = getCurrentTokenPayload();
   const currentUserId = currentPayload?.userId;
 
-  for (const item of items) {
+  for (const item of actionable) {
     // If mutation was authored by a specific user, only replay if current logged-in user matches
     if (item.userId && currentUserId && item.userId !== currentUserId) {
       continue;
     }
+
+    // Stop if user went offline mid-sync
+    if (!navigator.onLine) break;
 
     try {
       await api(item.method, item.path, item.body, { bypassOfflineQueue: true });
       await removeOfflineMutation(item.id);
       synced++;
     } catch (err: any) {
-      console.warn(`[Offline Sync] Action ${item.path} failed:`, err.message);
+      console.warn(`[Offline Sync] Action ${item.path} failed:`, err?.message || err);
       failed++;
-      // If network dropped again during drain, stop and retry on next online event
       if (!navigator.onLine) break;
 
-      // If server responded with a non-recoverable 4xx client error (e.g., 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 422 Unprocessable),
-      // drop the mutation from the queue to prevent infinite retry loop
+      // Handle non-recoverable client error
       const status = err instanceof ApiError ? err.status : (typeof err?.status === 'number' ? err.status : null);
       const msg = err?.message || '';
       const isClientError =
@@ -111,17 +135,33 @@ export async function drainOfflineQueue(): Promise<{ synced: number; failed: num
         msg.includes('HTTP 401') ||
         msg.includes('HTTP 403') ||
         msg.includes('HTTP 404') ||
+        msg.includes('HTTP 409') ||
         msg.includes('HTTP 422');
 
       if (isClientError) {
-        console.error(`[Offline Sync] Dropping invalid mutation ${item.id} (${item.path}) due to non-recoverable client error (${status || msg}).`);
-        await removeOfflineMutation(item.id);
+        if (status === 409 || msg.includes('409') || msg.toLowerCase().includes('conflict')) {
+          item.status = 'conflict';
+          item.errorCategory = 'conflict';
+          item.error = msg || 'Conflict with current server ledger state';
+        } else if (status === 401 || status === 403 || msg.includes('401') || msg.includes('403')) {
+          item.status = 'failed';
+          item.errorCategory = 'auth';
+          item.error = 'Session authorization required before synchronizing';
+        } else {
+          item.status = 'failed';
+          item.errorCategory = 'validation';
+          item.error = msg || 'Non-recoverable input validation error';
+        }
+        await updateOfflineMutation(item);
       }
     }
   }
 
   const remaining = await getOfflineMutations();
-  state.pendingCount = remaining.length;
+  const pending = remaining.filter((m) => m.status !== 'failed' && m.status !== 'conflict');
+  const unresolvedFailed = remaining.filter((m) => m.status === 'failed' || m.status === 'conflict');
+  state.pendingCount = pending.length;
+  state.failedCount = unresolvedFailed.length;
   state.isSyncing = false;
   if (synced > 0) {
     state.lastSyncSuccess = Date.now();
@@ -134,6 +174,30 @@ export async function drainOfflineQueue(): Promise<{ synced: number; failed: num
   }
 
   return { synced, failed };
+}
+
+/**
+ * Dismiss/remove a failed mutation
+ */
+export async function dismissMutation(id: string): Promise<void> {
+  await removeOfflineMutation(id);
+  await refreshPendingCount();
+}
+
+/**
+ * Retry a failed or conflicting mutation
+ */
+export async function retryMutation(id: string): Promise<void> {
+  const items = await getOfflineMutations();
+  const target = items.find((m) => m.id === id);
+  if (target) {
+    target.status = 'pending';
+    target.error = undefined;
+    target.errorCategory = undefined;
+    await updateOfflineMutation(target);
+    await refreshPendingCount();
+    void drainOfflineQueue();
+  }
 }
 
 /**

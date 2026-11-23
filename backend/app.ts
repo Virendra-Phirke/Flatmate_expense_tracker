@@ -1,7 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import { authContextMiddleware } from './middleware/auth';
+import env from './utils/env';
+import logger from './utils/logger';
+import { requestIdMiddleware } from './middleware/requestId';
+import { authContextMiddleware, requireAdmin } from './middleware/auth';
+import { idempotencyMiddleware } from './middleware/idempotency';
 
 // ── Route modules ─────────────────────────────────────────────────────────────
 import authRouter from './routes/auth';
@@ -18,36 +22,41 @@ import analyticsRouter from './routes/analytics';
 
 export const app = express();
 
-// ── CORS Configuration for Separate Frontend Deployments ───────────────────────
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:5173',
-  'http://127.0.0.1:3000',
-  'https://flatmate-expense-tracker-lemon.vercel.app',
-];
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
-}
+// ── Request ID & Tracing ───────────────────────────────────────────────────────
+app.use(requestIdMiddleware);
 
+// ── CORS Configuration for Separate Frontend Deployments ───────────────────────
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps, curl, or same-origin)
     if (!origin) return callback(null, true);
-    // Allow localhost or valid Vercel subdomains or configured FRONTEND_URL
-    const isVercelSubdomain = /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin);
-    if (allowedOrigins.includes(origin) || isVercelSubdomain) {
+    // Allow strictly configured origins
+    if (env.ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
-    if (process.env.NODE_ENV !== 'production') {
+    // Allow localhost/127.0.0.1 in non-production environments
+    if (
+      env.NODE_ENV !== 'production' &&
+      (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'))
+    ) {
       return callback(null, true);
     }
     return callback(new Error('Origin blocked by CORS policy'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-  exposedHeaders: ['Set-Cookie', 'Authorization'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'X-CSRF-Token',
+    'X-XSRF-Token',
+    'Idempotency-Key',
+    'X-Request-Id',
+  ],
+  exposedHeaders: ['Set-Cookie', 'Authorization', 'X-Request-Id'],
   maxAge: 86400,
 };
 
@@ -89,15 +98,26 @@ app.use(cookieParser());
 
 // ── Stateless JWT Authentication & Session Compatibility ──────────────────────
 app.use(authContextMiddleware);
+app.use(idempotencyMiddleware);
 
-// ── Health / Diagnostics Endpoint ─────────────────────────────────────────────
+// ── Public Health Endpoint ───────────────────────────────────────────────────
 app.get(['/', '/api/health', '/health', '/api', '/api/'], (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     name: 'Flatmate Expense Manager API',
-    hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
-    hasSessionSecret: Boolean(process.env.SESSION_SECRET || process.env.JWT_SECRET),
-    nodeEnv: process.env.NODE_ENV || 'not_set',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ── Admin Diagnostics Route (Protected, AUD-A4) ────────────────────────────────
+app.get('/api/admin/health', requireAdmin, (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    name: 'Flatmate Expense Manager API',
+    hasDatabaseUrl: Boolean(env.DATABASE_URL),
+    hasSessionSecret: Boolean(env.JWT_SECRET),
+    nodeEnv: env.NODE_ENV,
+    allowedOriginsCount: env.ALLOWED_ORIGINS.length,
     timestamp: new Date().toISOString(),
   });
 });
@@ -131,8 +151,13 @@ app.use('/ai', aiRouter);
 app.use('/analytics', analyticsRouter);
 
 // ── Global error handler ──────────────────────────────────────────────────────
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('[unhandled error]', err);
+app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+  logger.error('[unhandled error]', {
+    requestId: req.id,
+    path: req.originalUrl || req.url,
+    message: err.message || String(err),
+    stack: env.NODE_ENV !== 'production' ? err.stack : undefined,
+  });
   const status = typeof err.status === 'number' ? err.status : (typeof err.statusCode === 'number' ? err.statusCode : 500);
   res.status(status).json({ error: err.expose ? err.message : 'Internal server error' });
 });

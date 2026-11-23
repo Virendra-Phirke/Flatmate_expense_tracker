@@ -16,6 +16,9 @@ export interface QueuedMutation {
   path: string;
   body: any;
   createdAt: number;
+  status?: 'pending' | 'failed' | 'conflict';
+  error?: string;
+  errorCategory?: 'network' | 'validation' | 'conflict' | 'auth';
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -231,6 +234,24 @@ export async function removeOfflineMutation(id: string): Promise<void> {
       const tx = db.transaction(STORE_MUTATIONS, 'readwrite');
       const store = tx.objectStore(STORE_MUTATIONS);
       const req = store.delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+    });
+  } catch {
+    // Fail silently
+  }
+}
+
+/**
+ * Update a queued mutation (e.g. to update status, error message, or retry count)
+ */
+export async function updateOfflineMutation(item: QueuedMutation): Promise<void> {
+  try {
+    const db = await getDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_MUTATIONS, 'readwrite');
+      const store = tx.objectStore(STORE_MUTATIONS);
+      const req = store.put(item);
       req.onsuccess = () => resolve();
       req.onerror = () => resolve();
     });

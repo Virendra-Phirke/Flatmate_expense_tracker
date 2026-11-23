@@ -4,45 +4,20 @@ import sql from '../db/index';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { audit } from '../utils/audit';
 import { invalidateBalanceCache } from './balances';
+import { resolveCategoryId } from '../utils/category';
 
 const router = Router();
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Resolve or automatically create a category by UUID or Name
- */
-async function resolveCategoryId(categoryInput?: string | null): Promise<string | null> {
-  if (!categoryInput) return null;
-  const val = String(categoryInput).trim();
-  if (!val) return null;
-
-  if (UUID_REGEX.test(val)) {
-    const rows = await sql`SELECT id FROM categories WHERE id = ${val}`;
-    if (rows.length) return rows[0].id;
-  }
-
-  // Case-insensitive lookup by name
-  const existing = await sql`
-    SELECT id FROM categories WHERE LOWER(name) = LOWER(${val}) LIMIT 1`;
-  if (existing.length) return existing[0].id;
-
-  // Insert new category dynamically
-  const newId = uuidv4();
-  await sql`
-    INSERT INTO categories (id, name, is_active)
-    VALUES (${newId}, ${val.slice(0, 100)}, TRUE)`;
-  return newId;
-}
-
 // ── GET /api/expenses ────────────────────────────────────────────────────────
-// Query params: type (personal|common|all), from, to, page, limit (AUD-10)
+// Query params: type (personal|common|all), from, to, page, limit (AUD-10, Phase 6)
 router.get('/', requireAuth, async (req: Request, res: Response) => {
   const { type, from, to, page, limit } = req.query;
 
-  // Sanitize and bound pagination (AUD-10)
+  // Sanitize and bound pagination (Phase 6: Default 50, max 100)
   const pageNum   = Math.max(1, parseInt(String(page), 10) || 1);
-  const limitNum  = Math.min(1000, Math.max(1, parseInt(String(limit), 10) || 500));
+  const limitNum  = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 50));
   const offsetNum = (pageNum - 1) * limitNum;
 
   const validFrom = from && DATE_REGEX.test(String(from)) ? String(from) : null;
@@ -214,7 +189,7 @@ router.post('/personal', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    const resolvedCatId = await resolveCategoryId(category_id);
+    const resolvedCatId = await resolveCategoryId(category_id, hid);
 
     await sql.transaction([
       sql`
@@ -300,7 +275,7 @@ router.post('/common', requireAdmin, async (req: Request, res: Response) => {
       }
     }
 
-    const resolvedCatId = await resolveCategoryId(category_id);
+    const resolvedCatId = await resolveCategoryId(category_id, hid);
 
     const transactionQueries = [
       sql`
@@ -378,7 +353,7 @@ router.post('/on-behalf', requireAuth, async (req: Request, res: Response) => {
     const itemQueries: any[] = [];
     for (const item of items) {
       const iid = uuidv4();
-      const resolvedCatId = await resolveCategoryId(item.category_id || item.category);
+      const resolvedCatId = await resolveCategoryId(item.category_id || item.category, hid);
 
       itemQueries.push(
         sql`
@@ -472,7 +447,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
     const newAmountPaise = amount_paise !== undefined ? amount_paise : exp.amount_paise;
     const newDate = expense_date !== undefined ? expense_date : exp.expense_date;
     const newNotes = notes !== undefined ? (notes ? notes.trim().slice(0, 1000) : null) : exp.notes;
-    const resolvedCatId = category_id !== undefined ? await resolveCategoryId(category_id) : exp.category_id;
+    const resolvedCatId = category_id !== undefined ? await resolveCategoryId(category_id, hid) : exp.category_id;
 
     if (exp.expense_type === 'personal' && amount_paise !== undefined && amount_paise !== exp.amount_paise) {
       await sql.transaction([

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import sql from '../db/index';
-import { extractToken, verifyToken, UserSessionPayload } from '../utils/jwt';
+import { extractTokenDetails, verifyToken, UserSessionPayload } from '../utils/jwt';
+import { verifyCsrfToken } from '../utils/csrf';
 
 /**
  * Ensure req.session and req.user are populated with session data and safe stub methods.
@@ -39,13 +40,15 @@ export function populateSession(req: Request, payload?: UserSessionPayload | nul
  * populating req.user and req.session for seamless compatibility.
  */
 export function authContextMiddleware(req: Request, _res: Response, next: NextFunction) {
+  const { token, isCookie } = extractTokenDetails(req);
+  (req as any).authSource = isCookie ? 'cookie' : (token ? 'bearer' : null);
+
   let session = (req as any).session;
   if (session && session.userId) {
     populateSession(req);
     return next();
   }
 
-  const token = extractToken(req);
   if (token) {
     const payload = verifyToken(token);
     if (payload) {
@@ -61,12 +64,14 @@ export function authContextMiddleware(req: Request, _res: Response, next: NextFu
 /**
  * Require a valid, active, authenticated session.
  * Blocks all operations except password change if mustChangePassword is true. (AUD-03, AUD-06)
+ * Enforces CSRF token verification for cookie-authenticated mutating requests.
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   let session = (req as any).session;
 
   if (!session || !session.userId) {
-    const token = extractToken(req);
+    const { token, isCookie } = extractTokenDetails(req);
+    (req as any).authSource = isCookie ? 'cookie' : (token ? 'bearer' : null);
     if (token) {
       const payload = verifyToken(token);
       if (payload) {
@@ -77,6 +82,23 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
   if (!session || !session.userId) {
     return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Enforce CSRF protection for cookie-authenticated state-changing requests
+  if ((req as any).authSource === 'cookie' && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    const isExempt =
+      (req.baseUrl === '/api/auth' || req.baseUrl === '/auth') &&
+      ['/logout'].includes(req.path);
+
+    if (!isExempt) {
+      const csrfHeader = (req.headers['x-csrf-token'] || req.headers['x-xsrf-token']) as string | undefined;
+      const csrfBody = req.body?._csrf as string | undefined;
+      const csrfToken = csrfHeader || csrfBody;
+
+      if (!verifyCsrfToken(csrfToken, session.userId)) {
+        return res.status(403).json({ error: 'Invalid or missing CSRF token' });
+      }
+    }
   }
 
   // If user must change password, restrict mutating operations until password is changed

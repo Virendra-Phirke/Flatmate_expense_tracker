@@ -117,15 +117,17 @@ router.post('/', requireAuth, rateLimitClaim, async (req: Request, res: Response
 
     const recip = recipientRows[0];
 
-    await sql`
-      INSERT INTO settlements
-        (id, household_id, payer_id, recipient_id, amount_paise, method, status,
-         transaction_reference, note, recipient_name_snapshot, recipient_upi_snapshot, expense_share_id)
-      VALUES
-        (${sid}, ${hid}, ${uid}, ${recipient_id}, ${amount_paise}, ${method},
-         'verification_pending', ${transaction_reference ? transaction_reference.trim().slice(0, 100) : null},
-         ${note ? note.trim().slice(0, 500) : null},
-         ${recip.full_name}, ${recip.upi_id || null}, ${expense_share_id || null})`;
+    await sql.transaction([
+      sql`
+        INSERT INTO settlements
+          (id, household_id, payer_id, recipient_id, amount_paise, method, status,
+           transaction_reference, note, recipient_name_snapshot, recipient_upi_snapshot, expense_share_id)
+        VALUES
+          (${sid}, ${hid}, ${uid}, ${recipient_id}, ${amount_paise}, ${method},
+           'verification_pending', ${transaction_reference ? transaction_reference.trim().slice(0, 100) : null},
+           ${note ? note.trim().slice(0, 500) : null},
+           ${recip.full_name}, ${recip.upi_id || null}, ${expense_share_id || null})`,
+    ]);
 
     await audit(uid, hid, 'settlement', sid, 'claim', null, { amount_paise, method, recipient_id });
     invalidateBalanceCache(hid);

@@ -16,6 +16,30 @@ export class ApiError extends Error {
 }
 
 const TOKEN_KEY = 'flatmate_auth_token';
+const CSRF_KEY = 'flatmate_csrf_token';
+
+export function getCsrfToken(): string | null {
+  if (typeof document !== 'undefined') {
+    const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1]);
+    }
+  }
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(CSRF_KEY);
+  }
+  return null;
+}
+
+export function setCsrfToken(csrf: string | null): void {
+  if (typeof window !== 'undefined') {
+    if (csrf) {
+      localStorage.setItem(CSRF_KEY, csrf);
+    } else {
+      localStorage.removeItem(CSRF_KEY);
+    }
+  }
+}
 
 export function getAuthToken(): string | null {
   if (typeof window !== 'undefined') {
@@ -30,6 +54,7 @@ export function setAuthToken(token: string | null): void {
       localStorage.setItem(TOKEN_KEY, token);
     } else {
       localStorage.removeItem(TOKEN_KEY);
+      setCsrfToken(null);
     }
   }
 }
@@ -101,6 +126,14 @@ export async function api<T = any>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
+  // Attach CSRF protection header for state-changing requests
+  if (method !== 'GET') {
+    const csrf = getCsrfToken();
+    if (csrf) {
+      headers['X-CSRF-Token'] = csrf;
+    }
+  }
+
   const cleanPath = path.startsWith('/api/') ? path.slice(4) : (path === '/api' ? '' : path);
   const normalizedPath = cleanPath.startsWith('/') ? cleanPath : '/' + cleanPath;
 
@@ -116,6 +149,10 @@ export async function api<T = any>(
     if (!body.id) {
       processedBody = { ...body, id: generateUUID() };
     }
+  }
+
+  if (processedBody?.id && typeof processedBody.id === 'string') {
+    headers['Idempotency-Key'] = processedBody.id;
   }
 
   const opts: RequestInit = {
@@ -208,6 +245,9 @@ export async function api<T = any>(
   // Automatically save token if returned by any auth response
   if (data && typeof data.token === 'string') {
     setAuthToken(data.token);
+  }
+  if (data && typeof data.csrfToken === 'string') {
+    setCsrfToken(data.csrfToken);
   }
 
   if (!res.ok) {

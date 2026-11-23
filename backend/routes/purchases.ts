@@ -4,36 +4,11 @@ import sql from '../db/index';
 import { requireAuth } from '../middleware/auth';
 import { audit } from '../utils/audit';
 import { invalidateBalanceCache } from './balances';
+import { resolveCategoryId } from '../utils/category';
 
 const router = Router();
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-
-/**
- * Resolve or automatically create a category by UUID or Name
- */
-async function resolveCategoryId(categoryInput?: string | null): Promise<string | null> {
-  if (!categoryInput) return null;
-  const val = String(categoryInput).trim();
-  if (!val) return null;
-
-  if (UUID_REGEX.test(val)) {
-    const rows = await sql`SELECT id FROM categories WHERE id = ${val}`;
-    if (rows.length) return rows[0].id;
-  }
-
-  // Case-insensitive lookup by name
-  const existing = await sql`
-    SELECT id FROM categories WHERE LOWER(name) = LOWER(${val}) LIMIT 1`;
-  if (existing.length) return existing[0].id;
-
-  // Insert new category dynamically
-  const newId = uuidv4();
-  await sql`
-    INSERT INTO categories (id, name, is_active)
-    VALUES (${newId}, ${val.slice(0, 100)}, TRUE)`;
-  return newId;
-}
 
 // ── Handler for creating on-behalf purchase with multiple items ───────────────
 async function handleCreatePurchase(req: Request, res: Response) {
@@ -86,7 +61,7 @@ async function handleCreatePurchase(req: Request, res: Response) {
     const itemQueries: any[] = [];
     for (const item of items) {
       const iid = uuidv4();
-      const resolvedCatId = await resolveCategoryId(item.category_id || item.category);
+      const resolvedCatId = await resolveCategoryId(item.category_id || item.category, hid);
 
       itemQueries.push(
         sql`

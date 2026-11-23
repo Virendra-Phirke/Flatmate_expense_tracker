@@ -53,17 +53,24 @@ export function App() {
     }
   };
 
-  // Background warm-up: prefetch core tabs once authenticated so navigation is instantaneous
+  // Phase 6 optimization: Immediate prefetch for dashboard-critical data, deferred for secondary views
   useEffect(() => {
     if (user?.id) {
+      // 1. Critical dashboard queries (immediate)
       queryClient.prefetchQuery({ queryKey: ['balances_summary'], queryFn: () => api('GET', '/balances/summary') });
-      queryClient.prefetchQuery({ queryKey: ['analytics', undefined, undefined, 'all', ''], queryFn: () => api('GET', '/analytics') });
       queryClient.prefetchQuery({ queryKey: ['members'], queryFn: () => api('GET', '/members'), staleTime: 5 * 60 * 1000 });
       queryClient.prefetchQuery({ queryKey: ['categories'], queryFn: () => api('GET', '/categories'), staleTime: 10 * 60 * 1000 });
-      queryClient.prefetchQuery({ queryKey: ['personal_expenses'], queryFn: () => api('GET', '/expenses?type=personal') });
-      queryClient.prefetchQuery({ queryKey: ['common_expenses'], queryFn: () => api('GET', '/expenses?type=common') });
-      queryClient.prefetchQuery({ queryKey: ['purchases_made'], queryFn: () => api('GET', '/purchases/made') });
-      queryClient.prefetchQuery({ queryKey: ['purchases_for_me'], queryFn: () => api('GET', '/purchases/for-me') });
+
+      // 2. Secondary queries warmed during idle periods to reduce initial network/battery load
+      const deferTimer = setTimeout(() => {
+        queryClient.prefetchQuery({ queryKey: ['personal_expenses'], queryFn: () => api('GET', '/expenses?type=personal') });
+        queryClient.prefetchQuery({ queryKey: ['common_expenses'], queryFn: () => api('GET', '/expenses?type=common') });
+        queryClient.prefetchQuery({ queryKey: ['purchases_made'], queryFn: () => api('GET', '/purchases/made') });
+        queryClient.prefetchQuery({ queryKey: ['purchases_for_me'], queryFn: () => api('GET', '/purchases/for-me') });
+        queryClient.prefetchQuery({ queryKey: ['analytics', undefined, undefined, 'all', ''], queryFn: () => api('GET', '/analytics') });
+      }, 1500);
+
+      return () => clearTimeout(deferTimer);
     }
   }, [user?.id, queryClient]);
 

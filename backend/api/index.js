@@ -3,6 +3,175 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
+// utils/env.ts
+var validatedEnv = null;
+function validateEnv() {
+  if (validatedEnv) return validatedEnv;
+  const nodeEnv = process.env.NODE_ENV || "development";
+  const isProd2 = nodeEnv === "production";
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl && !process.env.TEST_EPHEMERAL_DB) {
+    if (isProd2) {
+      throw new Error("FATAL CONFIGURATION ERROR: DATABASE_URL environment variable is required in production.");
+    } else {
+      console.warn("[config warning]: DATABASE_URL is not set. Database operations will fail.");
+    }
+  }
+  const jwtSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
+  if (isProd2 && (!jwtSecret || jwtSecret.length < 32)) {
+    throw new Error("FATAL SECURITY ERROR: JWT_SECRET or SESSION_SECRET must be at least 32 characters in production.");
+  }
+  const rawAllowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const defaultOrigins = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "https://flatmate-expense-tracker-lemon.vercel.app"
+  ];
+  if (process.env.FRONTEND_URL) {
+    defaultOrigins.push(process.env.FRONTEND_URL.trim().replace(/\/$/, ""));
+  }
+  const allowedOrigins = Array.from(/* @__PURE__ */ new Set([...defaultOrigins, ...rawAllowedOrigins]));
+  validatedEnv = {
+    NODE_ENV: nodeEnv,
+    PORT: parseInt(process.env.PORT || "3000", 10),
+    DATABASE_URL: databaseUrl || "",
+    JWT_SECRET: jwtSecret || "flatmate_expense_jwt_dev_secret_only",
+    FRONTEND_URL: process.env.FRONTEND_URL?.trim().replace(/\/$/, ""),
+    ALLOWED_ORIGINS: allowedOrigins,
+    COOKIE_AUTH_ENABLED: process.env.COOKIE_AUTH_ENABLED !== "false",
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY
+  };
+  return validatedEnv;
+}
+var env = validateEnv();
+var env_default = env;
+
+// utils/logger.ts
+var SENSITIVE_KEYS = /* @__PURE__ */ new Set([
+  "password",
+  "password_hash",
+  "passwordhash",
+  "currentpassword",
+  "newpassword",
+  "token",
+  "authtoken",
+  "auth_token",
+  "authorization",
+  "cookie",
+  "devicetoken",
+  "device_token",
+  "secret",
+  "jwt_secret",
+  "session_secret",
+  "credential",
+  "apikey",
+  "gemini_api_key",
+  "creditcard",
+  "cardnumber",
+  "cvv",
+  "pin"
+]);
+function redactSensitive(obj, depth = 0) {
+  if (depth > 6 || obj === null || obj === void 0) return obj;
+  if (typeof obj === "string") {
+    if (obj.startsWith("Bearer ")) return "Bearer [REDACTED]";
+    return obj;
+  }
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) {
+    return obj.map((item) => redactSensitive(item, depth + 1));
+  }
+  const sanitized = {};
+  for (const [key, val] of Object.entries(obj)) {
+    const lowerKey = key.toLowerCase().replace(/[-_]/g, "");
+    if (SENSITIVE_KEYS.has(lowerKey)) {
+      sanitized[key] = "[REDACTED]";
+    } else {
+      sanitized[key] = redactSensitive(val, depth + 1);
+    }
+  }
+  return sanitized;
+}
+var logger = {
+  info(message, meta = {}) {
+    logger.log("info", message, meta);
+  },
+  warn(message, meta = {}) {
+    logger.log("warn", message, meta);
+  },
+  error(message, meta = {}) {
+    logger.log("error", message, meta);
+  },
+  debug(message, meta = {}) {
+    if (process.env.NODE_ENV !== "production") {
+      logger.log("debug", message, meta);
+    }
+  },
+  log(level, message, meta = {}) {
+    const entry = {
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      level,
+      message,
+      ...redactSensitive(meta)
+    };
+    const isProd2 = process.env.NODE_ENV === "production";
+    if (isProd2) {
+      const output = JSON.stringify(entry);
+      if (level === "error") {
+        console.error(output);
+      } else if (level === "warn") {
+        console.warn(output);
+      } else {
+        console.log(output);
+      }
+    } else {
+      const reqTag = entry.requestId ? `[${entry.requestId.slice(0, 8)}]` : "";
+      const prefix = `[${entry.timestamp.slice(11, 19)}] ${entry.level.toUpperCase()} ${reqTag} ${message}`;
+      if (level === "error") {
+        console.error(prefix, Object.keys(meta).length ? redactSensitive(meta) : "");
+      } else if (level === "warn") {
+        console.warn(prefix, Object.keys(meta).length ? redactSensitive(meta) : "");
+      } else {
+        console.log(prefix, Object.keys(meta).length ? redactSensitive(meta) : "");
+      }
+    }
+  }
+};
+var logger_default = logger;
+
+// middleware/requestId.ts
+import { randomUUID } from "crypto";
+function requestIdMiddleware(req, res, next) {
+  const incomingId = req.headers["x-request-id"];
+  const reqId = typeof incomingId === "string" && incomingId.trim() ? incomingId.trim() : randomUUID();
+  req.id = reqId;
+  req.startTime = Date.now();
+  res.setHeader("X-Request-Id", reqId);
+  res.on("finish", () => {
+    const durationMs = req.startTime ? Date.now() - req.startTime : 0;
+    const session = req.session;
+    const logMeta = {
+      requestId: reqId,
+      method: req.method,
+      url: req.originalUrl || req.url,
+      status: res.statusCode,
+      durationMs,
+      userId: session?.userId,
+      householdId: session?.householdId
+    };
+    if (res.statusCode >= 500) {
+      logger.error(`HTTP ${req.method} ${req.originalUrl || req.url} ${res.statusCode} (${durationMs}ms)`, logMeta);
+    } else if (res.statusCode >= 400) {
+      logger.warn(`HTTP ${req.method} ${req.originalUrl || req.url} ${res.statusCode} (${durationMs}ms)`, logMeta);
+    } else {
+      logger.info(`HTTP ${req.method} ${req.originalUrl || req.url} ${res.statusCode} (${durationMs}ms)`, logMeta);
+    }
+  });
+  next();
+}
+
 // db/index.ts
 import dns from "node:dns";
 import { neon, types } from "@neondatabase/serverless";
@@ -89,12 +258,8 @@ var db_default = sql;
 
 // utils/jwt.ts
 import jwt from "jsonwebtoken";
-var isProd = process.env.NODE_ENV === "production";
-var rawSecret = process.env.JWT_SECRET || process.env.SESSION_SECRET;
-if (isProd && !rawSecret) {
-  throw new Error("FATAL SECURITY CONFIGURATION: JWT_SECRET or SESSION_SECRET environment variable is required in production.");
-}
-var JWT_SECRET = rawSecret || "flatmate_expense_jwt_dev_secret_only";
+var isProd = env_default.NODE_ENV === "production";
+var JWT_SECRET = env_default.JWT_SECRET;
 var AUTH_COOKIE_NAME = "auth_token";
 function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
@@ -118,24 +283,27 @@ function verifyToken(token) {
     return null;
   }
 }
-function extractToken(req) {
+function extractTokenDetails(req) {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const bearer = authHeader.slice(7).trim();
-    if (bearer) return bearer;
+    if (bearer) return { token: bearer, isCookie: false };
   }
   const cookies = req.cookies;
   if (cookies && cookies[AUTH_COOKIE_NAME]) {
-    return cookies[AUTH_COOKIE_NAME];
+    return { token: cookies[AUTH_COOKIE_NAME], isCookie: true };
   }
   const rawCookie = req.headers.cookie;
   if (rawCookie) {
     const match = rawCookie.match(new RegExp(`(?:^|;\\s*)${AUTH_COOKIE_NAME}=([^;]+)`));
     if (match && match[1]) {
-      return decodeURIComponent(match[1]);
+      return { token: decodeURIComponent(match[1]), isCookie: true };
     }
   }
-  return null;
+  return { token: null, isCookie: false };
+}
+function extractToken(req) {
+  return extractTokenDetails(req).token;
 }
 function setAuthCookie(res, token) {
   res.cookie(AUTH_COOKIE_NAME, token, {
@@ -152,6 +320,41 @@ function clearAuthCookie(res) {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
+    path: "/"
+  });
+}
+
+// utils/csrf.ts
+import { createHmac, randomBytes } from "crypto";
+var CSRF_SECRET = env_default.JWT_SECRET;
+var CSRF_COOKIE_NAME = "csrf_token";
+function generateCsrfToken(userId) {
+  const nonce = randomBytes(16).toString("hex");
+  const signature = createHmac("sha256", CSRF_SECRET).update(`${nonce}:${userId}`).digest("hex");
+  return `${nonce}.${signature}`;
+}
+function verifyCsrfToken(token, userId) {
+  if (!token || typeof token !== "string") return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  const [nonce, signature] = parts;
+  if (!nonce || !signature) return false;
+  const expectedSignature = createHmac("sha256", CSRF_SECRET).update(`${nonce}:${userId}`).digest("hex");
+  if (signature.length !== expectedSignature.length) return false;
+  let result = 0;
+  for (let i = 0; i < signature.length; i++) {
+    result |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
+  }
+  return result === 0;
+}
+function setCsrfCookie(res, token) {
+  const isProd2 = env_default.NODE_ENV === "production";
+  res.cookie(CSRF_COOKIE_NAME, token, {
+    httpOnly: false,
+    // Must be readable by frontend JS to set X-CSRF-Token header
+    secure: isProd2,
+    sameSite: isProd2 ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1e3,
     path: "/"
   });
 }
@@ -191,12 +394,13 @@ function populateSession(req, payload) {
   return safeSession;
 }
 function authContextMiddleware(req, _res, next) {
+  const { token, isCookie } = extractTokenDetails(req);
+  req.authSource = isCookie ? "cookie" : token ? "bearer" : null;
   let session = req.session;
   if (session && session.userId) {
     populateSession(req);
     return next();
   }
-  const token = extractToken(req);
   if (token) {
     const payload = verifyToken(token);
     if (payload) {
@@ -210,7 +414,8 @@ function authContextMiddleware(req, _res, next) {
 async function requireAuth(req, res, next) {
   let session = req.session;
   if (!session || !session.userId) {
-    const token = extractToken(req);
+    const { token, isCookie } = extractTokenDetails(req);
+    req.authSource = isCookie ? "cookie" : token ? "bearer" : null;
     if (token) {
       const payload = verifyToken(token);
       if (payload) {
@@ -220,6 +425,17 @@ async function requireAuth(req, res, next) {
   }
   if (!session || !session.userId) {
     return res.status(401).json({ error: "Not authenticated" });
+  }
+  if (req.authSource === "cookie" && ["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
+    const isExempt = (req.baseUrl === "/api/auth" || req.baseUrl === "/auth") && ["/logout"].includes(req.path);
+    if (!isExempt) {
+      const csrfHeader = req.headers["x-csrf-token"] || req.headers["x-xsrf-token"];
+      const csrfBody = req.body?._csrf;
+      const csrfToken = csrfHeader || csrfBody;
+      if (!verifyCsrfToken(csrfToken, session.userId)) {
+        return res.status(403).json({ error: "Invalid or missing CSRF token" });
+      }
+    }
   }
   if (session.mustChangePassword) {
     const isAllowedAuthPath = (req.baseUrl === "/api/auth" || req.baseUrl === "/auth") && ["/change-password", "/logout", "/session", "/me"].includes(req.path);
@@ -259,6 +475,103 @@ async function requireAdmin(req, res, next) {
     }
     next();
   });
+}
+
+// middleware/idempotency.ts
+import { createHash } from "crypto";
+function hashPayload(payload) {
+  if (payload === void 0 || payload === null) return "";
+  const sortedKeys = (obj) => {
+    if (obj === null || typeof obj !== "object") return obj;
+    if (Array.isArray(obj)) return obj.map(sortedKeys);
+    return Object.keys(obj).sort().reduce((result, key) => {
+      result[key] = sortedKeys(obj[key]);
+      return result;
+    }, {});
+  };
+  return createHash("sha256").update(JSON.stringify(sortedKeys(payload))).digest("hex");
+}
+async function idempotencyMiddleware(req, res, next) {
+  if (!["POST", "PUT", "PATCH"].includes(req.method)) {
+    return next();
+  }
+  const rawKey = req.headers["idempotency-key"] || req.headers["x-idempotency-key"];
+  if (!rawKey || typeof rawKey !== "string" || !rawKey.trim()) {
+    return next();
+  }
+  const clientKey = String(rawKey).trim();
+  const session = req.session;
+  const uid = session?.userId;
+  const hid = session?.householdId;
+  if (!uid || !hid) {
+    return next();
+  }
+  const route = req.baseUrl ? `${req.baseUrl}${req.path}` : req.path;
+  const requestHash = hashPayload(req.body);
+  try {
+    const existing = await db_default`
+      SELECT id, status, status_code, request_hash, response_body
+      FROM idempotency_keys
+      WHERE household_id = ${hid}
+        AND user_id = ${uid}
+        AND route = ${route}
+        AND client_key = ${clientKey}
+      LIMIT 1`;
+    if (existing.length) {
+      const record = existing[0];
+      if (record.status === "completed") {
+        if (record.request_hash !== requestHash) {
+          return res.status(409).json({
+            error: "Idempotency key was previously used with a different request payload"
+          });
+        }
+        res.setHeader("X-Cache-Lookup", "IDEMPOTENT_HIT");
+        return res.status(record.status_code || 200).json(record.response_body);
+      }
+      if (record.status === "processing") {
+        return res.status(409).json({
+          error: "A concurrent operation with the same idempotency key is currently in progress"
+        });
+      }
+    }
+    try {
+      await db_default`
+        INSERT INTO idempotency_keys
+          (household_id, user_id, route, client_key, request_hash, status, expires_at)
+        VALUES
+          (${hid}, ${uid}, ${route}, ${clientKey}, ${requestHash}, 'processing', NOW() + INTERVAL '24 hours')
+        ON CONFLICT (household_id, user_id, route, client_key)
+        DO UPDATE SET request_hash = ${requestHash}, status = 'processing', created_at = NOW()`;
+    } catch {
+      return res.status(409).json({
+        error: "A concurrent operation with the same idempotency key is currently in progress"
+      });
+    }
+    const originalJson = res.json.bind(res);
+    res.json = function(body) {
+      const statusCode = res.statusCode;
+      const statusStr = statusCode < 400 ? "completed" : "failed";
+      db_default`
+        UPDATE idempotency_keys
+        SET status = ${statusStr},
+            status_code = ${statusCode},
+            response_body = ${body ? JSON.stringify(body) : null}
+        WHERE household_id = ${hid}
+          AND user_id = ${uid}
+          AND route = ${route}
+          AND client_key = ${clientKey}
+      `.catch((err) => {
+        console.warn("[idempotency record update warning]:", err?.message || err);
+      }).finally(() => {
+        originalJson(body);
+      });
+      return res;
+    };
+    next();
+  } catch (err) {
+    console.error("[idempotency error]:", err?.message || err);
+    next();
+  }
 }
 
 // routes/auth.ts
@@ -334,8 +647,136 @@ async function rateLimitAI(req, res, next) {
   }
 }
 
+// utils/webauthn.ts
+import { randomBytes as randomBytes2, createHash as createHash2, createVerify } from "crypto";
+function bufferToBase64Url(buffer) {
+  return Buffer.from(buffer).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function base64UrlToBuffer(base64url) {
+  let base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+  while (base64.length % 4) {
+    base64 += "=";
+  }
+  return Buffer.from(base64, "base64");
+}
+async function createWebAuthnChallenge(type, userId) {
+  const challenge = bufferToBase64Url(randomBytes2(32));
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1e3);
+  await db_default`
+    INSERT INTO webauthn_challenges (user_id, challenge, type, expires_at)
+    VALUES (${userId || null}, ${challenge}, ${type}, ${expiresAt.toISOString()})
+  `;
+  return challenge;
+}
+async function consumeWebAuthnChallenge(challenge, type, userId) {
+  const rows = await db_default`
+    DELETE FROM webauthn_challenges
+    WHERE challenge = ${challenge}
+      AND type = ${type}
+      AND expires_at > NOW()
+      ${userId ? db_default`AND (user_id = ${userId} OR user_id IS NULL)` : db_default``}
+    RETURNING id
+  `;
+  return rows.length > 0;
+}
+async function verifyRegistrationResponse(params) {
+  const { userId, expectedChallenge, clientDataJSON, credentialId, publicKey, deviceName, transports } = params;
+  const clientDataBuf = base64UrlToBuffer(clientDataJSON);
+  const clientData = JSON.parse(clientDataBuf.toString("utf8"));
+  if (clientData.type !== "webauthn.create") {
+    throw new Error("Invalid clientData type for registration");
+  }
+  if (clientData.challenge !== expectedChallenge) {
+    throw new Error("Challenge mismatch during registration");
+  }
+  const valid = await consumeWebAuthnChallenge(expectedChallenge, "registration", userId);
+  if (!valid) {
+    throw new Error("WebAuthn challenge expired or already consumed");
+  }
+  const rows = await db_default`
+    INSERT INTO webauthn_credentials
+      (user_id, credential_id, public_key, counter, device_name, transports, is_revoked)
+    VALUES
+      (${userId}, ${credentialId}, ${publicKey}, 0, ${deviceName || "Biometric Device"},
+       ${transports ? JSON.stringify(transports) : null}, FALSE)
+    ON CONFLICT (credential_id)
+    DO UPDATE SET
+      public_key = ${publicKey},
+      counter = 0,
+      is_revoked = FALSE,
+      last_used_at = NOW()
+    RETURNING id, credential_id AS "credentialId"
+  `;
+  return rows[0];
+}
+async function verifyAuthenticationResponse(params) {
+  const { credentialId, expectedChallenge, clientDataJSON, authenticatorData, signature } = params;
+  const creds = await db_default`
+    SELECT id, user_id, public_key, counter, is_revoked
+    FROM webauthn_credentials
+    WHERE credential_id = ${credentialId}
+    LIMIT 1
+  `;
+  if (!creds.length) {
+    throw new Error("WebAuthn credential not found on server");
+  }
+  const cred = creds[0];
+  if (cred.is_revoked) {
+    throw new Error("This biometric device credential has been revoked");
+  }
+  const clientDataBuf = base64UrlToBuffer(clientDataJSON);
+  const clientData = JSON.parse(clientDataBuf.toString("utf8"));
+  if (clientData.type !== "webauthn.get") {
+    throw new Error("Invalid clientData type for authentication");
+  }
+  if (clientData.challenge !== expectedChallenge) {
+    throw new Error("Challenge mismatch during authentication");
+  }
+  const validChallenge = await consumeWebAuthnChallenge(expectedChallenge, "authentication");
+  if (!validChallenge) {
+    throw new Error("WebAuthn challenge expired or already consumed");
+  }
+  const authDataBuf = base64UrlToBuffer(authenticatorData);
+  const flags = authDataBuf[32];
+  const userPresent = (flags & 1) !== 0;
+  if (!userPresent) {
+    throw new Error("User presence check flag not asserted by authenticator");
+  }
+  const newCounter = authDataBuf.readUInt32BE(33);
+  if (newCounter > 0 && newCounter <= cred.counter) {
+    throw new Error("Potential authenticator cloning / replay detected (counter did not increase)");
+  }
+  const clientDataHash = createHash2("sha256").update(clientDataBuf).digest();
+  const signedData = Buffer.concat([authDataBuf, clientDataHash]);
+  const signatureBuf = base64UrlToBuffer(signature);
+  if (cred.public_key.includes("BEGIN PUBLIC KEY")) {
+    const verifier = createVerify("SHA256");
+    verifier.update(signedData);
+    const signatureValid = verifier.verify(cred.public_key, signatureBuf);
+    if (!signatureValid) {
+      throw new Error("Cryptographic signature verification failed");
+    }
+  }
+  await db_default`
+    UPDATE webauthn_credentials
+    SET counter = ${newCounter},
+        last_used_at = NOW()
+    WHERE id = ${cred.id}
+  `;
+  return { userId: cred.user_id, credentialRecordId: cred.id };
+}
+
 // routes/auth.ts
 var router = Router();
+router.get("/csrf", (req, res) => {
+  const session = req.session;
+  if (!session?.userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  const csrfToken = generateCsrfToken(session.userId);
+  setCsrfCookie(res, csrfToken);
+  res.json({ csrfToken });
+});
 router.post("/login", rateLimitLogin, async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -371,6 +812,8 @@ router.post("/login", rateLimitLogin, async (req, res) => {
     };
     const token = signToken(sessionPayload);
     setAuthCookie(res, token);
+    const csrfToken = generateCsrfToken(user.id);
+    setCsrfCookie(res, csrfToken);
     const userPayload = {
       id: user.id,
       fullName: user.full_name,
@@ -390,6 +833,7 @@ router.post("/login", rateLimitLogin, async (req, res) => {
     return res.json({
       success: true,
       token,
+      csrfToken,
       user: userPayload,
       ...userPayload
     });
@@ -467,6 +911,8 @@ router.post("/biometric-login", rateLimitLogin, async (req, res) => {
     };
     const token = signToken(sessionPayload);
     setAuthCookie(res, token);
+    const csrfToken = generateCsrfToken(user.id);
+    setCsrfCookie(res, csrfToken);
     const userPayload = {
       id: user.id,
       fullName: user.full_name,
@@ -486,6 +932,7 @@ router.post("/biometric-login", rateLimitLogin, async (req, res) => {
     return res.json({
       success: true,
       token,
+      csrfToken,
       user: userPayload,
       ...userPayload
     });
@@ -498,6 +945,7 @@ router.post("/logout", (req, res) => {
   clearAuthCookie(res);
   res.clearCookie("connect.sid");
   res.clearCookie("auth_token");
+  res.clearCookie(CSRF_COOKIE_NAME, { path: "/" });
   const session = req.session;
   if (session && typeof session.destroy === "function") {
     session.destroy(() => {
@@ -522,6 +970,8 @@ router.get(["/session", "/me"], (req, res) => {
   if (!session?.userId) {
     return res.json({ authenticated: false });
   }
+  const csrfToken = generateCsrfToken(session.userId);
+  setCsrfCookie(res, csrfToken);
   const user = {
     id: session.userId,
     fullName: session.fullName,
@@ -534,6 +984,7 @@ router.get(["/session", "/me"], (req, res) => {
   res.json({
     authenticated: true,
     token: token || void 0,
+    csrfToken,
     user,
     ...user
   });
@@ -568,14 +1019,187 @@ router.post("/change-password", requireAuth, rateLimitPassword, async (req, res)
     };
     const newToken = signToken(updatedPayload);
     setAuthCookie(res, newToken);
+    const csrfToken = generateCsrfToken(session.userId);
+    setCsrfCookie(res, csrfToken);
     if (typeof session.save === "function") {
       session.save(() => {
       });
     }
-    res.json({ ok: true, success: true, token: newToken });
+    res.json({ ok: true, success: true, token: newToken, csrfToken });
   } catch (err) {
     console.error("[auth/change-password]", err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+router.post("/webauthn/register-options", requireAuth, async (req, res) => {
+  const session = req.session;
+  try {
+    const challenge = await createWebAuthnChallenge("registration", session.userId);
+    res.json({
+      challenge,
+      rp: {
+        name: "Flatmate Expense Manager",
+        id: req.hostname === "localhost" ? "localhost" : req.hostname
+      },
+      user: {
+        id: session.userId,
+        name: session.username,
+        displayName: session.fullName || session.username
+      },
+      pubKeyCredParams: [
+        { alg: -7, type: "public-key" },
+        // ES256
+        { alg: -257, type: "public-key" }
+        // RS256
+      ],
+      timeout: 6e4,
+      attestation: "none"
+    });
+  } catch (err) {
+    console.error("[webauthn/register-options error]:", err?.message || err);
+    res.status(500).json({ error: "Failed to generate WebAuthn registration options" });
+  }
+});
+router.post("/webauthn/register-verify", requireAuth, async (req, res) => {
+  const session = req.session;
+  const { expectedChallenge, clientDataJSON, credentialId, publicKey, deviceName, transports } = req.body;
+  if (!expectedChallenge || !clientDataJSON || !credentialId || !publicKey) {
+    return res.status(400).json({ error: "Missing required WebAuthn registration parameters" });
+  }
+  try {
+    const record = await verifyRegistrationResponse({
+      userId: session.userId,
+      expectedChallenge,
+      clientDataJSON,
+      credentialId,
+      publicKey,
+      deviceName,
+      transports
+    });
+    res.json({
+      success: true,
+      credentialRecordId: record.id,
+      credentialId: record.credentialId,
+      message: "Biometric passkey registered successfully"
+    });
+  } catch (err) {
+    console.error("[webauthn/register-verify error]:", err?.message || err);
+    res.status(400).json({ error: err?.message || "Failed to verify WebAuthn registration" });
+  }
+});
+router.post("/webauthn/login-options", async (req, res) => {
+  try {
+    const challenge = await createWebAuthnChallenge("authentication");
+    res.json({
+      challenge,
+      timeout: 6e4,
+      userVerification: "preferred"
+    });
+  } catch (err) {
+    console.error("[webauthn/login-options error]:", err?.message || err);
+    res.status(500).json({ error: "Failed to generate WebAuthn login options" });
+  }
+});
+router.post("/webauthn/login-verify", rateLimitLogin, async (req, res) => {
+  const { credentialId, expectedChallenge, clientDataJSON, authenticatorData, signature } = req.body;
+  if (!credentialId || !expectedChallenge || !clientDataJSON || !authenticatorData || !signature) {
+    return res.status(400).json({ error: "Missing required WebAuthn assertion fields" });
+  }
+  try {
+    const { userId } = await verifyAuthenticationResponse({
+      credentialId,
+      expectedChallenge,
+      clientDataJSON,
+      authenticatorData,
+      signature
+    });
+    const rows = await db_default`
+      SELECT u.id, u.full_name, u.username, u.is_active,
+             u.must_change_password, hm.role, hm.household_id
+      FROM   users u
+      LEFT   JOIN household_members hm ON hm.user_id = u.id
+      WHERE  u.id = ${userId}`;
+    const user = rows[0];
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: "User account disabled or not found" });
+    }
+    let householdId = user.household_id;
+    if (!householdId) {
+      const defaultHh = await db_default`SELECT id FROM households LIMIT 1`;
+      householdId = defaultHh[0]?.id || "c281ffa5-0c9b-4bff-9863-9b5bcee7f22c";
+    }
+    const sessionPayload = {
+      userId: user.id,
+      username: user.username,
+      fullName: user.full_name,
+      role: user.role || "member",
+      householdId,
+      mustChangePassword: Boolean(user.must_change_password)
+    };
+    const token = signToken(sessionPayload);
+    setAuthCookie(res, token);
+    const csrfToken = generateCsrfToken(user.id);
+    setCsrfCookie(res, csrfToken);
+    const userPayload = {
+      id: user.id,
+      fullName: user.full_name,
+      username: user.username,
+      role: user.role || "member",
+      householdId,
+      mustChangePassword: Boolean(user.must_change_password)
+    };
+    const session = req.session;
+    if (session) {
+      Object.assign(session, sessionPayload);
+      if (typeof session.save === "function") {
+        session.save(() => {
+        });
+      }
+    }
+    return res.json({
+      success: true,
+      token,
+      csrfToken,
+      user: userPayload,
+      ...userPayload
+    });
+  } catch (err) {
+    console.error("[webauthn/login-verify error]:", err?.message || err);
+    res.status(401).json({ error: err?.message || "Biometric authentication failed" });
+  }
+});
+router.get("/webauthn/devices", requireAuth, async (req, res) => {
+  const session = req.session;
+  try {
+    const devices = await db_default`
+      SELECT id, credential_id, device_name, is_revoked, last_used_at, created_at
+      FROM webauthn_credentials
+      WHERE user_id = ${session.userId}
+      ORDER BY created_at DESC
+    `;
+    res.json(devices);
+  } catch (err) {
+    console.error("[webauthn/devices GET error]:", err?.message || err);
+    res.status(500).json({ error: "Failed to retrieve registered devices" });
+  }
+});
+router.delete("/webauthn/devices/:id", requireAuth, async (req, res) => {
+  const session = req.session;
+  const { id } = req.params;
+  try {
+    const result = await db_default`
+      UPDATE webauthn_credentials
+      SET is_revoked = TRUE
+      WHERE id = ${id} AND user_id = ${session.userId}
+      RETURNING id
+    `;
+    if (!result.length) {
+      return res.status(404).json({ error: "Device credential not found" });
+    }
+    res.json({ ok: true, success: true, message: "Device credential revoked" });
+  } catch (err) {
+    console.error("[webauthn/devices DELETE error]:", err?.message || err);
+    res.status(500).json({ error: "Failed to revoke device" });
   }
 });
 var auth_default = router;
@@ -616,24 +1240,32 @@ var members_default = router2;
 import { Router as Router3 } from "express";
 import { randomUUID as uuidv4 } from "crypto";
 var router3 = Router3();
-var categoriesCache = null;
+var householdCategoryCaches = /* @__PURE__ */ new Map();
 var CACHE_TTL_MS2 = 5 * 60 * 1e3;
-function invalidateCategoriesCache() {
-  categoriesCache = null;
+function invalidateCategoriesCache(householdId) {
+  if (householdId) {
+    householdCategoryCaches.delete(householdId);
+  } else {
+    householdCategoryCaches.clear();
+  }
 }
 router3.get("/", requireAuth, async (req, res) => {
+  const session = req.session;
+  const hid = session?.householdId || "default";
   const now = Date.now();
-  if (categoriesCache && now - categoriesCache.timestamp < CACHE_TTL_MS2) {
+  const cached = householdCategoryCaches.get(hid);
+  if (cached && now - cached.timestamp < CACHE_TTL_MS2) {
     res.setHeader("Cache-Control", "private, max-age=60");
-    return res.json(categoriesCache.data);
+    return res.json(cached.data);
   }
   try {
     const rows = await db_default`
-      SELECT id, name, expense_type
+      SELECT id, name, expense_type, household_id
       FROM   categories
       WHERE  is_active = TRUE
+        AND  (household_id = ${hid} OR household_id IS NULL)
       ORDER  BY name`;
-    categoriesCache = { data: rows, timestamp: now };
+    householdCategoryCaches.set(hid, { data: rows, timestamp: now });
     res.setHeader("Cache-Control", "private, max-age=60");
     res.json(rows);
   } catch (err) {
@@ -642,6 +1274,8 @@ router3.get("/", requireAuth, async (req, res) => {
   }
 });
 router3.post("/", requireAuth, async (req, res) => {
+  const session = req.session;
+  const hid = session?.householdId;
   const { name, expense_type } = req.body;
   if (!name || typeof name !== "string" || !name.trim()) {
     return res.status(400).json({ error: "Category name is required" });
@@ -649,19 +1283,20 @@ router3.post("/", requireAuth, async (req, res) => {
   const trimmed = name.trim().slice(0, 100);
   try {
     const existing = await db_default`
-      SELECT id, name, expense_type
+      SELECT id, name, expense_type, household_id
       FROM   categories
       WHERE  LOWER(name) = LOWER(${trimmed})
+        AND  (household_id = ${hid} OR household_id IS NULL)
       LIMIT  1`;
     if (existing.length) {
       return res.json(existing[0]);
     }
     const id = uuidv4();
     await db_default`
-      INSERT INTO categories (id, name, expense_type, is_active)
-      VALUES (${id}, ${trimmed}, ${expense_type || null}, TRUE)`;
-    invalidateCategoriesCache();
-    res.status(201).json({ id, name: trimmed, expense_type: expense_type || null });
+      INSERT INTO categories (id, household_id, name, expense_type, is_active)
+      VALUES (${id}, ${hid || null}, ${trimmed}, ${expense_type || null}, TRUE)`;
+    invalidateCategoriesCache(hid);
+    res.status(201).json({ id, name: trimmed, expense_type: expense_type || null, household_id: hid });
   } catch (err) {
     console.error("[categories POST /]", err);
     res.status(500).json({ error: "Server error" });
@@ -671,7 +1306,7 @@ var categories_default = router3;
 
 // routes/expenses.ts
 import { Router as Router6 } from "express";
-import { randomUUID as uuidv43 } from "crypto";
+import { randomUUID as uuidv44 } from "crypto";
 
 // utils/audit.ts
 import { randomUUID as uuidv42 } from "crypto";
@@ -1136,31 +1771,49 @@ router5.get(["/", "/summary"], requireAuth, async (req, res) => {
 });
 var balances_default = router5;
 
-// routes/expenses.ts
-var router6 = Router6();
-var DATE_REGEX2 = /^\d{4}-\d{2}-\d{2}$/;
+// utils/category.ts
+import { randomUUID as uuidv43 } from "crypto";
 var UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-async function resolveCategoryId(categoryInput) {
+async function resolveCategoryId(categoryInput, householdId) {
   if (!categoryInput) return null;
   const val = String(categoryInput).trim();
   if (!val) return null;
   if (UUID_REGEX.test(val)) {
-    const rows = await db_default`SELECT id FROM categories WHERE id = ${val}`;
+    const rows = await db_default`
+      SELECT id FROM categories
+      WHERE id = ${val}
+        AND (household_id = ${householdId} OR household_id IS NULL)`;
     if (rows.length) return rows[0].id;
   }
-  const existing = await db_default`
-    SELECT id FROM categories WHERE LOWER(name) = LOWER(${val}) LIMIT 1`;
-  if (existing.length) return existing[0].id;
+  if (householdId) {
+    const existingHousehold = await db_default`
+      SELECT id FROM categories
+      WHERE LOWER(name) = LOWER(${val})
+        AND household_id = ${householdId}
+      LIMIT 1`;
+    if (existingHousehold.length) return existingHousehold[0].id;
+  }
+  const existingGlobal = await db_default`
+    SELECT id FROM categories
+    WHERE LOWER(name) = LOWER(${val})
+      AND household_id IS NULL
+    LIMIT 1`;
+  if (existingGlobal.length) return existingGlobal[0].id;
   const newId = uuidv43();
   await db_default`
-    INSERT INTO categories (id, name, is_active)
-    VALUES (${newId}, ${val.slice(0, 100)}, TRUE)`;
+    INSERT INTO categories (id, household_id, name, is_active)
+    VALUES (${newId}, ${householdId || null}, ${val.slice(0, 100)}, TRUE)`;
   return newId;
 }
+
+// routes/expenses.ts
+var router6 = Router6();
+var DATE_REGEX2 = /^\d{4}-\d{2}-\d{2}$/;
+var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 router6.get("/", requireAuth, async (req, res) => {
   const { type, from, to, page, limit } = req.query;
   const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
-  const limitNum = Math.min(1e3, Math.max(1, parseInt(String(limit), 10) || 500));
+  const limitNum = Math.min(100, Math.max(1, parseInt(String(limit), 10) || 50));
   const offsetNum = (pageNum - 1) * limitNum;
   const validFrom = from && DATE_REGEX2.test(String(from)) ? String(from) : null;
   const validTo = to && DATE_REGEX2.test(String(to)) ? String(to) : null;
@@ -1246,7 +1899,7 @@ router6.get("/:id", requireAuth, async (req, res) => {
   const id = req.params.id;
   const session = req.session;
   const uid = session.userId;
-  if (!UUID_REGEX.test(id)) {
+  if (!UUID_REGEX2.test(id)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }
   try {
@@ -1296,8 +1949,8 @@ router6.post("/personal", requireAuth, async (req, res) => {
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
-  const clientProvidedId = req.body.id && UUID_REGEX.test(req.body.id) ? req.body.id : null;
-  const eid = clientProvidedId || uuidv43();
+  const clientProvidedId = req.body.id && UUID_REGEX2.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv44();
   try {
     if (clientProvidedId) {
       const existing = await db_default`
@@ -1306,7 +1959,7 @@ router6.post("/personal", requireAuth, async (req, res) => {
         return res.status(200).json({ id: eid, already_exists: true });
       }
     }
-    const resolvedCatId = await resolveCategoryId(category_id);
+    const resolvedCatId = await resolveCategoryId(category_id, hid);
     await db_default.transaction([
       db_default`
         INSERT INTO expenses
@@ -1316,7 +1969,7 @@ router6.post("/personal", requireAuth, async (req, res) => {
            ${resolvedCatId}, ${uid}, ${expense_date}, ${notes ? notes.trim().slice(0, 1e3) : null})`,
       db_default`
         INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
-        VALUES (${uuidv43()}, ${eid}, ${uid}, ${amount_paise}, 'personal')`
+        VALUES (${uuidv44()}, ${eid}, ${uid}, ${amount_paise}, 'personal')`
     ]);
     await audit(uid, hid, "expense", eid, "create", null, { type: "personal", amount_paise });
     invalidateBalanceCache(hid);
@@ -1365,8 +2018,8 @@ router6.post("/common", requireAdmin, async (req, res) => {
       error: `Share total (${shareTotal} paise) must equal expense amount (${amount_paise} paise)`
     });
   }
-  const clientProvidedId = req.body.id && UUID_REGEX.test(req.body.id) ? req.body.id : null;
-  const eid = clientProvidedId || uuidv43();
+  const clientProvidedId = req.body.id && UUID_REGEX2.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv44();
   try {
     if (clientProvidedId) {
       const existing = await db_default`
@@ -1375,7 +2028,7 @@ router6.post("/common", requireAdmin, async (req, res) => {
         return res.status(200).json({ id: eid, already_exists: true });
       }
     }
-    const resolvedCatId = await resolveCategoryId(category_id);
+    const resolvedCatId = await resolveCategoryId(category_id, hid);
     const transactionQueries = [
       db_default`
         INSERT INTO expenses
@@ -1387,7 +2040,7 @@ router6.post("/common", requireAdmin, async (req, res) => {
       ...shares.map(
         (sh) => db_default`
           INSERT INTO expense_shares (id, expense_id, user_id, amount_paise, share_type)
-          VALUES (${uuidv43()}, ${eid}, ${sh.user_id}, ${sh.amount_paise}, 'common')`
+          VALUES (${uuidv44()}, ${eid}, ${sh.user_id}, ${sh.amount_paise}, 'common')`
       )
     ];
     await db_default.transaction(transactionQueries);
@@ -1419,7 +2072,7 @@ router6.post("/on-behalf", requireAuth, async (req, res) => {
     if (!item.description || !item.beneficiary_id) {
       return res.status(400).json({ error: "Each item needs a description and beneficiary_id" });
     }
-    if (!UUID_REGEX.test(item.beneficiary_id) || !validMemberIds.has(item.beneficiary_id)) {
+    if (!UUID_REGEX2.test(item.beneficiary_id) || !validMemberIds.has(item.beneficiary_id)) {
       return res.status(400).json({ error: "Beneficiary must be an active member of this household" });
     }
     if (!Number.isInteger(item.amount_paise) || item.amount_paise <= 0 || item.amount_paise > 1e9) {
@@ -1427,8 +2080,8 @@ router6.post("/on-behalf", requireAuth, async (req, res) => {
     }
     totalPaise += item.amount_paise;
   }
-  const clientProvidedId = req.body.id && UUID_REGEX.test(req.body.id) ? req.body.id : null;
-  const eid = clientProvidedId || uuidv43();
+  const clientProvidedId = req.body.id && UUID_REGEX2.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv44();
   try {
     if (clientProvidedId) {
       const existing = await db_default`
@@ -1439,15 +2092,15 @@ router6.post("/on-behalf", requireAuth, async (req, res) => {
     }
     const itemQueries = [];
     for (const item of items) {
-      const iid = uuidv43();
-      const resolvedCatId = await resolveCategoryId(item.category_id || item.category);
+      const iid = uuidv44();
+      const resolvedCatId = await resolveCategoryId(item.category_id || item.category, hid);
       itemQueries.push(
         db_default`
           INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
           VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`,
         db_default`
           INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
-          VALUES (${uuidv43()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
+          VALUES (${uuidv44()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
       );
     }
     await db_default.transaction([
@@ -1476,7 +2129,7 @@ router6.put("/:id", requireAuth, async (req, res) => {
   const uid = session.userId;
   const hid = session.householdId;
   const isAdmin = session.role === "admin";
-  if (!UUID_REGEX.test(id)) {
+  if (!UUID_REGEX2.test(id)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }
   const { description, amount_paise, category_id, expense_date, notes } = req.body;
@@ -1519,7 +2172,7 @@ router6.put("/:id", requireAuth, async (req, res) => {
     const newAmountPaise = amount_paise !== void 0 ? amount_paise : exp.amount_paise;
     const newDate = expense_date !== void 0 ? expense_date : exp.expense_date;
     const newNotes = notes !== void 0 ? notes ? notes.trim().slice(0, 1e3) : null : exp.notes;
-    const resolvedCatId = category_id !== void 0 ? await resolveCategoryId(category_id) : exp.category_id;
+    const resolvedCatId = category_id !== void 0 ? await resolveCategoryId(category_id, hid) : exp.category_id;
     if (exp.expense_type === "personal" && amount_paise !== void 0 && amount_paise !== exp.amount_paise) {
       await db_default.transaction([
         db_default`
@@ -1561,7 +2214,7 @@ router6.delete("/:id", requireAuth, async (req, res) => {
   const uid = session.userId;
   const hid = session.householdId;
   const isAdmin = session.role === "admin";
-  if (!UUID_REGEX.test(id)) {
+  if (!UUID_REGEX2.test(id)) {
     return res.status(400).json({ error: "Invalid expense ID" });
   }
   try {
@@ -1599,27 +2252,10 @@ var expenses_default = router6;
 
 // routes/purchases.ts
 import { Router as Router7 } from "express";
-import { randomUUID as uuidv44 } from "crypto";
+import { randomUUID as uuidv45 } from "crypto";
 var router7 = Router7();
-var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var UUID_REGEX3 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var DATE_REGEX3 = /^\d{4}-\d{2}-\d{2}$/;
-async function resolveCategoryId2(categoryInput) {
-  if (!categoryInput) return null;
-  const val = String(categoryInput).trim();
-  if (!val) return null;
-  if (UUID_REGEX2.test(val)) {
-    const rows = await db_default`SELECT id FROM categories WHERE id = ${val}`;
-    if (rows.length) return rows[0].id;
-  }
-  const existing = await db_default`
-    SELECT id FROM categories WHERE LOWER(name) = LOWER(${val}) LIMIT 1`;
-  if (existing.length) return existing[0].id;
-  const newId = uuidv44();
-  await db_default`
-    INSERT INTO categories (id, name, is_active)
-    VALUES (${newId}, ${val.slice(0, 100)}, TRUE)`;
-  return newId;
-}
 async function handleCreatePurchase(req, res) {
   const { description, expense_date, notes, items } = req.body;
   if (!description || !expense_date) {
@@ -1640,7 +2276,7 @@ async function handleCreatePurchase(req, res) {
     if (!item.description || !item.beneficiary_id) {
       return res.status(400).json({ error: "Each item needs a description and beneficiary_id" });
     }
-    if (!UUID_REGEX2.test(item.beneficiary_id) || !validMemberIds.has(item.beneficiary_id)) {
+    if (!UUID_REGEX3.test(item.beneficiary_id) || !validMemberIds.has(item.beneficiary_id)) {
       return res.status(400).json({ error: "Beneficiary must be an active member of this household" });
     }
     if (!Number.isInteger(item.amount_paise) || item.amount_paise <= 0 || item.amount_paise > 1e9) {
@@ -1648,8 +2284,8 @@ async function handleCreatePurchase(req, res) {
     }
     totalPaise += item.amount_paise;
   }
-  const clientProvidedId = req.body.id && UUID_REGEX2.test(req.body.id) ? req.body.id : null;
-  const eid = clientProvidedId || uuidv44();
+  const clientProvidedId = req.body.id && UUID_REGEX3.test(req.body.id) ? req.body.id : null;
+  const eid = clientProvidedId || uuidv45();
   try {
     if (clientProvidedId) {
       const existing = await db_default`
@@ -1660,15 +2296,15 @@ async function handleCreatePurchase(req, res) {
     }
     const itemQueries = [];
     for (const item of items) {
-      const iid = uuidv44();
-      const resolvedCatId = await resolveCategoryId2(item.category_id || item.category);
+      const iid = uuidv45();
+      const resolvedCatId = await resolveCategoryId(item.category_id || item.category, hid);
       itemQueries.push(
         db_default`
           INSERT INTO expense_items (id, expense_id, description, amount_paise, category_id)
           VALUES (${iid}, ${eid}, ${item.description.trim().slice(0, 255)}, ${item.amount_paise}, ${resolvedCatId})`,
         db_default`
           INSERT INTO expense_shares (id, expense_id, expense_item_id, user_id, amount_paise, share_type)
-          VALUES (${uuidv44()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
+          VALUES (${uuidv45()}, ${eid}, ${iid}, ${item.beneficiary_id}, ${item.amount_paise}, 'on_behalf')`
       );
     }
     await db_default.transaction([
@@ -1827,7 +2463,7 @@ router7.delete("/:id", requireAuth, async (req, res) => {
   const uid = session.userId;
   const hid = session.householdId;
   const isAdmin = session.role === "admin";
-  if (!UUID_REGEX2.test(id)) {
+  if (!UUID_REGEX3.test(id)) {
     return res.status(400).json({ error: "Invalid purchase ID" });
   }
   try {
@@ -1862,9 +2498,9 @@ var purchases_default = router7;
 
 // routes/settlements.ts
 import { Router as Router8 } from "express";
-import { randomUUID as uuidv45 } from "crypto";
+import { randomUUID as uuidv46 } from "crypto";
 var router8 = Router8();
-var UUID_REGEX3 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var UUID_REGEX4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 router8.get("/", requireAuth, async (req, res) => {
   const session = req.session;
   const uid = session.userId;
@@ -1897,7 +2533,7 @@ router8.post("/", requireAuth, rateLimitClaim, async (req, res) => {
   if (!recipient_id || !amount_paise || !method) {
     return res.status(400).json({ error: "recipient_id, amount_paise, and method are required" });
   }
-  if (!UUID_REGEX3.test(recipient_id)) {
+  if (!UUID_REGEX4.test(recipient_id)) {
     return res.status(400).json({ error: "Invalid recipient_id" });
   }
   if (!Number.isInteger(amount_paise) || amount_paise <= 0 || amount_paise > 1e9) {
@@ -1906,7 +2542,7 @@ router8.post("/", requireAuth, rateLimitClaim, async (req, res) => {
   if (!["cash", "upi"].includes(method)) {
     return res.status(400).json({ error: 'method must be "cash" or "upi"' });
   }
-  if (expense_share_id && !UUID_REGEX3.test(expense_share_id)) {
+  if (expense_share_id && !UUID_REGEX4.test(expense_share_id)) {
     return res.status(400).json({ error: "Invalid expense_share_id" });
   }
   const session = req.session;
@@ -1916,8 +2552,8 @@ router8.post("/", requireAuth, rateLimitClaim, async (req, res) => {
     return res.status(400).json({ error: "You cannot pay yourself" });
   }
   try {
-    const clientProvidedId = req.body.id && UUID_REGEX3.test(req.body.id) ? req.body.id : null;
-    const sid = clientProvidedId || uuidv45();
+    const clientProvidedId = req.body.id && UUID_REGEX4.test(req.body.id) ? req.body.id : null;
+    const sid = clientProvidedId || uuidv46();
     if (clientProvidedId) {
       const existing = await db_default`
         SELECT id FROM settlements WHERE id = ${sid} AND household_id = ${hid}`;
@@ -1956,15 +2592,17 @@ router8.post("/", requireAuth, rateLimitClaim, async (req, res) => {
       return res.status(404).json({ error: "Recipient not found in this household" });
     }
     const recip = recipientRows[0];
-    await db_default`
-      INSERT INTO settlements
-        (id, household_id, payer_id, recipient_id, amount_paise, method, status,
-         transaction_reference, note, recipient_name_snapshot, recipient_upi_snapshot, expense_share_id)
-      VALUES
-        (${sid}, ${hid}, ${uid}, ${recipient_id}, ${amount_paise}, ${method},
-         'verification_pending', ${transaction_reference ? transaction_reference.trim().slice(0, 100) : null},
-         ${note ? note.trim().slice(0, 500) : null},
-         ${recip.full_name}, ${recip.upi_id || null}, ${expense_share_id || null})`;
+    await db_default.transaction([
+      db_default`
+        INSERT INTO settlements
+          (id, household_id, payer_id, recipient_id, amount_paise, method, status,
+           transaction_reference, note, recipient_name_snapshot, recipient_upi_snapshot, expense_share_id)
+        VALUES
+          (${sid}, ${hid}, ${uid}, ${recipient_id}, ${amount_paise}, ${method},
+           'verification_pending', ${transaction_reference ? transaction_reference.trim().slice(0, 100) : null},
+           ${note ? note.trim().slice(0, 500) : null},
+           ${recip.full_name}, ${recip.upi_id || null}, ${expense_share_id || null})`
+    ]);
     await audit(uid, hid, "settlement", sid, "claim", null, { amount_paise, method, recipient_id });
     invalidateBalanceCache(hid);
     res.status(201).json({ id: sid });
@@ -1978,7 +2616,7 @@ router8.post("/:id/confirm", requireAuth, async (req, res) => {
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
-  if (!UUID_REGEX3.test(id)) return res.status(400).json({ error: "Invalid ID" });
+  if (!UUID_REGEX4.test(id)) return res.status(400).json({ error: "Invalid ID" });
   try {
     const checkRows = await db_default`SELECT * FROM settlements WHERE id = ${id} AND household_id = ${hid}`;
     if (!checkRows.length) return res.status(404).json({ error: "Not found" });
@@ -2013,7 +2651,7 @@ router8.post("/:id/reject", requireAuth, async (req, res) => {
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
-  if (!UUID_REGEX3.test(id)) return res.status(400).json({ error: "Invalid ID" });
+  if (!UUID_REGEX4.test(id)) return res.status(400).json({ error: "Invalid ID" });
   try {
     const checkRows = await db_default`SELECT * FROM settlements WHERE id = ${id} AND household_id = ${hid}`;
     if (!checkRows.length) return res.status(404).json({ error: "Not found" });
@@ -2044,7 +2682,7 @@ router8.post("/:id/cancel", requireAuth, async (req, res) => {
   const session = req.session;
   const uid = session.userId;
   const hid = session.householdId;
-  if (!UUID_REGEX3.test(id)) return res.status(400).json({ error: "Invalid ID" });
+  if (!UUID_REGEX4.test(id)) return res.status(400).json({ error: "Invalid ID" });
   try {
     const checkRows = await db_default`SELECT * FROM settlements WHERE id = ${id} AND household_id = ${hid}`;
     if (!checkRows.length) return res.status(404).json({ error: "Not found" });
@@ -2094,7 +2732,7 @@ function buildUpiUri(upiId, displayName, amountPaise = null) {
 
 // routes/profile.ts
 var router9 = Router9();
-var UUID_REGEX4 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var UUID_REGEX5 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 router9.get("/upi", requireAuth, async (req, res) => {
   const session = req.session;
   try {
@@ -2146,7 +2784,7 @@ async function handleQrRequest(req, res) {
   const session = req.session;
   const { userId, amount } = req.query;
   if (!userId || typeof userId !== "string") return res.status(400).json({ error: "userId is required" });
-  if (!UUID_REGEX4.test(userId)) {
+  if (!UUID_REGEX5.test(userId)) {
     return res.status(400).json({ error: "Invalid userId format" });
   }
   const hid = session.householdId;
@@ -2508,32 +3146,32 @@ var ai_default = router11;
 
 // app.ts
 var app = express();
-var allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:3000",
-  "https://flatmate-expense-tracker-lemon.vercel.app"
-];
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ""));
-}
+app.use(requestIdMiddleware);
 var corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    const isVercelSubdomain = /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin);
-    if (allowedOrigins.includes(origin) || isVercelSubdomain) {
+    if (env_default.ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
-    if (process.env.NODE_ENV !== "production") {
+    if (env_default.NODE_ENV !== "production" && (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:"))) {
       return callback(null, true);
     }
     return callback(new Error("Origin blocked by CORS policy"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
-  exposedHeaders: ["Set-Cookie", "Authorization"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+    "X-CSRF-Token",
+    "X-XSRF-Token",
+    "Idempotency-Key",
+    "X-Request-Id"
+  ],
+  exposedHeaders: ["Set-Cookie", "Authorization", "X-Request-Id"],
   maxAge: 86400
 };
 app.use(cors(corsOptions));
@@ -2556,13 +3194,22 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 app.use(cookieParser());
 app.use(authContextMiddleware);
+app.use(idempotencyMiddleware);
 app.get(["/", "/api/health", "/health", "/api", "/api/"], (_req, res) => {
   res.json({
     status: "ok",
     name: "Flatmate Expense Manager API",
-    hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
-    hasSessionSecret: Boolean(process.env.SESSION_SECRET || process.env.JWT_SECRET),
-    nodeEnv: process.env.NODE_ENV || "not_set",
+    timestamp: (/* @__PURE__ */ new Date()).toISOString()
+  });
+});
+app.get("/api/admin/health", requireAdmin, (_req, res) => {
+  res.json({
+    status: "ok",
+    name: "Flatmate Expense Manager API",
+    hasDatabaseUrl: Boolean(env_default.DATABASE_URL),
+    hasSessionSecret: Boolean(env_default.JWT_SECRET),
+    nodeEnv: env_default.NODE_ENV,
+    allowedOriginsCount: env_default.ALLOWED_ORIGINS.length,
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
@@ -2590,8 +3237,13 @@ app.use("/upi", profile_default);
 app.use("/activity", activity_default);
 app.use("/ai", ai_default);
 app.use("/analytics", analytics_default);
-app.use((err, _req, res, _next) => {
-  console.error("[unhandled error]", err);
+app.use((err, req, res, _next) => {
+  logger_default.error("[unhandled error]", {
+    requestId: req.id,
+    path: req.originalUrl || req.url,
+    message: err.message || String(err),
+    stack: env_default.NODE_ENV !== "production" ? err.stack : void 0
+  });
   const status = typeof err.status === "number" ? err.status : typeof err.statusCode === "number" ? err.statusCode : 500;
   res.status(status).json({ error: err.expose ? err.message : "Internal server error" });
 });
