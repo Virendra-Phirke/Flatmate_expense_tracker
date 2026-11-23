@@ -545,46 +545,11 @@
   animation: border-beam calc(var(--duration, 12)*1s) infinite linear;
 }
 
-/* ─── Ultra-smooth buttery theme transitions (lightweight & mobile GPU-optimized) ─── */
-html.theme-transitioning,
-html.theme-transitioning body,
-html.theme-transitioning #root,
-html.theme-transitioning header,
-html.theme-transitioning nav,
-html.theme-transitioning main,
-html.theme-transitioning aside,
-html.theme-transitioning section,
-html.theme-transitioning article,
-html.theme-transitioning .card,
-html.theme-transitioning [role="dialog"],
-html.theme-transitioning button,
-html.theme-transitioning input,
-html.theme-transitioning select {
-  transition: background-color 140ms ease-out,
-              border-color 140ms ease-out,
-              color 140ms ease-out !important;
-  transition-delay: 0s !important;
-}
-
-/* View transitions API native smoothing (Chrome, Edge, Safari iOS 18+) */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 160ms;
-  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .animate-shimmer,
   .animate-mic-pulse,
-  .animate-slide-up {
-    animation: none !important;
-  }
-  html.theme-transitioning,
-  html.theme-transitioning * {
-    transition: none !important;
-  }
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  .animate-slide-up,
+  .animate-border-beam {
     animation: none !important;
   }
 }

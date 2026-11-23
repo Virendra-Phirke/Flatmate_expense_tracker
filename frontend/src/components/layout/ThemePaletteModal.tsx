@@ -16,50 +16,64 @@ interface ThemePaletteModalProps {
 }
 
 export function ThemePaletteModal({ open, onOpenChange }: ThemePaletteModalProps) {
-  const { palette, setPalette, isDark, toggleDark } = useTheme();
+  const { palette, setPalette, isDark, setIsDark } = useTheme();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto p-4 sm:p-5 bg-card text-card-foreground border-border">
-        <DialogHeader className="space-y-1.5 pb-2 text-left">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Palette className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <div>
-                <DialogTitle className="text-base font-bold text-foreground tracking-tight">
-                  Theme & Appearance
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">
-                  Select an executive color palette tailored for clarity and focus.
-                </DialogDescription>
-              </div>
+        {/* Header with safety right-padding so it never collides with DialogPrimitive.Close */}
+        <DialogHeader className="space-y-1 pb-1 text-left pr-8 sm:pr-10">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+              <Palette className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-bold text-foreground tracking-tight">
+                Theme & Appearance
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Select an executive color palette tailored for clarity and focus.
+              </DialogDescription>
             </div>
-
-            {/* Light / Dark Mode Toggle */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={toggleDark}
-              className="h-8 gap-1.5 px-2.5 text-xs font-semibold border-border text-foreground hover:bg-muted active:scale-95 transition-all shrink-0"
-              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark ? (
-                <>
-                  <Sun className="h-3.5 w-3.5 text-pending" />
-                  <span className="hidden xs:inline">Light mode</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="h-3.5 w-3.5 text-primary" />
-                  <span className="hidden xs:inline">Dark mode</span>
-                </>
-              )}
-            </Button>
           </div>
         </DialogHeader>
+
+        {/* Dedicated Mode Switcher Row */}
+        <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-muted/40 border border-border">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-foreground">Interface Mode</span>
+            <span className="text-[11px] text-muted-foreground hidden xs:inline">
+              • {isDark ? 'Dark Theme' : 'Light Theme'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-card rounded-md p-0.5 border border-border shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setIsDark(false)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${
+                !isDark
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Sun className="h-3.5 w-3.5" />
+              <span>Light</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDark(true)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${
+                isDark
+                  ? 'bg-primary text-primary-foreground font-semibold shadow-2xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Moon className="h-3.5 w-3.5" />
+              <span>Dark</span>
+            </button>
+          </div>
+        </div>
 
         {/* 6 Curated Executive Palettes Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
