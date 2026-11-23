@@ -469,6 +469,17 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
               <span className="hidden xl:inline text-xs font-medium text-foreground">{currentPalette.name}</span>
               <Palette className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
+
+            {/* Keyboard Shortcuts Trigger */}
+            <button
+              type="button"
+              onClick={() => setShortcutsModalOpen(true)}
+              className="hidden lg:flex items-center justify-center h-8 w-8 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-mono font-bold transition-all shadow-2xs active:scale-95"
+              title="Keyboard shortcuts (?)"
+              aria-label="Keyboard shortcuts"
+            >
+              ?
+            </button>
           </div>
         </header>
 
