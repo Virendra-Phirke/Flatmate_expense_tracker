@@ -14,13 +14,13 @@ interface CategoryDonutChartProps {
 const PALETTE_COLORS = [
   'hsl(var(--primary))',
   '#10b981', // emerald
-  '#8b5cf6', // violet
+  '#0d9488', // teal
   '#f59e0b', // amber
-  '#ec4899', // pink
-  '#3b82f6', // blue
-  '#14b8a6', // teal
-  '#f97316', // orange
-  '#6366f1', // indigo
+  '#ea580c', // orange
+  '#16a34a', // green
+  '#14b8a6', // light teal
+  '#c2410c', // terracotta
+  '#78716c', // warm stone
   '#84cc16', // lime
 ];
 

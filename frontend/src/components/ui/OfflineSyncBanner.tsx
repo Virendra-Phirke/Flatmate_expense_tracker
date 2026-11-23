@@ -211,8 +211,8 @@ export function OfflineSyncBanner() {
                             item.errorCategory === 'conflict'
                               ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
                               : item.errorCategory === 'auth'
-                              ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300'
-                              : 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
+                              ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300'
+                              : 'bg-stone-500/20 text-stone-700 dark:text-stone-300'
                           }`}
                         >
                           {item.errorCategory}

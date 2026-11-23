@@ -101,7 +101,7 @@ export function AnalyticsTable({ transactions }: AnalyticsTableProps) {
         );
       case 'on_behalf':
         return (
-          <Badge variant="outline" className="text-xs font-mono font-medium bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/30">
+          <Badge variant="outline" className="text-xs font-mono font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30">
             For Flatmate
           </Badge>
         );

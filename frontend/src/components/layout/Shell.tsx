@@ -20,7 +20,9 @@ import {
   Key,
   Shield,
   Lock,
+  Plus,
 } from '@/components/ui/icons';
+import { motion, AnimatePresence } from 'motion/react';
 import { AppLogo } from '@/components/ui/AppLogo';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -155,7 +157,7 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
   return (
     <div className="min-h-screen bg-background text-foreground md:flex">
       {/* ── Desktop sidebar ─────────────────────────────────────── */}
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-60 lg:w-64 md:shrink-0 md:flex-col md:border-r md:border-border md:bg-card">
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-56 lg:w-60 md:shrink-0 md:flex-col md:border-r md:border-border md:bg-card">
         {/* Brand */}
         <div className="flex items-center justify-between border-b border-border p-4 lg:p-5">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -349,6 +351,62 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
 
       {/* ── Main content area ───────────────────────────────────── */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        {/* Desktop top header */}
+        <header className="hidden md:flex sticky top-0 z-30 h-13 min-h-[52px] items-center justify-between border-b border-border bg-card/85 backdrop-blur-md px-5 lg:px-7 py-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <h1 className="text-sm font-bold tracking-tight text-foreground truncate">{pageTitles[activeTab]}</h1>
+            <span className="text-muted-foreground/40 font-mono text-xs">•</span>
+            <span className="text-xs text-muted-foreground font-medium truncate max-w-[200px]">{user?.householdName || 'Household'}</span>
+            {user?.role === 'admin' && (
+              <Badge variant="outline" className="text-[10px] font-mono py-0 px-1.5 font-medium shrink-0">Admin</Badge>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Quick Action: New Expense */}
+            <Button
+              size="sm"
+              onClick={() => goTo('personal', true)}
+              className="h-8 gap-1.5 px-3 text-xs font-semibold shadow-xs hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>New Expense</span>
+            </Button>
+
+            {/* Quick Action: Settle Up */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goTo('repayments', true)}
+              className="h-8 gap-1.5 px-3 text-xs font-medium border-border hover:bg-muted active:scale-[0.98] transition-all"
+            >
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+              <span>Settle Up</span>
+            </Button>
+
+            {/* Voice Quick Trigger */}
+            <button
+              type="button"
+              onClick={() => setVoiceModalOpen(true)}
+              className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-medium transition-colors"
+              title="Voice assistant input (Ctrl+M)"
+            >
+              <Mic className="h-3.5 w-3.5" />
+              <kbd className="hidden lg:inline text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded border border-border">Ctrl+M</kbd>
+            </button>
+
+            {/* Palette Switcher */}
+            <button
+              type="button"
+              onClick={() => setPaletteModalOpen(true)}
+              className="flex items-center justify-center h-8 w-8 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Color palette"
+            >
+              <Palette className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </header>
+
         {/* Mobile top header */}
         <header className="sticky top-0 z-30 flex min-h-[52px] items-center justify-between gap-2 border-b border-border bg-background px-3 xs:px-4 py-2 md:hidden">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -419,9 +477,19 @@ export function Shell({ activeTab, onTabChange, children }: ShellProps) {
 
         {/* Page body with extra bottom padding for floating FAB and bottom dock */}
         <main className="min-w-0 flex-1 pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] md:pb-6">
-          <div className="mx-auto w-full max-w-6xl px-3 xs:px-4 py-3 xs:py-4 sm:p-6 lg:p-8 space-y-4">
+          <div className="mx-auto w-full max-w-6xl px-3 xs:px-4 py-3 xs:py-4 sm:p-5 lg:p-6 space-y-3.5">
             <OfflineSyncBanner />
-            {children}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -3 }}
+                transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
       </div>

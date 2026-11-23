@@ -81,7 +81,7 @@ export const DEFAULT_CATEGORIES: CategoryDefinition[] = [
     id: 'household',
     name: 'Household Supplies',
     emoji: '🧹',
-    colorClass: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+    colorClass: 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30',
     chips: [
       { label: 'Vim Dishwash', emoji: '🧼' },
       { label: 'Surf Excel Detergent', emoji: '🧺' },
@@ -157,7 +157,7 @@ export const DEFAULT_CATEGORIES: CategoryDefinition[] = [
     id: 'transport',
     name: 'Transport & Fuel',
     emoji: '🚗',
-    colorClass: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
+    colorClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
     chips: [
       { label: 'Uber / Ola Ride', emoji: '🚕' },
       { label: 'Auto Rickshaw', emoji: '🛺' },

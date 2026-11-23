@@ -1,16 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type ThemePaletteId =
-  | 'forest'
-  | 'indigo'
-  | 'terracotta'
   | 'teal'
+  | 'forest'
   | 'obsidian'
-  | 'plum';
+  | 'amber'
+  | 'terracotta'
+  | 'slate';
 
 export interface ThemePaletteInfo {
   id: ThemePaletteId;
   name: string;
+  category: string;
   tagline: string;
   vibe: string;
   primaryHex: string;
@@ -26,75 +27,81 @@ export const DEFAULT_PALETTE_ID: ThemePaletteId = 'teal';
 export const THEME_PALETTES: ThemePaletteInfo[] = [
   {
     id: 'teal',
-    name: 'Caribbean Teal & Neo-Mint',
-    tagline: 'Default • Fresh, energetic & digital',
-    vibe: 'Revolut / N26 Neo-Bank Style',
-    primaryHex: '#116A65',
-    accentHex: '#D2F5F1',
-    bgHex: '#F3F8F8',
+    name: 'Teal Capital',
+    category: 'Institutional Fintech',
+    tagline: 'Modern Neo-Bank Clarity',
+    vibe: 'Modern Fintech',
+    primaryHex: '#0F766E',
+    accentHex: '#14B8A6',
+    bgHex: '#F0FDFA',
     cardHex: '#FFFFFF',
     badgeHex: '#0D9488',
-    description: 'Deep ocean teal paired with crisp mint mist. Fresh, trust-inspiring, and high-clarity financial tracking.',
-  },
-  {
-    id: 'indigo',
-    name: 'Royal Indigo & Iris',
-    tagline: 'Modern, crisp & high-tech',
-    vibe: 'Linear / Stripe SaaS Style',
-    primaryHex: '#3730A3',
-    accentHex: '#E0E4FF',
-    bgHex: '#F4F6FA',
-    cardHex: '#FFFFFF',
-    badgeHex: '#4338CA',
-    description: 'Vibrant royal indigo with cool porcelain slate backgrounds and electric iris accents. Ultra-sharp and modern.',
+    description: 'Deep petrol teal with crisp neo-mint accents. High clarity and focus.',
   },
   {
     id: 'forest',
-    name: 'Nordic Forest & Sage',
-    tagline: 'Calm, organic & natural',
-    vibe: 'Eco Fintech / Notion Aesthetic',
-    primaryHex: '#275940',
-    accentHex: '#E2F0E5',
-    bgHex: '#F7F6F2',
+    name: 'Alpine Forest',
+    category: 'Private Wealth & ESG',
+    tagline: 'Swiss Wealth & Sustainability',
+    vibe: 'Private Wealth',
+    primaryHex: '#14532D',
+    accentHex: '#16A34A',
+    bgHex: '#F0FDF4',
     cardHex: '#FFFFFF',
-    badgeHex: '#1B4332',
-    description: 'Deep evergreen pine with warm linen parchment and gentle sage accents. Relaxed and easy on the eyes.',
-  },
-  {
-    id: 'terracotta',
-    name: 'Tuscan Terracotta & Sand',
-    tagline: 'Warm, cozy & artisanal',
-    vibe: 'Splitwise Reimagined / Warm Hearth',
-    primaryHex: '#AB4722',
-    accentHex: '#FDE8DB',
-    bgHex: '#FAF7F2',
-    cardHex: '#FFFFFF',
-    badgeHex: '#C05621',
-    description: 'Earthy baked terracotta with soft desert sand and warm peach accents. Feels friendly, tactile, and welcoming.',
+    badgeHex: '#15803D',
+    description: 'Deep British evergreen pine with warm linen and sage accents.',
   },
   {
     id: 'obsidian',
-    name: 'Obsidian Slate & Cobalt',
-    tagline: 'Minimalist, luxury & focused',
-    vibe: 'Apple / Vercel Monochromatic',
-    primaryHex: '#131C31',
-    accentHex: '#E5EFFF',
-    bgHex: '#F5F7FA',
+    name: 'Obsidian Titanium',
+    category: 'Executive Monochrome',
+    tagline: 'High-Density Minimalist Carbon',
+    vibe: 'Monochrome Pro',
+    primaryHex: '#18181B',
+    accentHex: '#71717A',
+    bgHex: '#FAFAFA',
     cardHex: '#FFFFFF',
-    badgeHex: '#2563EB',
-    description: 'Deep obsidian graphite with cool titanium tones and electric cobalt badges. High contrast, timeless, and punchy.',
+    badgeHex: '#27272A',
+    description: 'Pure neutral carbon with polished titanium steel tones. Timeless contrast.',
   },
   {
-    id: 'plum',
-    name: 'Royal Plum & Champagne',
-    tagline: 'Sophisticated, rich & creative',
-    vibe: 'Boutique Lifestyle / Velvet Lounge',
-    primaryHex: '#582585',
-    accentHex: '#F1E3FB',
-    bgHex: '#FAF6FB',
+    id: 'amber',
+    name: 'Imperial Amber',
+    category: 'Prestige Asset Mgmt',
+    tagline: 'Prestige Luxury & Burnished Gold',
+    vibe: 'Prestige Gold',
+    primaryHex: '#B45309',
+    accentHex: '#F59E0B',
+    bgHex: '#FFFBEB',
     cardHex: '#FFFFFF',
-    badgeHex: '#7C3AED',
-    description: 'Velvet royal plum with delicate champagne orchid highlights. Distinctive, luxurious, and visually captivating.',
+    badgeHex: '#92400E',
+    description: 'Warm burnished amber with champagne and gold accents. Refined luxury.',
+  },
+  {
+    id: 'terracotta',
+    name: 'Warm Bronze',
+    category: 'Artisanal & Editorial',
+    tagline: 'Architectural Earth & Ochre',
+    vibe: 'Warm Editorial',
+    primaryHex: '#9A3412',
+    accentHex: '#EA580C',
+    bgHex: '#FFF7ED',
+    cardHex: '#FFFFFF',
+    badgeHex: '#7C2D12',
+    description: 'Rich earthy terracotta and baked umber with desert sand tones.',
+  },
+  {
+    id: 'slate',
+    name: 'Slate Mineral',
+    category: 'Corporate Audit & Swiss',
+    tagline: 'Neutral Swiss Precision',
+    vibe: 'Swiss Precision',
+    primaryHex: '#334155',
+    accentHex: '#64748B',
+    bgHex: '#F8FAFC',
+    cardHex: '#FFFFFF',
+    badgeHex: '#1E293B',
+    description: 'Deep mineral slate and cool iron. Minimalist corporate clarity.',
   },
 ];
 

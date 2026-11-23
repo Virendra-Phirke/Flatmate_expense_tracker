@@ -72,68 +72,69 @@
     --info-soft: 198 30% 19%;
   }
 
-  /* ── 2. Royal Indigo & Iris (Stripe / Modern SaaS) ──────────────── */
-  [data-theme="indigo"] {
+  /* ── 2. Nordic Forest & Sage (Organic Earth) ─────────────────────── */
+  [data-theme="forest"] {
     color-scheme: light;
-    --background: 222 20% 97%;
-    --foreground: 224 45% 12%;
+    --background: 42 20% 96%;
+    --foreground: 140 12% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 224 45% 12%;
+    --card-foreground: 140 12% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 45% 12%;
-    --primary: 238 65% 44%;
+    --popover-foreground: 140 12% 14%;
+    --primary: 150 38% 25%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 225 30% 94%;
-    --secondary-foreground: 224 45% 15%;
-    --muted: 225 25% 93%;
-    --muted-foreground: 220 14% 44%;
-    --accent: 238 85% 94%;
-    --accent-foreground: 238 65% 35%;
-    --destructive: 350 72% 50%;
+    --secondary: 45 18% 92%;
+    --secondary-foreground: 140 12% 18%;
+    --muted: 45 18% 92%;
+    --muted-foreground: 135 7% 36%;
+    --accent: 135 25% 92%;
+    --accent-foreground: 150 38% 22%;
+    --destructive: 0 50% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 18% 88%;
-    --input: 220 18% 82%;
-    --ring: 238 65% 44%;
-    --positive: 156 72% 32%;
-    --positive-soft: 152 55% 94%;
-    --negative: 350 72% 50%;
-    --negative-soft: 350 85% 96%;
-    --pending: 38 92% 38%;
-    --pending-soft: 42 95% 93%;
-    --info: 217 80% 45%;
-    --info-soft: 215 85% 95%;
+    --border: 80 10% 88%;
+    --input: 80 10% 82%;
+    --ring: 150 38% 25%;
+    --positive: 150 53% 29%;
+    --positive-soft: 132 33% 93%;
+    --negative: 0 50% 48%;
+    --negative-soft: 0 70% 96%;
+    --pending: 39 86% 31%;
+    --pending-soft: 43 100% 92%;
+    --info: 201 35% 35%;
+    --info-soft: 200 45% 94%;
+    --radius: 0.75rem;
   }
 
-  [data-theme="indigo"].dark,
-  [data-theme="indigo"] .dark {
+  [data-theme="forest"].dark,
+  [data-theme="forest"] .dark {
     color-scheme: dark;
-    --background: 228 26% 8%;
-    --foreground: 220 25% 95%;
-    --card: 228 24% 12%;
-    --card-foreground: 220 25% 95%;
-    --popover: 228 24% 12%;
-    --popover-foreground: 220 25% 95%;
-    --primary: 235 85% 72%;
-    --primary-foreground: 228 35% 10%;
-    --secondary: 228 20% 18%;
-    --secondary-foreground: 220 25% 92%;
-    --muted: 228 18% 18%;
-    --muted-foreground: 220 14% 68%;
-    --accent: 235 40% 22%;
-    --accent-foreground: 235 85% 82%;
-    --destructive: 350 75% 70%;
-    --destructive-foreground: 228 35% 10%;
-    --border: 228 18% 22%;
-    --input: 228 18% 26%;
-    --ring: 235 85% 72%;
-    --positive: 156 65% 62%;
-    --positive-soft: 156 30% 18%;
-    --negative: 350 75% 70%;
-    --negative-soft: 350 30% 19%;
-    --pending: 40 85% 65%;
-    --pending-soft: 40 35% 18%;
-    --info: 217 80% 70%;
-    --info-soft: 217 30% 19%;
+    --background: 135 10% 9%;
+    --foreground: 100 15% 94%;
+    --card: 135 9% 12%;
+    --card-foreground: 100 15% 94%;
+    --popover: 135 9% 12%;
+    --popover-foreground: 100 15% 94%;
+    --primary: 137 29% 65%;
+    --primary-foreground: 140 25% 11%;
+    --secondary: 130 10% 17%;
+    --secondary-foreground: 100 15% 92%;
+    --muted: 130 10% 17%;
+    --muted-foreground: 120 8% 68%;
+    --accent: 135 15% 20%;
+    --accent-foreground: 137 29% 78%;
+    --destructive: 3 78% 74%;
+    --destructive-foreground: 140 25% 11%;
+    --border: 130 9% 24%;
+    --input: 130 9% 28%;
+    --ring: 137 29% 65%;
+    --positive: 140 43% 65%;
+    --positive-soft: 135 24% 18%;
+    --negative: 3 78% 74%;
+    --negative-soft: 0 24% 21%;
+    --pending: 41 72% 64%;
+    --pending-soft: 40 35% 19%;
+    --info: 201 48% 70%;
+    --info-soft: 201 25% 19%;
   }
 
   /* ── 3. Tuscan Terracotta & Sand (Warm Cozy) ────────────────────── */
@@ -200,197 +201,196 @@
     --info-soft: 198 30% 19%;
   }
 
-  /* ── 4. Nordic Forest & Sage (Organic Earth) ─────────────────────── */
-  [data-theme="forest"] {
-    color-scheme: light;
-    --background: 42 20% 96%;
-    --foreground: 140 12% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 140 12% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 140 12% 14%;
-    --primary: 150 38% 25%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 45 18% 92%;
-    --secondary-foreground: 140 12% 18%;
-    --muted: 45 18% 92%;
-    --muted-foreground: 135 7% 36%;
-    --accent: 135 25% 92%;
-    --accent-foreground: 150 38% 22%;
-    --destructive: 0 50% 48%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 80 10% 88%;
-    --input: 80 10% 82%;
-    --ring: 150 38% 25%;
-    --positive: 150 53% 29%;
-    --positive-soft: 132 33% 93%;
-    --negative: 0 50% 48%;
-    --negative-soft: 0 70% 96%;
-    --pending: 39 86% 31%;
-    --pending-soft: 43 100% 92%;
-    --info: 201 35% 35%;
-    --info-soft: 200 45% 94%;
-    --radius: 0.75rem;
-  }
-
-  [data-theme="forest"].dark,
-  [data-theme="forest"] .dark {
-    color-scheme: dark;
-    --background: 135 10% 9%;
-    --foreground: 100 15% 94%;
-    --card: 135 9% 12%;
-    --card-foreground: 100 15% 94%;
-    --popover: 135 9% 12%;
-    --popover-foreground: 100 15% 94%;
-    --primary: 137 29% 65%;
-    --primary-foreground: 140 25% 11%;
-    --secondary: 130 10% 17%;
-    --secondary-foreground: 100 15% 92%;
-    --muted: 130 10% 17%;
-    --muted-foreground: 120 8% 68%;
-    --accent: 135 15% 20%;
-    --accent-foreground: 137 29% 78%;
-    --destructive: 3 78% 74%;
-    --destructive-foreground: 140 25% 11%;
-    --border: 130 9% 24%;
-    --input: 130 9% 28%;
-    --ring: 137 29% 65%;
-    --positive: 140 43% 65%;
-    --positive-soft: 135 24% 18%;
-    --negative: 3 78% 74%;
-    --negative-soft: 0 24% 21%;
-    --pending: 41 72% 64%;
-    --pending-soft: 40 35% 19%;
-    --info: 201 48% 70%;
-    --info-soft: 201 25% 19%;
-  }
-
-  /* ── 5. Obsidian Slate & Cobalt (Monochrome Minimalism) ─────────── */
+  /* ── 4. Obsidian Graphite & Zinc (Pure Monochrome Minimalist) ─────── */
   [data-theme="obsidian"] {
     color-scheme: light;
-    --background: 215 20% 97%;
-    --foreground: 222 47% 11%;
+    --background: 0 0% 98%;
+    --foreground: 240 10% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 10% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 222 47% 13%;
+    --popover-foreground: 240 10% 10%;
+    --primary: 240 10% 12%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 214 18% 92%;
-    --secondary-foreground: 222 47% 15%;
-    --muted: 214 18% 92%;
-    --muted-foreground: 215 14% 45%;
-    --accent: 217 90% 94%;
-    --accent-foreground: 221 83% 45%;
+    --secondary: 240 5% 92%;
+    --secondary-foreground: 240 10% 12%;
+    --muted: 240 5% 92%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 240 5% 90%;
+    --accent-foreground: 240 10% 12%;
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 18% 87%;
-    --input: 214 18% 81%;
-    --ring: 222 47% 13%;
-    --positive: 145 65% 32%;
-    --positive-soft: 142 45% 93%;
+    --border: 240 6% 87%;
+    --input: 240 6% 82%;
+    --ring: 240 10% 12%;
+    --positive: 152 70% 32%;
+    --positive-soft: 152 45% 93%;
     --negative: 0 72% 50%;
     --negative-soft: 0 80% 96%;
     --pending: 38 92% 38%;
     --pending-soft: 42 95% 93%;
-    --info: 217 91% 53%;
-    --info-soft: 215 85% 95%;
+    --info: 174 70% 35%;
+    --info-soft: 174 50% 93%;
   }
 
   [data-theme="obsidian"].dark,
   [data-theme="obsidian"] .dark {
     color-scheme: dark;
-    --background: 222 25% 7%;
-    --foreground: 210 25% 96%;
-    --card: 222 22% 11%;
-    --card-foreground: 210 25% 96%;
-    --popover: 222 22% 11%;
-    --popover-foreground: 210 25% 96%;
-    --primary: 214 90% 68%;
-    --primary-foreground: 222 40% 10%;
-    --secondary: 222 18% 18%;
-    --secondary-foreground: 210 25% 92%;
-    --muted: 222 18% 18%;
-    --muted-foreground: 215 14% 68%;
-    --accent: 217 40% 22%;
-    --accent-foreground: 214 90% 78%;
+    --background: 240 6% 8%;
+    --foreground: 0 0% 96%;
+    --card: 240 5% 11%;
+    --card-foreground: 0 0% 96%;
+    --popover: 240 5% 11%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 10% 10%;
+    --secondary: 240 4% 17%;
+    --secondary-foreground: 0 0% 94%;
+    --muted: 240 4% 17%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 240 4% 20%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 75% 70%;
-    --destructive-foreground: 222 40% 10%;
-    --border: 222 16% 22%;
-    --input: 222 16% 26%;
-    --ring: 214 90% 68%;
-    --positive: 145 60% 62%;
-    --positive-soft: 145 28% 18%;
+    --destructive-foreground: 240 6% 8%;
+    --border: 240 4% 22%;
+    --input: 240 4% 26%;
+    --ring: 0 0% 98%;
+    --positive: 152 65% 60%;
+    --positive-soft: 152 30% 18%;
     --negative: 0 75% 70%;
     --negative-soft: 0 30% 19%;
     --pending: 38 85% 65%;
     --pending-soft: 38 35% 18%;
-    --info: 217 85% 70%;
-    --info-soft: 217 30% 19%;
+    --info: 174 65% 60%;
+    --info-soft: 174 30% 18%;
   }
 
-  /* ── 6. Royal Plum & Champagne (Luxury Twilight) ─────────────────── */
-  [data-theme="plum"] {
+  /* ── 5. Imperial Amber & Gold (Prestige Wealth) ──────────────────── */
+  [data-theme="amber"] {
     color-scheme: light;
-    --background: 280 20% 97%;
-    --foreground: 275 35% 14%;
+    --background: 40 30% 97%;
+    --foreground: 30 35% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 275 35% 14%;
+    --card-foreground: 30 35% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 275 35% 14%;
-    --primary: 272 52% 36%;
+    --popover-foreground: 30 35% 13%;
+    --primary: 36 92% 38%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 275 18% 92%;
-    --secondary-foreground: 275 35% 18%;
-    --muted: 275 18% 92%;
-    --muted-foreground: 270 12% 44%;
-    --accent: 272 65% 93%;
-    --accent-foreground: 272 52% 28%;
-    --destructive: 345 68% 48%;
+    --secondary: 40 22% 92%;
+    --secondary-foreground: 30 35% 16%;
+    --muted: 40 22% 92%;
+    --muted-foreground: 30 15% 42%;
+    --accent: 42 75% 90%;
+    --accent-foreground: 36 92% 26%;
+    --destructive: 0 65% 48%;
     --destructive-foreground: 0 0% 100%;
-    --border: 275 14% 87%;
-    --input: 275 14% 81%;
-    --ring: 272 52% 36%;
-    --positive: 152 62% 31%;
-    --positive-soft: 148 45% 93%;
-    --negative: 345 68% 48%;
-    --negative-soft: 345 75% 96%;
-    --pending: 35 85% 36%;
-    --pending-soft: 40 90% 93%;
-    --info: 245 55% 48%;
-    --info-soft: 245 65% 95%;
+    --border: 38 18% 86%;
+    --input: 38 18% 80%;
+    --ring: 36 92% 38%;
+    --positive: 150 55% 32%;
+    --positive-soft: 145 40% 93%;
+    --negative: 0 65% 48%;
+    --negative-soft: 0 75% 96%;
+    --pending: 36 92% 38%;
+    --pending-soft: 40 90% 92%;
+    --info: 180 50% 34%;
+    --info-soft: 180 45% 94%;
   }
 
-  [data-theme="plum"].dark,
-  [data-theme="plum"] .dark {
+  [data-theme="amber"].dark,
+  [data-theme="amber"] .dark {
     color-scheme: dark;
-    --background: 275 25% 8%;
-    --foreground: 270 20% 95%;
-    --card: 275 22% 12%;
-    --card-foreground: 270 20% 95%;
-    --popover: 275 22% 12%;
-    --popover-foreground: 270 20% 95%;
-    --primary: 275 75% 72%;
-    --primary-foreground: 275 40% 10%;
-    --secondary: 275 18% 18%;
-    --secondary-foreground: 270 20% 92%;
-    --muted: 275 18% 18%;
-    --muted-foreground: 270 12% 66%;
-    --accent: 275 35% 22%;
-    --accent-foreground: 275 75% 82%;
-    --destructive: 345 75% 70%;
-    --destructive-foreground: 275 40% 10%;
-    --border: 275 16% 22%;
-    --input: 275 16% 26%;
-    --ring: 275 75% 72%;
-    --positive: 152 60% 62%;
-    --positive-soft: 152 30% 18%;
-    --negative: 345 75% 70%;
-    --negative-soft: 345 30% 19%;
-    --pending: 38 85% 65%;
+    --background: 35 24% 8%;
+    --foreground: 40 22% 94%;
+    --card: 35 20% 12%;
+    --card-foreground: 40 22% 94%;
+    --popover: 35 20% 12%;
+    --popover-foreground: 40 22% 94%;
+    --primary: 38 90% 55%;
+    --primary-foreground: 35 30% 8%;
+    --secondary: 35 15% 17%;
+    --secondary-foreground: 40 22% 92%;
+    --muted: 35 15% 17%;
+    --muted-foreground: 35 12% 66%;
+    --accent: 38 35% 20%;
+    --accent-foreground: 38 90% 75%;
+    --destructive: 0 75% 70%;
+    --destructive-foreground: 35 30% 8%;
+    --border: 35 14% 22%;
+    --input: 35 14% 26%;
+    --ring: 38 90% 55%;
+    --positive: 150 50% 58%;
+    --positive-soft: 150 25% 18%;
+    --negative: 0 75% 70%;
+    --negative-soft: 0 30% 19%;
+    --pending: 38 90% 65%;
     --pending-soft: 38 35% 18%;
-    --info: 245 65% 72%;
-    --info-soft: 245 30% 19%;
+    --info: 180 45% 65%;
+    --info-soft: 180 30% 19%;
+  }
+
+  /* ── 6. Slate Mineral & Iron (Corporate Audit & Neutral Swiss) ────── */
+  [data-theme="slate"] {
+    color-scheme: light;
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+    --primary: 215 25% 27%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 16% 92%;
+    --secondary-foreground: 215 25% 16%;
+    --muted: 210 16% 92%;
+    --muted-foreground: 215 12% 44%;
+    --accent: 215 20% 90%;
+    --accent-foreground: 215 25% 20%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 14% 86%;
+    --input: 215 14% 80%;
+    --ring: 215 25% 27%;
+    --positive: 155 60% 32%;
+    --positive-soft: 155 45% 93%;
+    --negative: 0 65% 50%;
+    --negative-soft: 0 75% 96%;
+    --pending: 36 85% 36%;
+    --pending-soft: 40 90% 92%;
+    --info: 190 60% 36%;
+    --info-soft: 190 50% 94%;
+  }
+
+  [data-theme="slate"].dark,
+  [data-theme="slate"] .dark {
+    color-scheme: dark;
+    --background: 220 18% 8%;
+    --foreground: 215 20% 95%;
+    --card: 220 16% 12%;
+    --card-foreground: 215 20% 95%;
+    --popover: 220 16% 12%;
+    --popover-foreground: 215 20% 95%;
+    --primary: 215 20% 68%;
+    --primary-foreground: 220 25% 10%;
+    --secondary: 220 12% 17%;
+    --secondary-foreground: 215 20% 92%;
+    --muted: 220 12% 17%;
+    --muted-foreground: 215 10% 66%;
+    --accent: 215 15% 22%;
+    --accent-foreground: 215 20% 85%;
+    --destructive: 0 75% 70%;
+    --destructive-foreground: 220 25% 10%;
+    --border: 220 12% 21%;
+    --input: 220 12% 25%;
+    --ring: 215 20% 68%;
+    --positive: 155 50% 58%;
+    --positive-soft: 155 25% 18%;
+    --negative: 0 75% 70%;
+    --negative-soft: 0 30% 19%;
+    --pending: 36 80% 62%;
+    --pending-soft: 36 30% 18%;
+    --info: 190 55% 65%;
+    --info-soft: 190 30% 19%;
   }
 
   *,
